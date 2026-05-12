@@ -21,8 +21,7 @@ def render():
             id_banner = st.number_input("ID Banner del Estudiante", step=1, value=0, key="eval_banner")
             
             if id_banner > 0:
-                # Buscamos las pruebas programadas activas para este estudiante
-                # Traemos el id_programacion para insertarlo en la tabla 'notas'
+                # Buscamos las pruebas programadas
                 res_progs = traer_datos("""
                     SELECT p.id, e.nombre_completo, a.nombre_materia, p.alfa_asignatura 
                     FROM programacion_pruebas p
@@ -35,50 +34,48 @@ def render():
                     nombre_est = res_progs[0][1]
                     st.success(f"Estudiante: **{nombre_est}**")
                     
-                    # Diccionario para manejar la selección
                     opciones = {f"{r[2]} ({r[3]})": r[0] for r in res_progs}
                     seleccion = st.selectbox("Seleccione la Asignatura a Evaluar", list(opciones.keys()))
                     id_prog_sel = opciones[seleccion]
 
-                    # Verificar si ya existe registro en la tabla 'notas'
+                    # Verificar existencia para EDITAR
                     nota_existente = traer_datos("""
                         SELECT asistencia, calificacion, resultado 
                         FROM notas 
                         WHERE id_programacion = %s
                     """, (id_prog_sel,))
 
-                    # Valores iniciales (por defecto o recuperados)
                     asistencia_ini = True
                     calificacion_ini = 0.0
                     es_edicion = False
 
                     if nota_existente:
-                        st.info("Ya existe una calificación. Puede editarla abajo.")
+                        st.warning("⚠️ Esta prueba ya tiene una nota registrada. Si guarda cambios, se actualizarán los datos.")
                         asistencia_ini = nota_existente[0][0]
                         calificacion_ini = float(nota_existente[0][1])
                         es_edicion = True
 
-                    with st.form("form_notas"):
+                    with st.form("form_notas_v2"):
                         asistencia = st.radio("¿Asistió a la prueba?", [True, False], 
                                             index=0 if asistencia_ini else 1,
                                             format_func=lambda x: "SÍ" if x else "NO")
                         
                         if not asistencia:
                             calificacion = st.number_input("Calificación", value=0.0, disabled=True)
+                            st.info("Nota automática de 0.0 por inasistencia.")
                         else:
                             calificacion = st.number_input("Calificación (0.0 - 5.0)", 
                                                           min_value=0.0, max_value=5.0, 
                                                           value=calificacion_ini, step=0.1)
                         
-                        if st.form_submit_button("💾 Guardar Calificación"):
-                            # Lógica de negocio solicitada
+                        label_boton = "🔄 Actualizar Nota registrada" if es_edicion else "💾 Guardar Calificación"
+                        if st.form_submit_button(label_boton):
                             if not asistencia:
                                 resultado = "INASISTENCIA"
                                 calificacion = 0.0
                             else:
                                 resultado = "APROBÓ" if calificacion >= 3.5 else "REPROBÓ"
 
-                            # Guardar en la tabla 'notas' según tu imagen
                             ejecutar_query("""
                                 INSERT INTO notas (id_programacion, asistencia, calificacion, resultado)
                                 VALUES (%s, %s, %s, %s)
@@ -89,13 +86,12 @@ def render():
                                     resultado = EXCLUDED.resultado
                             """, (id_prog_sel, asistencia, calificacion, resultado))
                             
-                            st.success(f"Registro guardado: {resultado} ({calificacion})")
+                            st.success(f"✅ ¡{resultado}! Nota: {calificacion}")
                             st.rerun()
                 else:
-                    st.warning("No hay programaciones pendientes para este ID.")
+                    st.warning("No hay programaciones para este ID.")
 
-    # --- PESTAÑA 2: HISTÓRICO ---
-    # --- PESTAÑA 2: HISTÓRICO ---
+    # --- PESTAÑA 2: HISTÓRICO CON SEMÁFORO ---
     with tabs[1]:
         st.subheader("Listado General de Notas")
         query_notas = """
@@ -113,23 +109,29 @@ def render():
                 "ID Banner", "Estudiante", "Asignatura", "Asistió", "Nota", "Resultado"
             ])
             
-            # Función corregida para resaltar resultados
-            def resaltar_resultado(val):
-                if val == 'APROBÓ':
-                    return 'color: green; font-weight: bold'
-                elif val in ['REPROBÓ', 'INASISTENCIA']:
-                    return 'color: red; font-weight: bold'
-                return ''
+            # Función de Semáforo
+            def estilo_semaforo(row):
+                resultado = row['Resultado']
+                estilo = [''] * len(row)
+                
+                # Buscamos el índice de la columna 'Resultado'
+                idx_res = df_notas.columns.get_loc('Resultado')
+                
+                if resultado == 'APROBÓ':
+                    estilo[idx_res] = 'background-color: #d4edda; color: #155724; font-weight: bold; border: 1px solid #c3e6cb'
+                elif resultado == 'REPROBÓ':
+                    estilo[idx_res] = 'background-color: #f8d7da; color: #721c24; font-weight: bold; border: 1px solid #f5c6cb'
+                elif resultado == 'INASISTENCIA':
+                    estilo[idx_res] = 'background-color: #fff3cd; color: #856404; font-weight: bold; border: 1px solid #ffeeba'
+                
+                return estilo
 
-            # Usamos .map (Pandas nuevo) o .applymap (Pandas viejo) con un manejo de error
+            # Aplicar estilos
             try:
-                # Intentamos el método moderno primero
-                df_estilado = df_notas.style.map(resaltar_resultado, subset=['Resultado'])
-            except AttributeError:
-                # Si falla, usamos el método antiguo
-                df_estilado = df_notas.style.applymap(resaltar_resultado, subset=['Resultado'])
+                df_final = df_notas.style.apply(estilo_semaforo, axis=1)
+            except:
+                df_final = df_notas # En caso de error de pandas, muestra la tabla normal
 
-            # Cambiamos st.table por st.dataframe para mejor compatibilidad con estilos
-            st.dataframe(df_estilado, use_container_width=True)
+            st.dataframe(df_final, use_container_width=True, hide_index=True)
         else:
             st.info("No hay registros de notas todavía.")
