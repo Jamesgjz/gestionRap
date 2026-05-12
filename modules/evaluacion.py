@@ -95,6 +95,7 @@ def render():
                     st.warning("No hay programaciones pendientes para este ID.")
 
     # --- PESTAÑA 2: HISTÓRICO ---
+    # --- PESTAÑA 2: HISTÓRICO ---
     with tabs[1]:
         st.subheader("Listado General de Notas")
         query_notas = """
@@ -112,11 +113,23 @@ def render():
                 "ID Banner", "Estudiante", "Asignatura", "Asistió", "Nota", "Resultado"
             ])
             
-            # Estilo visual para aprobados/reprobados
+            # Función corregida para resaltar resultados
             def resaltar_resultado(val):
-                color = 'red' if val in ['REPROBÓ', 'INASISTENCIA'] else 'green'
-                return f'color: {color}; font-weight: bold'
+                if val == 'APROBÓ':
+                    return 'color: green; font-weight: bold'
+                elif val in ['REPROBÓ', 'INASISTENCIA']:
+                    return 'color: red; font-weight: bold'
+                return ''
 
-            st.table(df_notas.style.applymap(resaltar_resultado, subset=['Resultado']))
+            # Usamos .map (Pandas nuevo) o .applymap (Pandas viejo) con un manejo de error
+            try:
+                # Intentamos el método moderno primero
+                df_estilado = df_notas.style.map(resaltar_resultado, subset=['Resultado'])
+            except AttributeError:
+                # Si falla, usamos el método antiguo
+                df_estilado = df_notas.style.applymap(resaltar_resultado, subset=['Resultado'])
+
+            # Cambiamos st.table por st.dataframe para mejor compatibilidad con estilos
+            st.dataframe(df_estilado, use_container_width=True)
         else:
             st.info("No hay registros de notas todavía.")
