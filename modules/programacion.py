@@ -50,14 +50,10 @@ def render():
                             with col2:
                                 hora_app = st.time_input("Hora de la Prueba")
                             
-                            
-                            # ... (dentro de tu bloque de st.form_submit_button) ...
-
                             if st.form_submit_button("💾 Guardar Programación"):
                                 alfa_sel = seleccionada.split(" - ")[0].strip()
                                 fecha_hoy = datetime.now().date()
     
-                                # Esta consulta ahora funcionará porque la DB ya sabe qué es lo "único"
                                 ejecutar_query("""
                                     INSERT INTO programacion_pruebas (id_banner, alfa_asignatura, fecha_registro, fecha_aplicacion, hora)
                                     VALUES (%s, %s, %s, %s, %s)
@@ -66,7 +62,7 @@ def render():
                                     fecha_aplicacion = EXCLUDED.fecha_aplicacion, 
                                     hora = EXCLUDED.hora,
                                     fecha_registro = EXCLUDED.fecha_registro
-    """, (id_banner, alfa_sel, fecha_hoy, fecha_app, hora_app))
+                                """, (id_banner, alfa_sel, fecha_hoy, fecha_app, hora_app))
     
                                 st.success(f"¡Programación guardada! (ID: {id_banner} - {alfa_sel})")
                                 st.rerun()
@@ -78,16 +74,42 @@ def render():
     # --- PESTAÑA 2: VISTA ---
     with tabs[1]:
         st.subheader("Histórico de Programación")
+        
+        # SQL MEJORADO: Traemos el nombre de la asignatura haciendo JOIN con la tabla asignaturas
         query_vista = """
-            SELECT p.id_banner, e.nombre_completo, p.alfa_asignatura, p.fecha_registro, p.fecha_aplicacion, p.hora
+            SELECT p.id_banner, e.nombre_completo, a.nombre_materia, p.fecha_registro, p.fecha_aplicacion, p.hora, p.alfa_asignatura
             FROM programacion_pruebas p
             JOIN estudiantes e ON p.id_banner = e.id_banner
+            JOIN asignaturas a ON TRIM(p.alfa_asignatura) = TRIM(a.alfa)
             ORDER BY p.fecha_registro DESC
         """
         datos = traer_datos(query_vista)
         
         if datos:
-            df = pd.DataFrame(datos, columns=["ID Banner", "Estudiante", "Asignatura", "Fecha Registro", "Fecha Aplicación", "Hora"])
-            st.table(df)
+            # Mostramos el DataFrame (excluimos la columna oculta 'alfa_asignatura' para la tabla visual)
+            df = pd.DataFrame(datos, columns=["ID Banner", "Estudiante", "Asignatura", "Fecha Registro", "Fecha Aplicación", "Hora", "cod_alfa"])
+            st.table(df[["ID Banner", "Estudiante", "Asignatura", "Fecha Registro", "Fecha Aplicación", "Hora"]])
+            
+            # --- OPCIÓN DE BORRAR (Solo Admin) ---
+            if rol == "admin":
+                st.divider()
+                st.subheader("🗑️ Eliminar Programación")
+                
+                # Creamos una lista de opciones para el selector de borrado
+                opciones_borrar = [f"{row[0]} | {row[1]} - {row[6]}" for row in datos]
+                seleccion_borrar = st.selectbox("Seleccione la programación a eliminar:", opciones_borrar)
+                
+                if st.button("❌ Eliminar Actividad Seleccionada"):
+                    # Extraemos los datos para el DELETE
+                    banner_del = seleccion_borrar.split(" | ")[0]
+                    alfa_del = seleccion_borrar.split(" - ")[1]
+                    
+                    ejecutar_query("""
+                        DELETE FROM programacion_pruebas 
+                        WHERE id_banner = %s AND alfa_asignatura = %s
+                    """, (banner_del, alfa_del))
+                    
+                    st.error(f"Programación eliminada para el ID {banner_del}")
+                    st.rerun()
         else:
             st.info("Aún no hay pruebas programadas.")
