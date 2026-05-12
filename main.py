@@ -1,5 +1,5 @@
 import streamlit as st
-from modules import registro, estado_pruebas, programacion  # Asegúrate de importar tus módulos aquí
+from modules import registro, estado_pruebas, programacion, evaluacion  # Asegúrate de importar tus módulos aquí
 
 # 1. Configuración de página (DEBE SER LA PRIMERA LÍNEA DE STREAMLIT)
 st.set_page_config(page_title="AeroGrade - UNIMINUTO", layout="wide")
@@ -59,5 +59,7 @@ else:
         estado_pruebas.render()
     elif opcion =="Programación":
         programacion.render()
+    elif opcion == "Evaluación":
+        evaluacion.render()
     else:
         st.info(f"El módulo de {opcion} está en desarrollo.")
