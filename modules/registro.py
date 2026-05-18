@@ -75,40 +75,59 @@ def render():
             else:
                 st.info("No hay estudiantes registrados para eliminar.")
 
-    with t3: # Vista Maestro con Semáforo Automático
+    with t3: # Vista Maestro con Semáforo Automático y Barra de Progreso
         st.subheader("Estado de Aplicación por Estudiante")
         ests = traer_datos("SELECT id_banner, nombre_completo, alfa_asignatura FROM estudiantes")
         
-        for idb, nom, alfas in ests:
-            with st.expander(f"🎓 {nom} ({idb})"):
-                if not alfas:
-                    st.info("Este estudiante no tiene asignaturas asignadas.")
-                    continue
+        if ests:
+            total_estudiantes = len(ests)
+            
+            # 1. Crear el contenedor de la barra de progreso al inicio
+            st.caption("Cargando el historial de estudiantes...")
+            barra_progreso = st.progress(0)
+            
+            # 2. Iterar con un contador para calcular el porcentaje
+            for indice, (idb, nom, alfas) in enumerate(ests):
                 
-                lista_alfas = alfas.split(",")
-                cols = st.columns(len(lista_alfas))
+                # Calcular el porcentaje actual de carga
+                porcentaje = int(((indice + 1) / total_estudiantes) * 100)
+                barra_progreso.progress(porcentaje)
                 
-                for i, alfa in enumerate(lista_alfas):
-                    # 1. Traer el Nombre Completo y el Estado de la prueba
-                    info_materia = traer_datos("""
-                        SELECT a.nombre_materia, m.estado 
-                        FROM asignaturas a 
-                        LEFT JOIN maestro_pruebas m ON a.alfa = m.alfa_asignatura 
-                        WHERE a.alfa = %s
-                    """, (alfa,))
+                with st.expander(f"🎓 {nom} ({idb})"):
+                    if not alfas:
+                        st.info("Este estudiante no tiene asignaturas asignadas.")
+                        continue
                     
-                    nombre_completo = info_materia[0][0] if info_materia else alfa
-                    status = info_materia[0][1] if info_materia and info_materia[0][1] else "Sin construir"
+                    lista_alfas = alfas.split(",")
+                    cols = st.columns(len(lista_alfas))
                     
-                    # 2. Lógica de Semáforo
-                    ready = "✅ Lista" if status == "Construida" else "⏳ Pendiente"
-                    color = "#28a745" if status == "Construida" else "#ffc107" if status == "En construcción" else "#dc3545"
-                    
-                    # 3. Renderizado visual
-                    cols[i].markdown(f"""
-                        <div style='border-left:5px solid {color}; background-color: #f8f9fa; padding:10px; border-radius:4px; height: 100px;'>
-                            <div style='font-size: 0.8rem; font-weight: bold;'>{nombre_completo}</div>
-                            <div style='font-size: 0.7rem; color: #555;'>{alfa}</div>
-                            <div style='margin-top: 5px; font-size: 0.75rem;'>{ready}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    for i, alfa in enumerate(lista_alfas):
+                        # Traer el Nombre Completo y el Estado de la prueba
+                        info_materia = traer_datos("""
+                            SELECT a.nombre_materia, m.estado 
+                            FROM asignaturas a 
+                            LEFT JOIN maestro_pruebas m ON a.alfa = m.alfa_asignatura 
+                            WHERE a.alfa = %s
+                        """, (alfa,))
+                        
+                        nombre_completo = info_materia[0][0] if info_materia else alfa
+                        status = info_materia[0][1] if info_materia and info_materia[0][1] else "Sin construir"
+                        
+                        # Lógica de Semáforo
+                        ready = "✅ Lista" if status == "Construida" else "⏳ Pendiente"
+                        color = "#28a745" if status == "Construida" else "#ffc107" if status == "En construcción" else "#dc3545"
+                        
+                        # Renderizado visual
+                        cols[i].markdown(f"""
+                            <div style='border-left:5px solid {color}; background-color: #f8f9fa; padding:10px; border-radius:4px; height: 100px;'>
+                                <div style='font-size: 0.8rem; font-weight: bold;'>{nombre_completo}</div>
+                                <div style='font-size: 0.7rem; color: #555;'>{alfa}</div>
+                                <div style='margin-top: 5px; font-size: 0.75rem;'>{ready}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+            # 3. Limpiar o completar la barra cuando termine el proceso
+            barra_progreso.empty() # Esto borra la barra una vez cargue todo para dejar la interfaz limpia
+            st.success(f" Se cargaron {total_estudiantes} estudiantes con éxito.")
+        else:
+            st.info("No hay estudiantes registrados en el sistema.")
