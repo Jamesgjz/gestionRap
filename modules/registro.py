@@ -24,15 +24,18 @@ def render():
         if rol == "admin":
             st.divider()
             st.subheader("🗑️ Eliminar Docente")
-            profesores_db = traer_datos("SELECT id, nombre_completo FROM profesores ORDER BY nombre_completo")
+            # Usamos el nombre exacto de tu columna: id_profesor
+            profesores_db = traer_datos("SELECT id_profesor, nombre_completo FROM profesores ORDER BY nombre_completo")
             
             if profesores_db:
+                # Mapeamos la lista usando el id_profesor real de tu base de datos
                 opts_profes = {f"{p[1]} (ID: {p[0]})": p[0] for p in profesores_db}
                 profe_sel = st.selectbox("Seleccione el docente a eliminar:", list(opts_profes.keys()), key="del_profe")
                 
                 if st.button("❌ Eliminar Docente Seleccionado"):
                     id_profe_del = opts_profes[profe_sel]
-                    ejecutar_query("DELETE FROM profesores WHERE id = %s", (id_profe_del,))
+                    # Ejecutamos el DELETE usando la columna id_profesor
+                    ejecutar_query("DELETE FROM profesores WHERE id_profesor = %s", (id_profe_del,))
                     st.error(f"Docente '{profe_sel}' eliminado correctamente.")
                     st.rerun()
             else:
