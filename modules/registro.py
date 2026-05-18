@@ -5,7 +5,11 @@ def render():
     st.title("📝 Gestión de Registros")
     t1, t2, t3 = st.tabs(["👨‍🏫 Docentes", "🎓 Estudiantes", "🔍 Vista Maestro"])
     
+    # Evaluamos el rol del usuario para restringir el borrado si no es admin
+    rol = st.session_state.get("rol", "visitante")
+    
     with t1: # Registro Docentes
+        st.subheader("Programar Nuevo Docente")
         with st.form("f_p", clear_on_submit=True):
             c1, c2 = st.columns([2, 1])
             nom_p = c1.text_input("Nombre del Profesor")
@@ -13,8 +17,28 @@ def render():
             if st.form_submit_button("💾 Guardar"):
                 ejecutar_query("INSERT INTO profesores (nombre_completo, horas_dedicacion) VALUES (%s,%s)", (nom_p, hrs))
                 st.success("Docente registrado")
+                st.rerun()
+
+        # --- NUEVA OPCIÓN: ELIMINAR DOCENTE (Solo Admin) ---
+        if rol == "admin":
+            st.divider()
+            st.subheader("🗑️ Eliminar Docente")
+            profesores_db = traer_datos("SELECT id, nombre_completo FROM profesores ORDER BY nombre_completo")
+            
+            if profesores_db:
+                opts_profes = {f"{p[1]} (ID: {p[0]})": p[0] for p in profesores_db}
+                profe_sel = st.selectbox("Seleccione el docente a eliminar:", list(opts_profes.keys()), key="del_profe")
+                
+                if st.button("❌ Eliminar Docente Seleccionado"):
+                    id_profe_del = opts_profes[profe_sel]
+                    ejecutar_query("DELETE FROM profesores WHERE id = %s", (id_profe_del,))
+                    st.error(f"Docente '{profe_sel}' eliminado correctamente.")
+                    st.rerun()
+            else:
+                st.info("No hay docentes registrados para eliminar.")
 
     with t2: # Registro Estudiantes
+        st.subheader("Registrar Nuevo Estudiante")
         with st.form("f_e", clear_on_submit=True):
             c1, c2 = st.columns([1, 2])
             id_b = c1.number_input("ID Banner", step=1)
@@ -27,6 +51,25 @@ def render():
                 alfas = ",".join([opts[m] for m in mats_sel])
                 ejecutar_query("INSERT INTO estudiantes (id_banner, nombre_completo, estado_matricula, alfa_asignatura) VALUES (%s,%s,%s,%s)", (id_b, nom_e, est, alfas))
                 st.success("Estudiante registrado")
+                st.rerun()
+
+        # --- NUEVA OPCIÓN: ELIMINAR ESTUDIANTE (Solo Admin) ---
+        if rol == "admin":
+            st.divider()
+            st.subheader("🗑️ Eliminar Estudiante")
+            estudiantes_db = traer_datos("SELECT id_banner, nombre_completo FROM estudiantes ORDER BY nombre_completo")
+            
+            if estudiantes_db:
+                opts_est = {f"{e[1]} (Banner: {e[0]})": e[0] for e in estudiantes_db}
+                est_sel = st.selectbox("Seleccione el estudiante a eliminar:", list(opts_est.keys()), key="del_est")
+                
+                if st.button("❌ Eliminar Estudiante Seleccionado"):
+                    id_banner_del = opts_est[est_sel]
+                    ejecutar_query("DELETE FROM estudiantes WHERE id_banner = %s", (id_banner_del,))
+                    st.error(f"Estudiante '{est_sel}' eliminado correctamente.")
+                    st.rerun()
+            else:
+                st.info("No hay estudiantes registrados para eliminar.")
 
     with t3: # Vista Maestro con Semáforo Automático
         st.subheader("Estado de Aplicación por Estudiante")
@@ -34,6 +77,10 @@ def render():
         
         for idb, nom, alfas in ests:
             with st.expander(f"🎓 {nom} ({idb})"):
+                if not alfas:
+                    st.info("Este estudiante no tiene asignaturas asignadas.")
+                    continue
+                
                 lista_alfas = alfas.split(",")
                 cols = st.columns(len(lista_alfas))
                 
