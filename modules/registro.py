@@ -2,16 +2,12 @@ import streamlit as st
 from database import ejecutar_query, traer_datos
 
 def render():
-   def render():
     st.title("📝 Gestión de Registros")
     
-    # --- AGREGA ESTA REGLA DE SEGURIDAD AQUÍ ---
-    if st.session_state.get("usuario") == "James Jaramillo":
-        st.session_state["rol"] = "admin"
-        
+    # Leemos el rol directamente de la sesión. Si no existe, por defecto es visitante.
     rol = st.session_state.get("rol", "visitante")
+    
     t1, t2, t3 = st.tabs(["👨‍🏫 Docentes", "🎓 Estudiantes", "🔍 Vista Maestro"])
-    # ... (el resto de tu código sigue igual abajo)
     
     with t1: # Registro Docentes
         st.subheader("Programar Nuevo Docente")
