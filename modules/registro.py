@@ -2,11 +2,16 @@ import streamlit as st
 from database import ejecutar_query, traer_datos
 
 def render():
+   def render():
     st.title("📝 Gestión de Registros")
-    t1, t2, t3 = st.tabs(["👨‍🏫 Docentes", "🎓 Estudiantes", "🔍 Vista Maestro"])
     
-    # Evaluamos el rol del usuario para restringir el borrado si no es admin
+    # --- AGREGA ESTA REGLA DE SEGURIDAD AQUÍ ---
+    if st.session_state.get("usuario") == "James Jaramillo":
+        st.session_state["rol"] = "admin"
+        
     rol = st.session_state.get("rol", "visitante")
+    t1, t2, t3 = st.tabs(["👨‍🏫 Docentes", "🎓 Estudiantes", "🔍 Vista Maestro"])
+    # ... (el resto de tu código sigue igual abajo)
     
     with t1: # Registro Docentes
         st.subheader("Programar Nuevo Docente")
