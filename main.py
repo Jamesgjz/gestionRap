@@ -1,5 +1,5 @@
 import streamlit as st
-from modules import registro, estado_pruebas, programacion, evaluacion
+from modules import registro, estado_pruebas, programacion, evaluacion, dashboard
 
 # Configuración de la página
 st.set_page_config(page_title="Gestión RAP", page_icon="🔒", layout="centered")
@@ -75,6 +75,7 @@ else:
         "Estado de Pruebas", 
         "Programación", 
         "Evaluación"
+        "Dashboard / KPIs"
     ])
 
     if opcion == "Inicio":
@@ -88,3 +89,5 @@ else:
         programacion.render()
     elif opcion == "Evaluación":
         evaluacion.render()
+    elif opcion=="Dashboard / KPIs":
+        dashboard.render()
