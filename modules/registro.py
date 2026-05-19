@@ -16,9 +16,12 @@ def render():
             nom_p = c1.text_input("Nombre del Profesor")
             hrs = c2.number_input("Horas", 1, 48, 1)
             if st.form_submit_button("💾 Guardar"):
-                ejecutar_query("INSERT INTO profesores (nombre_completo, horas_dedicacion) VALUES (%s,%s)", (nom_p, hrs))
-                st.success("Docente registrado")
-                st.rerun()
+                try:
+                    ejecutar_query("INSERT INTO profesores (nombre_completo, horas_dedicacion) VALUES (%s,%s)", (nom_p, hrs))
+                    st.success("Docente registrado")
+                    st.rerun()
+                except Exception as e:
+                    st.error("⚠️ Ocurrió un inconveniente al registrar el docente. Verifique que los datos sean correctos.")
 
         # --- NUEVA OPCIÓN: ELIMINAR DOCENTE (Solo Admin) ---
         if rol == "admin":
@@ -34,18 +37,35 @@ def render():
                 
                 if st.button("❌ Eliminar Docente Seleccionado"):
                     id_profe_del = opts_profes[profe_sel]
-                    # Ejecutamos el DELETE usando la columna id_profesor
-                    ejecutar_query("DELETE FROM profesores WHERE id_profesor = %s", (id_profe_del,))
-                    st.error(f"Docente '{profe_sel}' eliminado correctamente.")
-                    st.rerun()
+                    try:
+                        # Ejecutamos el DELETE usando la columna id_profesor
+                        ejecutar_query("DELETE FROM profesores WHERE id_profesor = %s", (id_profe_del,))
+                        st.error(f"Docente '{profe_sel}' eliminado correctamente.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error("⚠️ No se puede eliminar este docente porque tiene cargas académicas o actividades vinculadas en el sistema.")
             else:
                 st.info("No hay docentes registrados para eliminar.")
 
     with t2: # Registro / Actualización de Estudiantes
         st.subheader("Registrar / Actualizar Estudiante")
+        
+        # Consultamos los estudiantes actuales para permitir seleccionar uno si se desea MODIFICAR su ID de raíz
+        estudiantes_carga = traer_datos("SELECT id_banner, nombre_completo FROM estudiantes ORDER BY nombre_completo")
+        
+        # Checkbox para activar el modo corrección de un ID mal digitado
+        modo_correccion = st.checkbox("🔄 ¿Desea corregir un ID Banner que quedó mal digitado?")
+        id_antiguo = None
+        
+        if modo_correccion and estudiantes_carga:
+            opts_correccion = {f"{e[1]} (ID Actual: {e[0]})": e[0] for e in estudiantes_carga}
+            est_a_corregir = st.selectbox("Seleccione el registro que contiene el ID ERRÓNEO:", list(opts_correccion.keys()))
+            id_antiguo = opts_correccion[est_a_corregir]
+            st.warning(f"Se modificará el identificador del estudiante. El ID viejo {id_antiguo} será reemplazado por el nuevo ID que digite en el formulario inferior.")
+
         with st.form("f_e", clear_on_submit=True):
             c1, c2 = st.columns([1, 2])
-            id_b = c1.number_input("ID Banner", step=1)
+            id_b = c1.number_input("ID Banner", step=1, value=id_antiguo if id_antiguo else 0)
             nom_e = c2.text_input("Nombre Estudiante")
             est = st.selectbox("Estado", ["Matriculado", "Admitido", "No matriculado"])
             mats_db = traer_datos("SELECT alfa, nombre_materia FROM asignaturas ORDER BY periodo")
@@ -58,35 +78,62 @@ def render():
                 else:
                     alfas = ",".join([opts[m] for m in mats_sel])
                     
-                    # Usamos ON CONFLICT para guardar o actualizar automáticamente según corresponda
-                    ejecutar_query("""
-                        INSERT INTO estudiantes (id_banner, nombre_completo, estado_matricula, alfa_asignatura) 
-                        VALUES (%s, %s, %s, %s)
-                        ON CONFLICT (id_banner) 
-                        DO UPDATE SET 
-                            nombre_completo = EXCLUDED.nombre_completo,
-                            estado_matricula = EXCLUDED.estado_matricula,
-                            alfa_asignatura = EXCLUDED.alfa_asignatura
-                    """, (id_b, nom_e, est, alfas))
-                    
-                    st.success(f"¡Procesado correctamente! El estudiante con ID **{id_b}** ha sido guardado/actualizado.")
-                    st.rerun()
+                    try:
+                        # ESCENARIO A: Si se activó la corrección de un ID erróneo previo
+                        if modo_correccion and id_antiguo:
+                            ejecutar_query("""
+                                UPDATE estudiantes 
+                                SET id_banner = %s, nombre_completo = %s, estado_matricula = %s, alfa_asignatura = %s
+                                WHERE id_banner = %s
+                            """, (id_b, nom_e, est, alfas, id_antiguo))
+                            st.success(f"¡Identificación corregida! El ID {id_antiguo} ahora es **{id_b}**.")
+                        
+                        # ESCENARIO B: Flujo estándar (Registro nuevo o actualización de datos con el mismo ID)
+                        else:
+                            # Usamos ON CONFLICT para guardar o actualizar automáticamente según corresponda
+                            ejecutar_query("""
+                                INSERT INTO estudiantes (id_banner, nombre_completo, estado_matricula, alfa_asignatura) 
+                                VALUES (%s, %s, %s, %s)
+                                ON CONFLICT (id_banner) 
+                                DO UPDATE SET 
+                                    nombre_completo = EXCLUDED.nombre_completo,
+                                    estado_matricula = EXCLUDED.estado_matricula,
+                                    alfa_asignatura = EXCLUDED.alfa_asignatura
+                            """, (id_b, nom_e, est, alfas))
+                            st.success(f"¡Procesado correctamente! El estudiante con ID **{id_b}** ha sido guardado/actualizado.")
+                        
+                        st.rerun()
+                        
+                    except Exception as e:
+                        # Interceptamos las excepciones de la base de datos para mostrar mensajes amigables
+                        err_str = str(e).lower()
+                        if "unique" in err_str or "duplicate" in err_str:
+                            st.error(f"⚠️ El ID Banner **{id_b}** ya se encuentra asignado a otro estudiante.")
+                        elif "foreign key" in err_str or "violación de llave foránea" in err_str:
+                            st.error("⚠️ No es posible alterar esta identificación porque tiene exámenes o calificaciones asociadas en otras dependencias.")
+                        else:
+                            st.error("⚠️ No se pudo procesar la solicitud. Por favor verifique los campos e intente nuevamente.")
 
         # --- NUEVA OPCIÓN: ELIMINAR ESTUDIANTE (Solo Admin) ---
         if rol == "admin":
             st.divider()
             st.subheader("🗑️ Eliminar Estudiante")
-            estudiantes_db = traer_datos("SELECT id_banner, nombre_completo FROM estudiantes ORDER BY nombre_completo")
             
-            if estudiantes_db:
-                opts_est = {f"{e[1]} (Banner: {e[0]})": e[0] for e in estudiantes_db}
+            if estudiantes_carga:
+                opts_est = {f"{e[1]} (Banner: {e[0]})": e[0] for e in estudiantes_carga}
                 est_sel = st.selectbox("Seleccione el estudiante a eliminar:", list(opts_est.keys()), key="del_est")
                 
                 if st.button("❌ Eliminar Estudiante Seleccionado"):
                     id_banner_del = opts_est[est_sel]
-                    ejecutar_query("DELETE FROM estudiantes WHERE id_banner = %s", (id_banner_del,))
-                    st.error(f"Estudiante '{est_sel}' eliminado correctamente.")
-                    st.rerun()
+                    try:
+                        # Eliminación secuencial controlada para evitar romper restricciones de llaves foráneas
+                        ejecutar_query("DELETE FROM notas WHERE id_programacion IN (SELECT id FROM programacion_pruebas WHERE id_banner = %s)", (id_banner_del,))
+                        ejecutar_query("DELETE FROM programacion_pruebas WHERE id_banner = %s", (id_banner_del,))
+                        ejecutar_query("DELETE FROM estudiantes WHERE id_banner = %s", (id_banner_del,))
+                        st.error(f"Estudiante '{est_sel}' eliminado correctamente.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error("⚠️ Ocurrió un error restrictivo en la base de datos al intentar eliminar el registro.")
             else:
                 st.info("No hay estudiantes registrados para eliminar.")
 
