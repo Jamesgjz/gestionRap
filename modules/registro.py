@@ -30,7 +30,7 @@ def render():
             if profesores_db:
                 # Mapeamos la lista usando el id_profesor real de tu base de datos
                 opts_profes = {f"{p[1]} (ID: {p[0]})": p[0] for p in profesores_db}
-                profe_sel = st.selectbox("Seleccione el docente a eliminar:", list(opts_profes.keys()), key="del_profe")
+                profe_sel = st.selectbox("Seleccione el docente a eliminar:", list(opts_profes.keys()), key="del_fe")
                 
                 if st.button("❌ Eliminar Docente Seleccionado"):
                     id_profe_del = opts_profes[profe_sel]
@@ -41,8 +41,8 @@ def render():
             else:
                 st.info("No hay docentes registrados para eliminar.")
 
-    with t2: # Registro Estudiantes
-        st.subheader("Registrar Nuevo Estudiante")
+    with t2: # Registro / Actualización de Estudiantes
+        st.subheader("Registrar / Actualizar Estudiante")
         with st.form("f_e", clear_on_submit=True):
             c1, c2 = st.columns([1, 2])
             id_b = c1.number_input("ID Banner", step=1)
@@ -51,11 +51,26 @@ def render():
             mats_db = traer_datos("SELECT alfa, nombre_materia FROM asignaturas ORDER BY periodo")
             opts = {f"{m[1]} ({m[0]})": m[0] for m in mats_db}
             mats_sel = st.multiselect("Asignaturas", list(opts.keys()))
-            if st.form_submit_button("🚀 Registrar"):
-                alfas = ",".join([opts[m] for m in mats_sel])
-                ejecutar_query("INSERT INTO estudiantes (id_banner, nombre_completo, estado_matricula, alfa_asignatura) VALUES (%s,%s,%s,%s)", (id_b, nom_e, est, alfas))
-                st.success("Estudiante registrado")
-                st.rerun()
+            
+            if st.form_submit_button("🚀 Registrar / Actualizar"):
+                if id_b <= 0 or not nom_e.strip():
+                    st.error("Por favor, ingrese un ID Banner válido y el nombre del estudiante.")
+                else:
+                    alfas = ",".join([opts[m] for m in mats_sel])
+                    
+                    # Usamos ON CONFLICT para guardar o actualizar automáticamente según corresponda
+                    ejecutar_query("""
+                        INSERT INTO estudiantes (id_banner, nombre_completo, estado_matricula, alfa_asignatura) 
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (id_banner) 
+                        DO UPDATE SET 
+                            nombre_completo = EXCLUDED.nombre_completo,
+                            estado_matricula = EXCLUDED.estado_matricula,
+                            alfa_asignatura = EXCLUDED.alfa_asignatura
+                    """, (id_b, nom_e, est, alfas))
+                    
+                    st.success(f"¡Procesado correctamente! El estudiante con ID **{id_b}** ha sido guardado/actualizado.")
+                    st.rerun()
 
         # --- NUEVA OPCIÓN: ELIMINAR ESTUDIANTE (Solo Admin) ---
         if rol == "admin":
