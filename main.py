@@ -74,7 +74,7 @@ else:
         "Registro Estudiantes", 
         "Estado de Pruebas", 
         "Programación", 
-        "Evaluación"
+        "Evaluación",
         "Dashboard / KPIs"
     ])
 
