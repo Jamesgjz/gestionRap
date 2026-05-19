@@ -94,8 +94,9 @@ def render():
     # --- PESTAÑA 2: HISTÓRICO CON SEMÁFORO ---
     with tabs[1]:
         st.subheader("Listado General de Notas")
+        # SQL modificado sutilmente solo para recuperar el n.id_programacion necesario para la UI de borrado
         query_notas = """
-            SELECT e.id_banner, e.nombre_completo, a.nombre_materia, n.asistencia, n.calificacion, n.resultado
+            SELECT e.id_banner, e.nombre_completo, a.nombre_materia, n.asistencia, n.calificacion, n.resultado, n.id_programacion
             FROM notas n
             JOIN programacion_pruebas p ON n.id_programacion = p.id
             JOIN estudiantes e ON p.id_banner = e.id_banner
@@ -106,7 +107,7 @@ def render():
         
         if datos_notas:
             df_notas = pd.DataFrame(datos_notas, columns=[
-                "ID Banner", "Estudiante", "Asignatura", "Asistió", "Nota", "Resultado"
+                "ID Banner", "Estudiante", "Asignatura", "Asistió", "Nota", "Resultado", "id_prog_oculto"
             ])
             
             # Función de Semáforo
@@ -126,12 +127,35 @@ def render():
                 
                 return estilo
 
-            # Aplicar estilos
+            # Aplicar estilos (Ocultando la columna del ID de programación para que la tabla quede limpia)
             try:
                 df_final = df_notas.style.apply(estilo_semaforo, axis=1)
             except:
                 df_final = df_notas # En caso de error de pandas, muestra la tabla normal
 
-            st.dataframe(df_final, use_container_width=True, hide_index=True)
+            st.dataframe(df_final, use_container_width=True, hide_index=True, column_order=["ID Banner", "Estudiante", "Asignatura", "Asistió", "Nota", "Resultado"])
+            
+            # --- NUEVA FUNCIÓN: ELIMINAR CALIFICACIÓN (Solo Admin) ---
+            if rol == "admin":
+                st.divider()
+                st.subheader("🗑️ Eliminar Registro de Calificación")
+                st.info("Utilice esta opción si cometió un error de digitalización de raíz o si la prueba debe ser anulada para reprogramación.")
+                
+                # Generamos una lista estructurada para facilitar la búsqueda en el selectbox
+                opciones_borrar_nota = {
+                    f"Estudiante: {row[1]} ({row[0]}) | Asignatura: {row[2]} | Nota: {row[4]}": row[6]
+                    for row in datos_notas
+                }
+                
+                nota_sel = st.selectbox("Seleccione la calificación que desea eliminar permanentemente:", list(opciones_borrar_nota.keys()), key="del_nota_select")
+                
+                if st.button("❌ Eliminar Calificación Seleccionada"):
+                    id_prog_del = opciones_borrar_nota[nota_sel]
+                    
+                    # Ejecutamos la remoción física del registro en la tabla de notas
+                    ejecutar_query("DELETE FROM notas WHERE id_programacion = %s", (id_prog_del,))
+                    
+                    st.error(f"La calificación seleccionada ha sido eliminada del sistema.")
+                    st.rerun()
         else:
             st.info("No hay registros de notas todavía.")
