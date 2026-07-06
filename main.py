@@ -157,10 +157,10 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # NUEVO CSS ULTRA-ESPECÍFICO: Apuntamos directamente a los selectores react de Streamlit (!important)
+  # Nuevo bloque CSS ultraespecífico para anular las pastillas de Streamlit sin romper el texto al pasar el cursor
     st.markdown("""
         <style>
-        /* Fondo de la barra lateral */
+        /* Fondo de la barra lateral oscura institucional */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
@@ -169,54 +169,50 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* ELIMINACIÓN TOTAL DEL FONDO BLANCO NATIVO Y CONFIGURACIÓN DE ESPACIOS */
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
+        /* 1. ANULACIÓN DE LA CAJA BLANCA EN REPOSO Y EN HOVER */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:active,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             
-            /* Tus sugerencias: Espaciado interno generoso y separación de 20px entre botones */
-            padding: 14px 20px !important;
-            margin-bottom: 20px !important; 
+            /* 2. PADDINGS Y MÁRGENES DE 20PX SEGÚN TU SUGERENCIA */
+            padding: 20px !important;
+            margin-bottom: 12px !important;
             
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
+            
+            /* 3. ALINEACIÓN MILIMÉTRICA AL EXTREMO IZQUIERDO */
             justify-content: flex-start !important;
             text-align: left !important;
-            border-radius: 10px !important;
         }
         
-        /* ALINEACIÓN A LA IZQUIERDA Y FORZADO DE TEXTO BLANCO */
+        /* FORZAR COLOR BLANCO EN EL TEXTO INTERNO (REPOSO Y HOVER) */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div {
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
             color: #ffffff !important;
             font-size: 1rem !important;
             font-weight: 500 !important;
             margin: 0 !important;
             text-align: left !important;
             justify-content: flex-start !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 10px !important;
         }
         
-        /* EFECTO HOVER EN AZUL INSTITUCIONAL SIN BLOQUEAR EL TEXTO */
+        /* CAMBIO DE COLOR EXCLUSIVO EN EL HOVER SIN TAPAR EL TEXTO */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
-            background: #0056b3 !important;
             background-color: #0056b3 !important;
-        }
-        
-        /* Forzar que el texto interno siga siendo visible en el hover */
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
-            color: #ffffff !important;
+            background: #0056b3 !important;
+            border-radius: 10px !important;
+            cursor: pointer !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
-
     with st.sidebar:
         st.markdown("""
             <div class="sidebar-brand">
