@@ -1,279 +1,302 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from modules import registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración de la página en modo ancho
+# Configuración de la página en modo ancho para aprovechar todo el monitor
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
-# --- CSS DEFINITIVO (Usamos triple comilla limpia sin 'f' para evitar conflictos con las llaves de CSS) ---
-st.markdown("""
-    <style>
-    /* Ocultar interfaces y barras nativas de la plataforma */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+# --- LÓGICA DE CAPTURA DE CREDENCIALES DESDE EL COMPONENTE ---
+query_params = st.query_params
+if "form_usuario" in query_params and "form_pass" in query_params:
+    u_ingresado = query_params["form_usuario"]
+    p_ingresado = query_params["form_pass"]
     
-    .stApp {
-        background-color: #fcfdfe;
-    }
+    # Limpiamos los parámetros de la URL inmediatamente para evitar ciclos de recarga
+    st.query_params.clear()
     
-    /* MAQUETACIÓN EN CONTENEDOR FLEX PARA IGUALAR EL MOCKUP */
-    .contenedor-mockup {
-        display: flex;
-        justify-content: space-between;
-        align-items: stretch;
-        width: 100%;
-        max-width: 1200px;
-        margin: 1rem auto;
-        gap: 2rem;
-    }
-    
-    /* BANNER AZUL IZQUIERDO */
-    .banner-izquierdo-real {
-        flex: 1;
-        background: linear-gradient(135deg, #001f4d 0%, #00112c 100%);
-        padding: 3.5rem 3rem;
-        border-radius: 20px;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 12px 30px rgba(0,31,77,0.15);
-    }
-    
-    .marca-sub-txt {
-        color: #38bdf8;
-        font-size: 0.9rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    .logo-main-txt {
-        font-size: 2.3rem;
-        font-weight: 800;
-        color: white;
-        line-height: 1.1;
-        margin-top: 10px;
-        margin-bottom: 1.5rem;
-    }
-    
-    .logo-main-txt span {
-        color: #f1c40f;
-    }
-    
-    .divisor-corto-real {
-        width: 60px;
-        height: 4px;
-        background-color: #38bdf8;
-        margin-bottom: 2rem;
-    }
-    
-    .texto-desc-real {
-        font-size: 1.15rem;
-        color: #cbd5e1;
-        line-height: 1.6;
-    }
-    
-    .bloque-caracteristicas {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 5rem;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 2rem;
-    }
-    
-    .item-carac {
-        text-align: center;
-        flex: 1;
-    }
-    
-    .item-carac div {
-        font-weight: bold;
-        font-size: 0.95rem;
-        color: white;
-        margin-bottom: 4px;
-    }
-    
-    .item-carac span {
-        font-size: 0.8rem;
-        color: #94a3b8;
-    }
-    
-    /* TARJETA BLANCA FORMULARIO DERECHO */
-    .tarjeta-login-real {
-        flex: 1.1;
-        background-color: #ffffff;
-        padding: 3.5rem;
-        border-radius: 20px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.02);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    .titulo-acceso-real {
-        color: #0f172a;
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.3rem;
-    }
-    
-    .sub-acceso-real {
-        color: #64748b;
-        font-size: 0.95rem;
-        margin-bottom: 2.5rem;
-    }
-    
-    /* Estilos para inputs HTML puros clonados del mockup */
-    .input-html-grupo {
-        margin-bottom: 1.5rem;
-    }
-    
-    .input-html-label {
-        display: block;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #334155;
-        margin-bottom: 0.5rem;
-    }
-    
-    .input-html-field {
-        width: 100%;
-        padding: 0.75rem 1rem;
-        border-radius: 10px;
-        border: 1px solid #cbd5e1;
-        font-size: 0.95rem;
-        color: #0f172a;
-        background-color: #fff;
-        box-sizing: border-box;
-    }
-    
-    .input-html-field:focus {
-        outline: none;
-        border-color: #0056b3;
-        box-shadow: 0 0 0 3px rgba(0,86,179,0.1);
-    }
-    
-    /* Botón de envío que hereda el ancho completo */
-    .btn-ingresar-real {
-        background-color: #0056b3;
-        color: white;
-        width: 100%;
-        border: none;
-        padding: 0.8rem;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,86,179,0.25);
-        transition: background 0.2s;
-        margin-top: 1rem;
-    }
-    
-    /* Enlace inferior de soporte */
-    .soporte-footer {
-        background-color: #f4f0ff;
-        border: 1px solid #e0d4ff;
-        border-radius: 10px;
-        padding: 14px 20px;
-        color: #4c1d95;
-        font-size: 0.9rem;
-        font-weight: 500;
-        margin-top: 2.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        text-decoration: none;
-    }
-    </style>
-""", unsafe_allow_html=True)
+    if u_ingresado == "admin" and p_ingresado == "admin123":
+        st.session_state['autenticado'] = True
+        st.session_state['usuario'] = "James Jaramillo"
+        st.session_state['rol'] = "admin"
+        st.rerun()
+    else:
+        st.sidebar.error("❌ Credenciales incorrectas. Intente nuevamente.")
 
-# --- TOP BAR (Cabecera Superior del Mockup) ---
-col_logo_top, col_fecha_top = st.columns([2, 1])
-with col_logo_top:
-    st.markdown("""
-        <div style='padding: 5px 0;'>
-            <span style='font-size:1.4rem; font-weight:800; color:#001f4d;'>MD UNIMINUTO</span>
-            <span style='font-size:0.85rem; font-weight:400; color:#64748b; display:block; margin-top:-5px;'>VIRTUAL</span>
-        </div>
-    """, unsafe_allow_html=True)
-with col_fecha_top:
-    import datetime
-    fecha_hoy = datetime.date.today().strftime("%d de %B de %Y")
-    st.markdown(f"<div style='text-align:right; color:#64748b; padding-top:15px; font-size:0.9rem;'>📅 {fecha_hoy}</div>", unsafe_allow_html=True)
-
-st.divider()
-
-# --- INSTANCIACIÓN DE SESIÓN ---
+# --- INICIALIZACIÓN DEL ESTADO DE SESIÓN ---
 if 'autenticado' not in st.session_state:
     st.session_state['autenticado'] = False
 
+# --- ESCENARIO A: USUARIO NO AUTENTICADO (PANTALLA DE LOGIN IDÉNTICA AL MOCKUP) ---
 if not st.session_state['autenticado']:
     
-    # Procesamos las variables que inyectará el formulario HTML nativo en la URL
-    query_params = st.query_params
-    if "form_usuario" in query_params and "form_pass" in query_params:
-        u_ingresado = query_params["form_usuario"]
-        p_ingresado = query_params["form_pass"]
-        
-        st.query_params.clear() # Limpiamos la barra de direcciones
-        
-        if u_ingresado == "admin" and p_ingresado == "admin123":
-            st.session_state['autenticado'] = True
-            st.session_state['usuario'] = "James Jaramillo"
-            st.session_state['rol'] = "admin"
-            st.rerun()
-        else:
-            st.error("Credenciales incorrectas")
+    # Renderizado aislado mediante el componente HTML de Streamlit (Evita fugas de texto o deformaciones)
+    components.html("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            body {
+                font-family: 'Inter', sans-serif;
+                background-color: #fcfdfe;
+                margin: 0;
+                padding: 10px 40px;
+                box-sizing: border-box;
+            }
+            
+            /* BARRA SUPERIOR INSTITUCIONAL */
+            .top-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px 0;
+                border-bottom: 1px solid #e2e8f0;
+                margin-bottom: 25px;
+            }
+            .top-logo {
+                color: #001f4d;
+                line-height: 1.2;
+            }
+            .top-logo .bold-md { font-weight: 800; font-size: 1.4rem; }
+            .top-logo .text-uni { font-weight: 700; font-size: 1.2rem; letter-spacing: 1px; }
+            .top-logo .sub-virtual { font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px; }
+            .top-date { color: #64748b; font-size: 0.9rem; }
 
-    # RENDERIZADO COMPLETO REPARADO (Sin f-string, código HTML interpretado puro)
-    st.markdown("""
-        <div class="contenedor-mockup">
-            <!-- PARTE IZQUIERDA: EL BANNER INSTITUCIONAL -->
-            <div class="banner-izquierdo-real">
-                <div>
-                    <div class="marca-sub-txt">RAP Digital</div>
-                    <div class="logo-main-txt">MD UNIMINUTO<br><span>VIRTUAL</span></div>
-                    <div class="divisor-corto-real"></div>
-                    <div class="texto-desc-real">
+            /* CONTENEDOR PRINCIPAL DIVIDIDO (FLEXBOX) */
+            .main-container {
+                display: flex;
+                max-width: 1200px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 24px;
+                overflow: hidden;
+                box-shadow: 0 15px 35px rgba(0, 31, 77, 0.08);
+                min-height: 560px;
+            }
+
+            /* PANEL IZQUIERDO: BANNER AZUL EXPANDIDO (45% DEL CONTENEDOR) */
+            .banner-azul {
+                flex: 0.45;
+                background: linear-gradient(135deg, #001f4d 0%, #00112c 100%);
+                padding: 3.5rem 3rem;
+                color: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                position: relative;
+            }
+            .banner-top .sub-marca {
+                color: #38bdf8;
+                font-size: 0.9rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+            }
+            .banner-top .main-logo-title {
+                font-size: 2.3rem;
+                font-weight: 800;
+                line-height: 1.1;
+                margin-bottom: 1.5rem;
+            }
+            .banner-top .main-logo-title span { color: #f1c40f; }
+            .banner-top .short-line {
+                width: 60px;
+                height: 4px;
+                background-color: #38bdf8;
+                margin-bottom: 2rem;
+            }
+            .banner-top .main-description {
+                font-size: 1.15rem;
+                color: #cbd5e1;
+                line-height: 1.6;
+            }
+            
+            /* CARACTERÍSTICAS INFERIORES DEL BANNER */
+            .banner-features {
+                display: flex;
+                justify-content: space-between;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding-top: 2rem;
+                gap: 10px;
+            }
+            .feature-box { text-align: center; flex: 1; }
+            .feature-box .f-title { font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 4px; }
+            .feature-box .f-desc { font-size: 0.8rem; color: #94a3b8; }
+
+            /* PANEL DERECHO: FORMULARIO BLANCO INSTITUCIONAL (55% DEL CONTENEDOR) */
+            .panel-formulario {
+                flex: 0.55;
+                padding: 4rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                background-color: #ffffff;
+            }
+            .form-header .f-access-title {
+                color: #0f172a;
+                font-size: 2rem;
+                font-weight: 700;
+                margin: 0 0 5px 0;
+            }
+            .form-header .f-access-subtitle {
+                color: #64748b;
+                font-size: 0.95rem;
+                margin: 0 0 2.5rem 0;
+            }
+
+            /* SELECTOR DE PESTAÑAS DEL MOCKUP */
+            .mockup-tabs {
+                display: flex;
+                border-bottom: 1px solid #e2e8f0;
+                margin-bottom: 2rem;
+            }
+            .tab-item {
+                padding: 10px 20px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: #64748b;
+                border-bottom: 2px solid transparent;
+                cursor: pointer;
+            }
+            .tab-item.active {
+                color: #0056b3;
+                border-bottom: 2px solid #0056b3;
+            }
+
+            /* CAMPOS DE ENTRADA HTML PUROS */
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+            .form-group label {
+                display: block;
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: #334155;
+                margin-bottom: 0.5rem;
+            }
+            .form-group input {
+                width: 100%;
+                padding: 0.8rem 1rem;
+                border-radius: 10px;
+                border: 1px solid #cbd5e1;
+                font-size: 0.95rem;
+                color: #0f172a;
+                background-color: #fff;
+                box-sizing: border-box;
+                transition: border-color 0.2s;
+            }
+            .form-group input:focus {
+                outline: none;
+                border-color: #0056b3;
+            }
+
+            /* BOTÓN COMPLETO */
+            .btn-submit-action {
+                background-color: #0056b3;
+                color: white;
+                width: 100%;
+                border: none;
+                padding: 0.85rem;
+                border-radius: 10px;
+                font-size: 1rem;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25);
+                margin-top: 1rem;
+                transition: background 0.2s;
+            }
+            .btn-submit-action:hover {
+                background-color: #004394;
+            }
+
+            /* CAJA MORADA INFERIOR DE SOPORTE */
+            .box-support-footer {
+                background-color: #f4f0ff;
+                border: 1px solid #e0d4ff;
+                border-radius: 10px;
+                padding: 14px 20px;
+                color: #4c1d95;
+                font-size: 0.9rem;
+                font-weight: 500;
+                margin-top: 2.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        </style>
+    </head>
+    <body>
+
+        <!-- CABECERA SUPERIOR -->
+        <div class="top-bar">
+            <div class="top-logo">
+                <span class="bold-md">MD</span><span class="text-uni"> UNIMINUTO</span>
+                <span class="sub-virtual">VIRTUAL</span>
+            </div>
+            <div class="top-date">📅 06 de Julio de 2026</div>
+        </div>
+
+        <!-- CONTENEDOR CENTRAL MAQUETADO -->
+        <div class="main-container">
+            
+            <!-- PANEL IZQUIERDO (BANNER AZUL ANCHO) -->
+            <div class="banner-azul">
+                <div class="banner-top">
+                    <div class="sub-marca">RAP Digital</div>
+                    <div class="main-logo-title">MD UNIMINUTO<br><span>VIRTUAL</span></div>
+                    <div class="short-line"></div>
+                    <div class="main-description">
                         Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.
                     </div>
                 </div>
-                <div class="bloque-caracteristicas">
-                    <div class="item-carac"><div>📈 Seguimiento</div><span>Métricas en tiempo real</span></div>
-                    <div class="item-carac"><div>📋 Evaluación</div><span>Asignación ágil</span></div>
-                    <div class="item-carac"><div>🛡️ Trazabilidad</div><span>Históricos seguros</span></div>
+                <div class="banner-features">
+                    <div class="feature-box"><div class="f-title">📈 Seguimiento</div><span class="f-desc">Tiempo real</span></div>
+                    <div class="feature-box"><div class="f-title">📋 Evaluación</div><span class="f-desc">Asignación ágil</div></div>
+                    <div class="feature-box"><div class="f-title">🛡️ Trazabilidad</div><span class="f-desc">Históricos seguros</span></div>
                 </div>
             </div>
             
-            <!-- PARTE DERECHA: LA TARJETA BLANCA DE ACCESO CON FORMULARIO DIRECTO -->
-            <div class="tarjeta-login-real">
-                <div class="titulo-acceso-real">Acceso al sistema</div>
-                <div class="sub-acceso-real">Inicia sesión para continuar con RAP Digital.</div>
+            <!-- PANEL DERECHO (FORMULARIO SIN HUECOS EN BLANCO) -->
+            <div class="panel-formulario">
+                <div class="form-header">
+                    <h2 class="f-access-title">Acceso al sistema</h2>
+                    <p class="f-access-subtitle">Inicia sesión para continuar con RAP Digital.</p>
+                </div>
                 
-                <form action="/" method="get">
-                    <div class="input-html-grupo">
-                        <label class="input-html-label">Usuario</label>
-                        <input type="text" name="form_usuario" class="input-html-field" placeholder="Ingresa tu usuario" required>
+                <div class="mockup-tabs">
+                    <div class="tab-item active">👤 Administrativo</div>
+                    <div class="tab-item">🌐 Consulta pública</div>
+                </div>
+                
+                <!-- Target del formulario redirige los valores directo al backend de Streamlit -->
+                <form action="/" method="GET">
+                    <div class="form-group">
+                        <label>Usuario</label>
+                        <input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required>
                     </div>
-                    <div class="input-html-grupo">
-                        <label class="input-html-label">Contraseña</label>
-                        <input type="password" name="form_pass" class="input-html-field" placeholder="Ingresa tu contraseña" required>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" name="form_pass" placeholder="Ingresa tu contraseña" required>
                     </div>
-                    <button type="submit" class="btn-ingresar-real">➔ Ingresar al sistema</button>
+                    <button type="submit" class="btn-submit-action">➔ Ingresar al sistema</button>
                 </form>
                 
-                <div class="soporte-footer">
-                    <span>Support técnico académico RAP</span>
+                <div class="box-support-footer">
+                    <span>Soporte académico RAP</span>
                     <span>➔</span>
                 </div>
             </div>
+            
         </div>
-    """, unsafe_allow_html=True)
 
+    </body>
+    </html>
+    """, height=720)
+
+# --- ESCENARIO B: PANEL ADMINISTRATIVO PRIVADO (USUARIO LOGUEADO) ---
 else:
-    # --- INTERFAZ ADMINISTRATIVA CONTROLADA ---
     st.sidebar.title(f"👨‍🏫 {st.session_state['usuario']}")
     if st.sidebar.button("Cerrar Sesión"):
         st.session_state['autenticado'] = False
