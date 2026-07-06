@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración de la página en modo ancho total y limpio para eliminar márgenes laterales innecesarios
+# Configuración de la página en modo ancho total y limpio
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
 # --- CONTROLADOR DE NAVEGACIÓN Y AUTENTICACIÓN ---
@@ -157,10 +157,9 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # Inyección de estilos global unificada con alta prioridad para forzar el rediseño del menú
+    # NUEVO CSS ULTRA-ESPECÍFICO: Apuntamos directamente a los selectores react de Streamlit (!important)
     st.markdown("""
         <style>
-        /* Transformación completa de la barra lateral nativa */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
@@ -169,33 +168,36 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* ANULACIÓN RADICAL Y CONTROL DE LOS BOTONES DE STREAMLIT */
-        div[data-testid="stSidebar"] button {
+        /* DESTRUCCIÓN DE PASTILLAS BLANCAS NATIVAS EN LA BARRA LATERAL */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background-color: transparent !important;
+            background: transparent !important;
             border: none !important;
+            box-shadow: none !important;
             padding: 12px 20px !important;
-            border-radius: 10px !important;
             margin-bottom: 6px !important;
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
-            transition: all 0.2s ease !important;
+            text-align: left !important;
+            border-radius: 10px !important;
         }
         
-        /* Forzar texto blanco e iconos alineados dentro de las etiquetas internas de Streamlit */
-        div[data-testid="stSidebar"] button p {
+        /* Forzar texto e iconos en color blanco puro alineados al extremo izquierdo */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span {
             color: #ffffff !important;
             font-size: 0.95rem !important;
             font-weight: 500 !important;
             margin: 0 !important;
             text-align: left !important;
+            justify-content: flex-start !important;
         }
         
-        /* Efecto Hover Premium */
-        div[data-testid="stSidebar"] button:hover {
+        /* Efecto de selección / Hover en azul institucional */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
             background-color: #0056b3 !important;
-            box-shadow: 0 4px 12px rgba(0,86,179,0.3) !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
