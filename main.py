@@ -45,20 +45,20 @@ def cargar_kpis_panel():
 
 data_db = cargar_kpis_panel()
 
-# --- ESCENARIO A: PANTALLA DE LOGIN PREMIUM CON REDISEÑO ESTÉTICO NATIVO ---
+# --- ESCENARIO A: PANTALLA DE LOGIN CON ESTILIZACIÓN AGRESIVA DE REESCRITURA NATIVA ---
 if not st.session_state['autenticado']:
     
-    # 2. INYECCIÓN CSS TRANSFORMATIVA TOTAL: Reescribe la visual nativa de Streamlit a la de tu mockup
+    # 2. INYECCIÓN CSS BLINDADA CON CLASES EXTENDIDAS DE MÁXIMA PRIORIDAD (!IMPORTANT)
     st.markdown("""
         <style>
         /* Ocultar elementos nativos superiores de Streamlit en el Login */
         [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { background-color: #f8fafc !important; overflow: hidden !important; }
         
-        /* Ajustar contenedor principal */
+        /* Ajustar contenedor principal de la aplicación */
         div.block-container { padding: 40px 80px !important; max-width: 1240px !important; margin: 0 auto !important; }
         
-        /* Unificar st.columns como la tarjeta blanca flotante con sombra sutil */
+        /* Modificación integral de st.columns para simular la tarjeta premium unificada */
         div[data-testid="stColumns"] {
             background: #ffffff !important;
             border-radius: 24px !important;
@@ -69,11 +69,11 @@ if not st.session_state['autenticado']:
         }
         div[data-testid="column"] { padding: 0 !important; margin: 0 !important; }
         
-        /* Maquetación del Banner Azul Izquierdo (Idéntico a tu imagen de destino) */
+        /* Estilos del Banner Azul Izquierdo Corporativo */
         .banner-azul-premium {
             background: linear-gradient(180deg, #001737 0%, #00224f 100%);
             padding: 4.5rem 3.5rem;
-            color: white;
+            color: white !important;
             height: 610px;
             display: flex;
             flex-direction: column;
@@ -88,22 +88,25 @@ if not st.session_state['autenticado']:
             background-position: bottom -10% right -25%; background-repeat: no-repeat; background-size: 85%; opacity: 0.03; pointer-events: none;
         }
         .banner-top-content { position: relative; z-index: 2; }
-        .sub-marca { color: #38bdf8; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .main-logo-title { font-size: 2.3rem; font-weight: 800; line-height: 1.15; margin: 0 0 1.2rem 0; letter-spacing: -0.5px; }
-        .main-description { font-size: 1.05rem; color: #94a3b8; line-height: 1.6; }
+        .sub-marca { color: #38bdf8 !important; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .main-logo-title { font-size: 2.3rem; font-weight: 800; line-height: 1.15; margin: 0 0 1.2rem 0; letter-spacing: -0.5px; color: white !important; }
+        .main-description { font-size: 1.05rem; color: #94a3b8 !important; line-height: 1.6; }
         
-        /* Indicadores inferiores */
+        /* Indicadores inferiores vectoriales */
         .banner-features { display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.8rem; gap: 10px; position: relative; z-index: 2; }
-        .feature-box { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; }
-        .feature-icon-wrapper { background: rgba(255, 255, 255, 0.04); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: #38bdf8; font-size: 1.1rem; border: 1px solid rgba(255, 255, 255, 0.04); }
-        .feature-box .f-title { font-weight: 600; font-size: 0.85rem; color: #f8fafc; }
+        .feature-box { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; color: white !important; }
+        .feature-icon-wrapper { background: rgba(255, 255, 255, 0.04); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: #38bdf8 !important; font-size: 1.1rem; border: 1px solid rgba(255, 255, 255, 0.04); }
+        .feature-box .f-title { font-weight: 600; font-size: 0.85rem; color: #f8fafc !important; }
         
-        /* Contenedor del Formulario Derecho */
+        /* Panel del Formulario Derecho */
         .panel-formulario-real { padding: 4.5rem 4rem 1rem 4rem; font-family: 'Inter', sans-serif; box-sizing: border-box; }
-        .f-access-title { color: #0f172a; font-size: 2.1rem; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.5px; }
-        .f-access-subtitle { color: #64748b; font-size: 0.95rem; margin: 0 0 0.5rem 0; }
+        .f-access-title { color: #0f172a !important; font-size: 2.1rem; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.5px; }
+        .f-access-subtitle { color: #64748b !important; font-size: 0.95rem; margin: 0 0 0.5rem 0; }
         
-        /* TRANSFORMACIÓN DE LA BARRA DE RADIO A PESTAÑAS RECTANGULARES CORPORATIVAS (Imagen 2) */
+        /* REESCRITURA TOTAL DE PESTAÑAS (TRANSFORMA LOS RADIOS REDONDOS EN RECTÁNGULOS DE LA IMAGEN 2) */
+        div[data-testid="stRadio"] { background: transparent !important; }
+        div[data-testid="stRadio"] > label { display: none !important; }
+        
         div[data-testid="stRadio"] div[role="radiogroup"] { 
             background-color: #f1f5f9 !important; 
             padding: 6px !important; 
@@ -113,50 +116,59 @@ if not st.session_state['autenticado']:
             flex-direction: row !important;
             border: none !important;
         }
-        div[data-testid="stRadio"] label[data-testid="stWidgetLabel"] { display: none !important; }
         
-        /* Convertir los ítems circulares individuales en botones planos */
-        div[data-testid="stRadio"] div[role="radiogroup"] > label {
+        /* Selecciona cada opción del radio nativo y lo aplana como pestaña */
+        div[data-testid="stRadio"] div[role="radiogroup"] label[data-testid="stRadioOption"] {
             flex: 1 !important;
             background: transparent !important;
+            background-color: transparent !important;
             padding: 10px 15px !important;
             border-radius: 8px !important;
             justify-content: center !important;
             align-items: center !important;
+            display: flex !important;
             cursor: pointer !important;
-            transition: all 0.2s ease !important;
             border: none !important;
             margin: 0 !important;
+            box-shadow: none !important;
         }
-        /* Ocultar el círculo nativo de selección (Radio button dot) */
-        div[data-testid="stRadio"] div[role="radiogroup"] input[type="radio"] { display: none !important; }
+        
+        /* Destruye por completo el círculo nativo de selección de Streamlit */
+        div[data-testid="stRadio"] div[role="radiogroup"] label[data-testid="stRadioOption"] div[theme="[object Object]"],
+        div[data-testid="stRadio"] div[role="radiogroup"] label[data-testid="stRadioOption"] div:first-child { 
+            display: none !important; 
+        }
+        
+        /* Modifica la tipografía interna de la pestaña */
         div[data-testid="stRadio"] div[role="radiogroup"] div[data-testid="stMarkdownContainer"] p { 
             font-weight: 600 !important; 
             font-size: 0.95rem !important; 
             color: #64748b !important;
             margin: 0 !important;
+            text-align: center !important;
         }
         
-        /* Estilo para la pestaña seleccionada activa (Fondo blanco y sombra sutil) */
-        div[data-testid="stRadio"] div[role="radiogroup"] div[data-checked="true"] {
+        /* REGLA DE INYECCIÓN DE ESTADO ACTIVO: Pestaña seleccionada en blanco con sombra */
+        div[data-testid="stRadio"] div[role="radiogroup"] label[data-testid="stRadioOption"]:has(input:checked) {
             background-color: #ffffff !important;
+            background: #ffffff !important;
             border-radius: 8px !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03) !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
         }
-        div[data-testid="stRadio"] div[role="radiogroup"] div[data-checked="true"] p {
+        div[data-testid="stRadio"] div[role="radiogroup"] label[data-testid="stRadioOption"]:has(input:checked) div[data-testid="stMarkdownContainer"] p {
             color: #0056b3 !important;
         }
         
-        /* TRANSFORMACIÓN Y ABRAZO DE INPUTS NATIVOS */
+        /* REFINAMIENTO DE CAMPOS DE TEXTO E INPUTS NATIVOS */
         div[data-testid="stTextInput"] label { font-size: 0.95rem !important; font-weight: 600 !important; color: #334155 !important; margin-bottom: 0.4rem !important; }
         div[data-testid="stTextInput"] input { border-radius: 12px !important; padding: 0.8rem 1rem !important; border: 1px solid #cbd5e1 !important; font-size: 1rem !important; color: #0f172a !important; background-color: #ffffff !important; transition: all 0.2s !important; }
         div[data-testid="stTextInput"] input:focus { border-color: #0056b3 !important; box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.08) !important; }
         
-        /* Transformación del Botón de Ingreso a un Azul Rey de Bloque Completo */
+        /* Botón de Ingreso Nivel Corporativo Completo */
         div.stButton > button {
             background-color: #0056b3 !important; color: white !important; width: 100% !important; padding: 0.95rem !important;
             border-radius: 12px !important; font-weight: 700 !important; font-size: 1.05rem !important; border: none !important;
-            box-shadow: 0 4px 14px rgba(0, 86, 179, 0.15) !important; margin-top: 10px !important; transition: all 0.2s !important;
+            box-shadow: 0 4px 14px rgba(0, 86, 179, 0.15) !important; margin-top: 15px !important; transition: all 0.2s !important;
         }
         div.stButton > button:hover { background-color: #004494 !important; border: none !important; color: white !important; }
         div.stButton > button:focus { border: none !important; background-color: #004494 !important; color: white !important; }
@@ -164,7 +176,7 @@ if not st.session_state['autenticado']:
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
-    # Navbar Superior Estático Idéntico
+    # Navbar Superior Estático Idéntico al mockup original
     st.markdown("""
         <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; font-family: 'Inter', sans-serif;">
             <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: #001f4d; font-size: 1.3rem;">
@@ -178,7 +190,7 @@ if not st.session_state['autenticado']:
         </div>
     """, unsafe_allow_html=True)
 
-    # Distribución Simétrica en Columnas Nativas (Máxima velocidad de procesamiento)
+    # Distribución en columnas nativas unificadas
     col_izq_banner, col_der_form = st.columns([1, 1.12])
     
     with col_izq_banner:
@@ -212,7 +224,7 @@ if not st.session_state['autenticado']:
         with st.container():
             st.markdown('<div style="padding: 0 4rem 4rem 4rem; margin-top: -30px;">', unsafe_allow_html=True)
             
-            # El radio nativo se convertirá automáticamente en las pestañas rectangulares por el CSS superior
+            # El CSS capturará este st.radio y forzará el diseño premium rectangular eliminando círculos
             tab_selec = st.radio("Rol_Acceso", ["Administrativo", "Consulta pública"], horizontal=True)
             st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
             
@@ -220,7 +232,7 @@ if not st.session_state['autenticado']:
                 usuario = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="usr_real")
                 contrasena = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="pwd_real")
                 
-                # Botón nativo estable, procesado en memoria al instante
+                # Validación nativa, estable y con acceso inmediato
                 if st.button("➡️ Ingresar al sistema", use_container_width=True):
                     if usuario == "admin" and contrasena == "admin123":
                         try:
@@ -238,8 +250,8 @@ if not st.session_state['autenticado']:
                 st.markdown("""
                     <div style='text-align:center; padding: 35px 0; color:#64748b; font-family:\"Inter\",sans-serif;'>
                         <i class='fa-solid fa-circle-info' style='font-size:2.5rem; color:#0056b3; margin-bottom:15px;'></i><br>
-                        <b>Consulta Pública Habilitada Abajo</b><br>
-                        Por favor use el bloque inferior de la aplicación para revisar registros.
+                        <b>Consulta Pública Habilitada</b><br>
+                        Por favor use el bloque inferior de la aplicación para revisar registros públicos de trámites académicos.
                     </div>
                 """, unsafe_allow_html=True)
                 
@@ -253,7 +265,7 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # Restablecemos los scrolls y aplicamos el blindaje contra el hover oscuro del menú izquierdo
+    # Restablecemos los scrolls internos y fijamos el CSS que anula por completo el oscurecimiento en Hover
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: auto !important; background-color: #fcfdfe !important; }
@@ -267,7 +279,7 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Desactivar cajas opacas nativas en la barra lateral */
+        /* Botones de navegación limpios con tus 20px de espaciado */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background: transparent !important;
             background-color: transparent !important;
@@ -284,12 +296,11 @@ else:
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* Forzar tipografía blanca fija sin alteraciones */
+        /* Forzar fuentes blancas estables (Evita que se tapen al pasar el mouse) */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus p {
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
             color: #ffffff !important;
             font-size: 1rem !important;
             font-weight: 500 !important;
@@ -297,10 +308,9 @@ else:
             text-align: left !important;
         }
         
-        /* HOVER DE ALTA VISIBILIDAD: Al pasar el mouse cambia a azul corporativo sólido sin oscurecerse */
+        /* Hover seguro en azul institucional brillante (Evita el oscurecimiento gris nativo) */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:active {
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
             background-color: #0056b3 !important;
             background: #0056b3 !important;
             color: #ffffff !important;
@@ -341,7 +351,7 @@ else:
             st.session_state['opcion_menu'] = "Estado de Pruebas"
             st.rerun()
         if st.button("📅 Programación", use_container_width=True):
-            st.session_state['opcion_menu'].select = "Programación"
+            st.session_state['opcion_menu'] = "Programación"
             st.rerun()
         if st.button("📝 Evaluación", use_container_width=True):
             st.session_state['opcion_menu'] = "Evaluación"
@@ -360,6 +370,7 @@ else:
             st.session_state['autenticado'] = False
             st.rerun()
 
+    # Enrutador general de vistas
     opcion = st.session_state['opcion_menu']
 
     if opcion == "Inicio":
