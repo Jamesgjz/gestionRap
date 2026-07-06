@@ -12,6 +12,16 @@ if 'autenticado' not in st.session_state:
 if 'opcion_menu' not in st.session_state:
     st.session_state['opcion_menu'] = "Inicio"
 
+# --- PROCESADOR DE NAVEGACIÓN RECIENTE (MENÚ LATERAL) ---
+query_params = st.query_params
+menu_click = query_params.get("view", None)
+if menu_click:
+    if isinstance(menu_click, list) or isinstance(menu_click, tuple):
+        menu_click = menu_click[0] if len(menu_click) > 0 else "Inicio"
+    st.session_state['opcion_menu'] = menu_click
+    st.query_params.clear()
+    st.rerun()
+
 # --- ESCENARIO A: PANTALLA DE LOGIN UNIFICADA Y SIN SCROLL ---
 if not st.session_state['autenticado']:
     
@@ -83,7 +93,7 @@ if not st.session_state['autenticado']:
                 <span style="font-weight: 800; font-size: 1.4rem;">MD</span><span style="font-weight: 700; font-size: 1.2rem; letter-spacing: 1px;"> UNIMINUTO</span>
                 <span style="font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px;">VIRTUAL</span>
             </div>
-            <div style="color: #64748b; font-size: 0.9rem;">Field 📅 06 de Julio de 2026</div>
+            <div style="color: #64748b; font-size: 0.9rem;">📅 06 de Julio de 2026</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -91,12 +101,14 @@ if not st.session_state['autenticado']:
     col_izquierda_banner, col_derecha_formulario = st.columns([1, 1.15])
     
     with col_izquierda_banner:
-        # Renderizado del Banner Azul Premium dentro de su propia columna
+        # Renderizado del Banner Azul Premium incluyendo la CDN de FontAwesome por dentro
         html_banner = """
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <div style="background: linear-gradient(135deg, #001f4d 0%, #00112c 100%); padding: 3.5rem 3rem; color: white; height: 560px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; font-family: 'Inter', sans-serif;">
             <div class="banner-top">
                 <div style="width: 100%; max-width: 220px; margin-bottom: 2rem;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" style="width:100%; height:auto; filter: brightness(0) invert(1);">
+                    <!-- Logo Vectorial Alternativo de alta estabilidad corporativa -->
+                    <img src="https://uniminuto.edu/sites/default/files/logo-uniminuto-header.png" style="width:100%; height:auto; filter: brightness(0) invert(1);" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/0/03/Logo_Uniminuto.png';">
                 </div>
                 <div style="color: #38bdf8; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">RAP Digital</div>
                 <div style="font-size: 2.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.2rem;">MD UNIMINUTO<br><span style="color: #f1c40f;">VIRTUAL</span></div>
@@ -104,16 +116,24 @@ if not st.session_state['autenticado']:
                 <div style="font-size: 1.05rem; color: #cbd5e1; line-height: 1.6;">Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.</div>
             </div>
             <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1.5rem; gap: 15px;">
-                <div style="text-align: center; flex: 1;"><div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-solid fa-chart-line"></i></div><b style="font-size:0.85rem;">Seguimiento</b></div>
-                <div style="text-align: center; flex: 1;"><div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-regular fa-clipboard"></i></div><b style="font-size:0.85rem;">Evaluación</b></div>
-                <div style="text-align: center; flex: 1;"><div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-solid fa-shield-halved"></i></div><b style="font-size:0.85rem;">Trazabilidad</b></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-solid fa-chart-line"></i></div>
+                    <span style="font-size:0.85rem; font-weight:600;">Seguimiento</span>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-regular fa-clipboard"></i></div>
+                    <span style="font-size:0.85rem; font-weight:600;">Evaluación</span>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span style="font-size:0.85rem; font-weight:600;">Trazabilidad</span>
+                </div>
             </div>
         </div>
         """
         components.html(html_banner, height=560, scrolling=False)
         
     with col_derecha_formulario:
-        # Contenedor del formulario nativo alineado y con aire interno exacto
         st.markdown("""
             <div style="padding: 3.5rem 3.5rem 1rem 3.5rem; font-family: 'Inter', sans-serif;">
                 <h2 style="color: #0f172a; font-weight: 700; font-size: 1.9rem; margin: 0 0 4px 0;">Acceso al sistema</h2>
@@ -121,7 +141,6 @@ if not st.session_state['autenticado']:
             </div>
         """, unsafe_allow_html=True)
         
-        # Padding interno de Streamlit para cuadrar los elementos
         with st.container():
             st.markdown('<div style="padding: 0 3.5rem;">', unsafe_allow_html=True)
             
@@ -160,7 +179,6 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # Restablecemos scrolls globales y aplicamos el estilo quirúrgico solicitado al menú izquierdo
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
@@ -174,7 +192,7 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* SELECTOR COMPLETO: Destruye las cajas blancas en reposo, hover, active y focus en la barra izquierda */
+        /* Ajuste estricto de botones secundarios de la barra lateral */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus,
@@ -183,11 +201,8 @@ else:
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            
-            /* Sugerencias de James: alineación y aire interno de 20px */
             padding: 20px !important;
             margin-bottom: 10px !important;
-            
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
@@ -196,7 +211,7 @@ else:
             border-radius: 10px !important;
         }
         
-        /* BLINDAJE DE TIPOGRAFÍA: Fuerza que el texto permanezca blanco y no sea tapado por el hover */
+        /* Blindaje de fuentes blancas permanente (Evita que el texto se tape en hover) */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div,
@@ -209,7 +224,6 @@ else:
             justify-content: flex-start !important;
         }
         
-        /* Hover premium en azul institucional */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
             background: #0056b3 !important;
             background-color: #0056b3 !important;
