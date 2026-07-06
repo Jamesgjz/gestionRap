@@ -1,178 +1,170 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración limpia de la página en modo ancho total sin barras de scroll
+# 1. Configuración de la página en modo ancho total y limpio
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
-# Inicialización estricta de variables de sesión
+# Inicialización estricta del estado de la sesión
 if 'autenticado' not in st.session_state:
     st.session_state['autenticado'] = False
 
 if 'opcion_menu' not in st.session_state:
     st.session_state['opcion_menu'] = "Inicio"
 
-# --- PROCESADOR DE NAVEGACIÓN RECIENTE (MENÚ LATERAL) ---
-query_params = st.query_params
-menu_click = query_params.get("view", None)
-if menu_click:
-    if isinstance(menu_click, list) or isinstance(menu_click, tuple):
-        menu_click = menu_click[0] if len(menu_click) > 0 else "Inicio"
-    st.session_state['opcion_menu'] = menu_click
-    st.query_params.clear()
-    st.rerun()
-
-# --- ESCENARIO A: PANTALLA DE LOGIN PREMIUM SIN SCROLLS ---
+# --- ESCENARIO A: PANTALLA DE LOGIN UNIFICADA Y SIN SCROLL ---
 if not st.session_state['autenticado']:
     
-    # INYECCIÓN CSS CORPORATIVA: Limpia cabeceras, elimina scrolls y fija la tarjeta centradora
+    # 2. INYECCIÓN DE ESTILOS GLOBALES: Centra la tarjeta y estiliza inputs nativos
     st.markdown("""
         <style>
-        /* Desactivar elementos nativos superiores de Streamlit para el Login */
+        /* Ocultar elementos nativos de edición superiores de Streamlit */
         [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: hidden !important; background-color: #fcfdfe !important; }
-        .block-container { padding: 0 !important; max-width: 100% !important; }
+        html, body, [data-testid="stAppViewContainer"] { background-color: #fcfdfe !important; overflow: hidden !important; }
         
-        /* Contenedor Cascarón del Layout Principal */
-        .page-wrapper { padding: 20px 40px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; font-family: 'Inter', sans-serif; position: relative; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e2e8f0; height: 60px; box-sizing: border-box; }
-        .top-logo { color: #001f4d; }
-        .top-logo .bold-md { font-weight: 800; font-size: 1.4rem; }
-        .top-logo .text-uni { font-weight: 700; font-size: 1.2rem; letter-spacing: 1px; }
-        .top-logo .sub-virtual { font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px; }
-        .top-date { color: #64748b; font-size: 0.9rem; }
+        /* Ajustar el contenedor general de la página */
+        div.block-container { padding: 20px 60px !important; max-width: 1200px !important; margin: 0 auto !important; }
         
-        .center-container { display: flex; justify-content: center; align-items: center; flex-grow: 1; height: calc(100vh - 80px); position: relative; }
-        .main-container { display: flex; width: 100%; max-width: 1150px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 31, 77, 0.07); height: 560px; }
-        
-        /* Mitad Izquierda: Banner Azul Universitario */
-        .banner-azul { flex: 1; background: linear-gradient(135deg, #001f4d 0%, #00112c 100%); padding: 3.5rem 3rem; color: white; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
-        .logo-upload-zone img { width: 100%; max-width: 220px; height: auto; filter: brightness(0) invert(1); }
-        .banner-top .sub-marca { color: #38bdf8; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-        .banner-top .main-logo-title { font-size: 2.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.2rem; }
-        .banner-top .main-logo-title span { color: #f1c40f; }
-        .banner-top .short-line { width: 50px; height: 3px; background-color: #38bdf8; margin-bottom: 1.5rem; }
-        .banner-top .main-description { font-size: 1.05rem; color: #cbd5e1; line-height: 1.6; }
-        .banner-features { display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1.5rem; gap: 15px; }
-        .feature-box { text-align: center; flex: 1; }
-        .feature-icon-wrapper { background: rgba(255, 255, 255, 0.08); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto; color: #38bdf8; font-size: 1.1rem; }
-        .feature-box .f-title { font-weight: 700; font-size: 0.9rem; color: white; margin-bottom: 2px; }
-        .feature-box .f-desc { font-size: 0.75rem; color: #94a3b8; }
-        
-        /* Mitad Derecha: Espacio Base reservado */
-        .panel-formulario-vacio { flex: 1.1; background-color: #ffffff; padding: 3.5rem; box-sizing: border-box; }
-        
-        /* CAPA FLOTANTE ABSOLUTA INTERNA: Sienta los elementos de Streamlit encima del espacio blanco */
-        .floating-form-layer {
-            position: absolute !important;
-            right: calc(50% - 535px + 40px) !important;
-            width: 480px !important;
-            top: calc(50% - 240px) !important;
-            z-index: 9999 !important;
-            display: flex;
-            flex-direction: column;
+        /* DISEÑO DE LA TARJETA PRINCIPAL CONECTANDO LAS COLUMNAS NATIVAS */
+        div[data-testid="stColumns"] {
+            background: #ffffff !important;
+            border-radius: 24px !important;
+            box-shadow: 0 20px 40px rgba(0, 31, 77, 0.07) !important;
+            overflow: hidden !important;
+            border: 1px solid #e2e8f0 !important;
+            margin-top: 25px !important;
         }
         
-        /* ESTILIZACIÓN DE ENTRADAS NATIVAS DE PYTHON */
-        div[data-testid="stTextInput"] label { font-size: 0.9rem !important; font-weight: 600 !important; color: #334155 !important; }
-        div[data-testid="stTextInput"] input { border-radius: 10px !important; padding: 0.65rem 1rem !important; border: 1px solid #cbd5e1 !important; font-size: 0.95rem !important; color: #0f172a !important; background-color: #ffffff !important; }
+        /* Forzar que las columnas nativas no tengan espacios extraños */
+        div[data-testid="column"] { padding: 0 !important; margin: 0 !important; }
         
-        /* Botón de envío principal nativo */
-        div.floating-form-layer div.stButton > button {
-            background-color: #0056b3 !important; color: white !important; width: 100% !important; padding: 0.8rem !important;
-            border-radius: 10px !important; font-weight: 700 !important; font-size: 1rem !important; border: none !important;
-            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25) !important; margin-top: 10px !important; transition: all 0.2s !important;
+        /* ESTILIZACIÓN DE ENTRADAS DE TEXTO NATIVAS */
+        div[data-testid="stTextInput"] label { 
+            font-size: 0.9rem !important; 
+            font-weight: 600 !important; 
+            color: #334155 !important; 
+            font-family: 'Inter', sans-serif;
         }
-        div.floating-form-layer div.stButton > button:hover { background-color: #004494 !important; }
+        div[data-testid="stTextInput"] input { 
+            border-radius: 10px !important; 
+            padding: 0.65rem 1rem !important; 
+            border: 1px solid #cbd5e1 !important; 
+            font-size: 0.95rem !important; 
+            color: #0f172a !important; 
+            background-color: #ffffff !important; 
+        }
         
-        /* Ajuste específico para el contenedor de pestañas de radio */
+        /* Botón de ingreso principal nativo corporativo */
+        div.stButton > button {
+            background-color: #0056b3 !important; 
+            color: white !important; 
+            width: 100% !important; 
+            padding: 0.8rem !important;
+            border-radius: 10px !important; 
+            font-weight: 700 !important; 
+            font-size: 1rem !important; 
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25) !important; 
+            margin-top: 15px !important; 
+            transition: all 0.2s !important;
+        }
+        div.stButton > button:hover { background-color: #004494 !important; }
+        
+        /* Personalizar la barra de radio pestañas */
         div[data-testid="stRadio"] div[role="radiogroup"] { gap: 20px !important; }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
-    # Renderizado de la estructura visual del fondo
+    # 3. Barra superior estática alineada con el contenedor
     st.markdown("""
-        <div class="page-wrapper">
-            <div class="top-bar">
-                <div class="top-logo"><span class="bold-md">MD</span><span class="text-uni"> UNIMINUTO</span><span class="sub-virtual">VIRTUAL</span></div>
-                <div class="top-date">📅 06 de Julio de 2026</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-family: 'Inter', sans-serif;">
+            <div style="color: #001f4d; line-height: 1.2;">
+                <span style="font-weight: 800; font-size: 1.4rem;">MD</span><span style="font-weight: 700; font-size: 1.2rem; letter-spacing: 1px;"> UNIMINUTO</span>
+                <span style="font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px;">VIRTUAL</span>
             </div>
-            <div class="center-container">
-                <div class="main-container">
-                    <div class="banner-azul">
-                        <div class="banner-top">
-                            <div class="logo-upload-zone"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png"></div>
-                            <div class="sub-marca">RAP Digital</div>
-                            <div class="main-logo-title">MD UNIMINUTO<br><span>VIRTUAL</span></div>
-                            <div class="short-line"></div>
-                            <div class="main-description">Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.</div>
-                        </div>
-                        <div class="banner-features">
-                            <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-solid fa-chart-line"></i></div><div class="f-title">Seguimiento</div><span class="f-desc">Tiempo real</span></div>
-                            <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-regular fa-clipboard"></i></div><div class="f-title">Evaluación</div><span class="f-desc">Asignación ágil</span></div>
-                            <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-solid fa-shield-halved"></i></div><div class="f-title">Trazabilidad</div><span class="f-desc">Históricos seguros</span></div>
-                        </div>
-                    </div>
-                    <div class="panel-formulario-vacio"></div>
-                </div>
-            </div>
+            <div style="color: #64748b; font-size: 0.9rem;">Field 📅 06 de Julio de 2026</div>
         </div>
     """, unsafe_allow_html=True)
 
-    # Encapsulamos el contenedor nativo flotante mediante un contenedor de Streamlit controlado por la clase CSS superior
-    with st.container():
-        st.markdown('<div class="floating-form-layer">', unsafe_allow_html=True)
-        
-        st.markdown("<h2 style='color: #0f172a; font-weight:700; font-size:1.9rem; font-family:\"Inter\",sans-serif; margin: 0 0 4px 0;'>Acceso al sistema</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #64748b; font-size:0.95rem; font-family:\"Inter\",sans-serif; margin: 0 0 20px 0;'>Inicia sesión para continuar con RAP Digital.</p>", unsafe_allow_html=True)
-        
-        modo_seleccionado = st.radio("Rol", ["Administrativo", "Consulta pública"], horizontal=True, label_visibility="collapsed")
-        st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
-        
-        if modo_seleccionado == "Administrativo":
-            usuario = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="usr_real")
-            contrasena = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="pwd_real")
-            
-            if st.button("🚪 Ingresar al sistema", use_container_width=True):
-                if usuario == "admin" and contrasena == "admin123":
-                    st.session_state['autenticado'] = True
-                    st.session_state['usuario'] = "James Jaramillo"
-                    st.session_state['rol'] = "admin"
-                    st.session_state['opcion_menu'] = "Inicio"
-                    st.rerun()
-                else:
-                    st.error("❌ Credenciales incorrectas.")
-        else:
-            st.markdown("""
-                <div style='text-align:center; padding: 25px 0; color:#64748b; font-family:\"Inter\",sans-serif;'>
-                    <i class='fa-solid fa-circle-info' style='font-size:2.5rem; color:#0056b3; margin-bottom:15px;'></i><br>
-                    <b>Formulario de Registro Habilitado Abajo</b><br>
-                    Por favor, baje un poco en la pantalla para diligenciar los campos del registro público.
+    # 4. DISTRIBUCIÓN SIMÉTRICA EN COLUMNAS (Evita que el formulario se caiga abajo)
+    col_izquierda_banner, col_derecha_formulario = st.columns([1, 1.15])
+    
+    with col_izquierda_banner:
+        # Renderizado del Banner Azul Premium dentro de su propia columna
+        html_banner = """
+        <div style="background: linear-gradient(135deg, #001f4d 0%, #00112c 100%); padding: 3.5rem 3rem; color: white; height: 560px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; font-family: 'Inter', sans-serif;">
+            <div class="banner-top">
+                <div style="width: 100%; max-width: 220px; margin-bottom: 2rem;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" style="width:100%; height:auto; filter: brightness(0) invert(1);">
                 </div>
-            """, unsafe_allow_html=True)
-            
+                <div style="color: #38bdf8; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">RAP Digital</div>
+                <div style="font-size: 2.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.2rem;">MD UNIMINUTO<br><span style="color: #f1c40f;">VIRTUAL</span></div>
+                <div style="width: 50px; height: 3px; background-color: #38bdf8; margin-bottom: 1.5rem;"></div>
+                <div style="font-size: 1.05rem; color: #cbd5e1; line-height: 1.6;">Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1.5rem; gap: 15px;">
+                <div style="text-align: center; flex: 1;"><div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-solid fa-chart-line"></i></div><b style="font-size:0.85rem;">Seguimiento</b></div>
+                <div style="text-align: center; flex: 1;"><div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-regular fa-clipboard"></i></div><b style="font-size:0.85rem;">Evaluación</b></div>
+                <div style="text-align: center; flex: 1;"><div style="background: rgba(255, 255, 255, 0.08); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; color: #38bdf8;"><i class="fa-solid fa-shield-halved"></i></div><b style="font-size:0.85rem;">Trazabilidad</b></div>
+            </div>
+        </div>
+        """
+        components.html(html_banner, height=560, scrolling=False)
+        
+    with col_derecha_formulario:
+        # Contenedor del formulario nativo alineado y con aire interno exacto
         st.markdown("""
-            <div style="background-color: #f4f0ff; border: 1px solid #e0d4ff; border-radius: 10px; padding: 12px 20px; color: #4c1d95; font-size: 0.9rem; font-weight: 500; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; font-family:\"Inter\",sans-serif;">
-                <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
-                <span>➔</span>
+            <div style="padding: 3.5rem 3.5rem 1rem 3.5rem; font-family: 'Inter', sans-serif;">
+                <h2 style="color: #0f172a; font-weight: 700; font-size: 1.9rem; margin: 0 0 4px 0;">Acceso al sistema</h2>
+                <p style="color: #64748b; font-size: 0.95rem; margin: 0 0 25px 0;">Inicia sesión para continuar con RAP Digital.</p>
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    if modo_seleccionado == "Consulta pública":
-        st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
-        st.divider()
-        st.subheader("📝 Formulario de Registro Público de Estudiantes")
-        registro.render()
+        # Padding interno de Streamlit para cuadrar los elementos
+        with st.container():
+            st.markdown('<div style="padding: 0 3.5rem;">', unsafe_allow_html=True)
+            
+            modo_seleccionado = st.radio("Rol", ["Administrativo", "Consulta pública"], horizontal=True, label_visibility="collapsed")
+            st.markdown("<div style='margin-top:15px;'></div>", unsafe_allow_html=True)
+            
+            if modo_seleccionado == "Administrativo":
+                usuario = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="usr_real")
+                contrasena = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="pwd_real")
+                
+                if st.button("🚪 Ingresar al sistema", use_container_width=True):
+                    if usuario == "admin" and contrasena == "admin123":
+                        st.session_state['autenticado'] = True
+                        st.session_state['usuario'] = "James Jaramillo"
+                        st.session_state['rol'] = "admin"
+                        st.session_state['opcion_menu'] = "Inicio"
+                        st.rerun()
+                    else:
+                        st.error("❌ Credenciales incorrectas.")
+            else:
+                st.markdown("""
+                    <div style='text-align:center; padding: 35px 0; color:#64748b; font-family:\"Inter\",sans-serif;'>
+                        <i class='fa-solid fa-circle-info' style='font-size:2.5rem; color:#0056b3; margin-bottom:15px;'></i><br>
+                        <b>Formulario de Registro Público Habilitado</b><br>
+                        Por favor, use la pestaña de consulta pública para ver el estado de sus trámites académicos.
+                    </div>
+                """, unsafe_allow_html=True)
+                
+            st.markdown("""
+                <div style="background-color: #f4f0ff; border: 1px solid #e0d4ff; border-radius: 10px; padding: 12px 20px; color: #4c1d95; font-size: 0.9rem; font-weight: 500; margin-top: 30px; display: flex; justify-content: space-between; align-items: center; font-family:\"Inter\",sans-serif;">
+                    <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
+                    <span>➔</span>
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # Restablecemos las barras de scroll globales y contenedores estables únicamente para el panel interno
+    # Restablecemos scrolls globales y aplicamos el estilo quirúrgico solicitado al menú izquierdo
     st.markdown("""
         <style>
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: auto !important; background-color: #fcfdfe !important; }
-        div.block-container { padding: 2.5rem 4rem !important; }
+        html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
+        div.block-container { padding: 2.5rem 4rem !important; max-width: 100% !important; }
         
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
@@ -182,7 +174,7 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Configuración estricta de botones secundarios de la barra lateral con tus espaciados de 20px */
+        /* SELECTOR COMPLETO: Destruye las cajas blancas en reposo, hover, active y focus en la barra izquierda */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus,
@@ -191,8 +183,11 @@ else:
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
+            
+            /* Sugerencias de James: alineación y aire interno de 20px */
             padding: 20px !important;
             margin-bottom: 10px !important;
+            
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
@@ -201,7 +196,7 @@ else:
             border-radius: 10px !important;
         }
         
-        /* Blindaje de fuentes blancas permanente (Evita que el texto se tape en hover) */
+        /* BLINDAJE DE TIPOGRAFÍA: Fuerza que el texto permanezca blanco y no sea tapado por el hover */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div,
@@ -214,6 +209,7 @@ else:
             justify-content: flex-start !important;
         }
         
+        /* Hover premium en azul institucional */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
             background: #0056b3 !important;
             background-color: #0056b3 !important;
