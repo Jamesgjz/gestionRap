@@ -157,6 +157,7 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
+    # REGLAS CSS CORREGIDAS: Apuntamos EXCLUSIVAMENTE a la barra lateral con alta especificidad
     st.markdown("""
         <style>
         /* Fondo de la barra lateral oscura institucional */
@@ -168,8 +169,8 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* 1. DESTRUCCIÓN DE LA CAJA BLANCA NATIVA DE STREAMLIT (EL CONTENEDOR) */
-        div.stButton {
+        /* 1. SECTORIZACIÓN: Rompemos cajas blancas ÚNICAMENTE dentro del Sidebar */
+        [data-testid="stSidebar"] div.stButton {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -177,30 +178,31 @@ else:
             padding: 0 !important;
         }
 
-        /* 2. CONFIGURACIÓN DEL BOTÓN REAL CON TUS PADDINGS Y ALINEACIÓN DE 20PX */
-        div.stButton > button {
+        /* 2. DISEÑO DEL BOTÓN INTERNO DE LA BARRA LATERAL CON PADDING DE 20PX */
+        [data-testid="stSidebar"] div.stButton -> button,
+        [data-testid="stSidebar"] div.stButton > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             
-            /* Ajustes sugeridos por James */
+            /* Alineación y espaciados perfectos solicitados */
             padding: 20px 25px !important;
             margin-bottom: 8px !important;
             
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
-            justify-content: flex-start !important; /* Totalmente alineados a la izquierda */
+            justify-content: flex-start !important;
             text-align: left !important;
             border-radius: 10px !important;
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* 3. FORZADO RADICAL DE TEXTO E ICONOS EN COLOR BLANCO PURO */
-        div.stButton > button p,
-        div.stButton > button span,
-        div.stButton > button div {
+        /* 3. TEXTO BLANCO PERMANENTE SÓLO EN LA BARRA LATERAL */
+        [data-testid="stSidebar"] div.stButton > button p,
+        [data-testid="stSidebar"] div.stButton > button span,
+        [data-testid="stSidebar"] div.stButton > button div {
             color: #ffffff !important;
             font-size: 1rem !important;
             font-weight: 500 !important;
@@ -209,14 +211,13 @@ else:
             justify-content: flex-start !important;
         }
         
-        /* 4. EFECTO HOVER PREMIUM EN AZUL CORPORATIVO SIN TAPAR EL ENUNCIADO */
-        div.stButton > button:hover {
+        /* 4. HOVER AZUL DE MENÚ */
+        [data-testid="stSidebar"] div.stButton > button:hover {
             background: #0056b3 !important;
             background-color: #0056b3 !important;
         }
         
-        /* Asegurar consistencia del texto blanco en el hover */
-        div.stButton > button:hover p {
+        [data-testid="stSidebar"] div.stButton > button:hover p {
             color: #ffffff !important;
         }
         </style>
@@ -244,7 +245,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botonera de navegación nativa
+        # Botones nativos estables de navegación
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
