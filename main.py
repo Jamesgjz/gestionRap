@@ -4,141 +4,196 @@ from modules import registro, estado_pruebas, programacion, evaluacion, dashboar
 # Configuración de la página en modo ancho
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
-# --- CSS INTEGRADO CORREGIDO Y OPTIMIZADO ---
+# --- CSS DEFINITIVO Y TOTALMENTE CONTROLADO ---
 st.markdown("""
     <style>
-    /* Ocultar barras por defecto */
+    /* Ocultar interfaces y barras nativas de la plataforma */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Forzar fondo limpio y unificado */
     .stApp {
         background-color: #fcfdfe;
     }
     
-    /* CONTENEDOR IZQUIERDO: Banner Azul Profundo */
-    .banner-izquierdo {
+    /* MAQUETACIÓN EN CONTENEDOR FLEX PARA IGUALAR EL MOCKUP */
+    .contenedor-mockup {
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        width: 100%;
+        max-width: 1200px;
+        margin: 2rem auto;
+        gap: 2rem;
+    }
+    
+    /* BANNER AZUL IZQUIERDO */
+    .banner-izquierdo-real {
+        flex: 1;
         background: linear-gradient(135deg, #001f4d 0%, #00112c 100%);
         padding: 3.5rem 3rem;
         border-radius: 20px;
         color: white;
-        height: auto;
-        min-height: 520px;
-        box-shadow: 0 12px 28px rgba(0,31,77,0.15);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 12px 30px rgba(0,31,77,0.15);
     }
     
-    .marca-sub {
+    .marca-sub-txt {
         color: #38bdf8;
         font-size: 0.9rem;
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-bottom: 5px;
     }
     
-    .logo-main {
+    .logo-main-txt {
         font-size: 2.3rem;
         font-weight: 800;
         color: white;
         line-height: 1.1;
+        margin-top: 10px;
         margin-bottom: 1.5rem;
     }
     
-    .logo-main span {
+    .logo-main-txt span {
         color: #f1c40f;
     }
     
-    .divisor-corto {
+    .divisor-corto-real {
         width: 60px;
         height: 4px;
         background-color: #38bdf8;
-        margin-bottom: 2.5rem;
+        margin-bottom: 2rem;
     }
     
-    .texto-desc {
+    .texto-desc-real {
         font-size: 1.15rem;
         color: #cbd5e1;
         line-height: 1.6;
-        margin-bottom: 4rem;
     }
     
-    /* Ajustes de las características */
-    .item-caracteristica {
-        margin-top: 1.8rem;
+    .bloque-caracteristicas {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 2rem;
     }
     
-    .titulo-caracteristica {
+    .item-carac {
+        text-align: center;
+        flex: 1;
+    }
+    
+    .item-carac div {
         font-weight: bold;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         color: white;
+        margin-bottom: 4px;
     }
     
-    .desc-caracteristica {
-        font-size: 0.9rem;
+    .item-carac span {
+        font-size: 0.8rem;
         color: #94a3b8;
     }
     
-    /* CONTENEDOR DERECHO: Tarjeta de Acceso Limpia */
-    .tarjeta-login {
+    /* TARJETA BLANCA FORMULARIO DERECHO */
+    .tarjeta-login-real {
+        flex: 1.1;
         background-color: #ffffff;
-        padding: 2.5rem 3rem;
+        padding: 3.5rem;
         border-radius: 20px;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.03);
-        margin-top: 0px; /* Eliminamos cualquier margen que empuje el contenido */
+        box-shadow: 0 10px 25px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
-    .titulo-acceso {
+    .titulo-acceso-real {
         color: #0f172a;
-        font-size: 1.9rem;
+        font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.3rem;
     }
     
-    .sub-acceso {
+    .sub-acceso-real {
         color: #64748b;
         font-size: 0.95rem;
+        margin-bottom: 2.5rem;
+    }
+    
+    /* Estilos para inputs HTML puros clonados del mockup */
+    .input-html-grupo {
         margin-bottom: 1.5rem;
     }
     
-    /* Ajuste estricto para los Inputs de Streamlit para que no dejen espacios muertos */
-    .stTextInput {
-        margin-top: -10px !important;
+    .input-html-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.5rem;
     }
     
-    /* Ajuste de Botón de bloque completo */
-    div.stButton > button:first-child {
-        background-color: #0056b3 !important;
-        color: white !important;
-        width: 100% !important;
-        border-radius: 8px !important;
-        padding: 0.7rem 1rem !important;
-        font-size: 1rem !important;
-        font-weight: bold !important;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(0,86,179,0.2) !important;
-        margin-top: 15px;
+    .input-html-field {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.95rem;
+        color: #0f172a;
+        background-color: #fff;
+        box-sizing: border-box;
     }
     
-    /* Caja Morada de Soporte en el extremo inferior */
-    .caja-soporte {
+    .input-html-field:focus {
+        outline: none;
+        border-color: #0056b3;
+        box-shadow: 0 0 0 3px rgba(0,86,179,0.1);
+    }
+    
+    /* Botón de envío que hereda el ancho completo */
+    .btn-ingresar-real {
+        background-color: #0056b3;
+        color: white;
+        width: 100%;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,86,179,0.25);
+        transition: background 0.2s;
+        margin-top: 1rem;
+    }
+    
+    .btn-ingresar-real:hover {
+        background-color: #004394;
+    }
+    
+    /* Enlace inferior de soporte */
+    .soporte-footer {
         background-color: #f4f0ff;
         border: 1px solid #e0d4ff;
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 14px 20px;
         color: #4c1d95;
         font-size: 0.9rem;
         font-weight: 500;
-        margin-top: 2rem;
+        margin-top: 2.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        text-decoration: none;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER SUPERIOR (Alineación Horizontal) ---
+# --- TOP BAR (Cabecera Superior del Mockup) ---
 col_logo_top, col_fecha_top = st.columns([2, 1])
 with col_logo_top:
     st.markdown("""
@@ -154,78 +209,76 @@ with col_fecha_top:
 
 st.divider()
 
-# --- VALIDACIÓN DE SESIÓN ---
+# --- INSTANCIACIÓN DE SESIÓN ---
 if 'autenticado' not in st.session_state:
     st.session_state['autenticado'] = False
 
 if not st.session_state['autenticado']:
     
-    # Ajustamos la proporción a [5, 6] eliminando la columna vacía del medio para expandir todo horizontalmente
-    col_banner, col_formulario = st.columns([5, 6])
-    
-    # PANEL IZQUIERDO: Renderizado directo del bloque visual
-    with col_banner:
-        st.markdown("""
-            <div class="banner-izquierdo">
-                <div class="marca-sub">RAP Digital</div>
-                <div class="logo-main">MD UNIMINUTO<br><span>VIRTUAL</span></div>
-                <div class="divisor-corto"></div>
-                <div class="texto-desc">
-                    Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.
+    # Procesamos el login capturando las variables URL que inyectará el formulario HTML nativo
+    query_params = st.query_params
+    if "form_usuario" in query_params and "form_pass" in query_params:
+        u_ingresado = query_params["form_usuario"]
+        p_ingresado = query_params["form_pass"]
+        
+        # Limpiamos los parámetros de la URL inmediatamente para evitar ciclos
+        st.query_params.clear()
+        
+        if u_ingresado == "admin" and p_ingresado == "admin123":
+            st.session_state['autenticado'] = True
+            st.session_state['usuario'] = "James Jaramillo"
+            st.session_state['rol'] = "admin"
+            st.rerun()
+        else:
+            st.error("Credenciales incorrectas")
+
+    # RENDERIZADO COMPLETO DEL CONTENEDOR FLEX SIN ESPACIOS MUERTOS
+    st.markdown(f"""
+        <div class="contenedor-mockup">
+            <!-- PARTE IZQUIERDA: EL BANNER INSTITUCIONAL -->
+            <div class="banner-izquierdo-real">
+                <div>
+                    <div class="marca-sub-txt">RAP Digital</div>
+                    <div class="logo-main-txt">MD UNIMINUTO<br><span>VIRTUAL</span></div>
+                    <div class="divisor-corto-real"></div>
+                    <div class="texto-desc-real">
+                        Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.
+                    </div>
                 </div>
-                <div style="margin-top: 1rem;">
-                    <div class="item-caracteristica">
-                        <span class="titulo-caracteristica">📈 Seguimiento</span><br>
-                        <span class="desc-caracteristica">Control analítico y métricas en tiempo real.</span>
-                    </div>
-                    <div class="item-caracteristica">
-                        <span class="titulo-caracteristica">📋 Evaluación</span><br>
-                        <span class="desc-caracteristica">Asignación ágil y transparente de notas.</span>
-                    </div>
-                    <div class="item-caracteristica">
-                        <span class="titulo-caracteristica">🛡️ Trazabilidad académica</span><br>
-                        <span class="desc-caracteristica">Históricos consolidados sin alteración.</span>
-                    </div>
+                <div class="bloque-caracteristicas">
+                    <div class="item-carac"><div>📈 Seguimiento</div><span>Métricas en tiempo real</span></div>
+                    <div class="item-carac"><div>📋 Evaluación</div><span>Asignación ágil</span></div>
+                    <div class="item-carac"><div>🛡️ Trazabilidad</div><span>Históricos seguros</span></div>
                 </div>
             </div>
-        """, unsafe_allow_html=True)
-        
-    # PANEL DERECHO: Tarjeta de Acceso alineada arriba
-    with col_formulario:
-        st.markdown('<div class="tarjeta-login">', unsafe_allow_html=True)
-        st.markdown('<div class="titulo-acceso">Acceso al sistema</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sub-acceso">Inicia sesión para continuar con RAP Digital.</div>', unsafe_allow_html=True)
-        
-        # Pestañas limpias
-        modo = st.tabs(["👤 Administrativo", "🌐 Consulta pública"])
-        
-        with modo[0]:
-            usuario = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="login_user")
-            contrasena = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
             
-            if st.button("Ingresar al sistema"):
-                if usuario == "admin" and contrasena == "admin123":
-                    st.session_state['autenticado'] = True
-                    st.session_state['usuario'] = "James Jaramillo"
-                    st.session_state['rol'] = "admin"
-                    st.rerun()
-                else:
-                    st.error("Credenciales incorrectas")
-                    
-        with modo[1]:
-            st.info("Utilice este espacio alterno para registrar nuevos estudiantes al sistema.")
-            registro.render()
-            
-        st.markdown("""
-            <div class="caja-soporte">
-                <span>ℹ️ Soporte académico RAP</span>
-                <span>➔</span>
+            <!-- PARTE DERECHA: LA TARJETA BLANCA DE ACCESO CON FORMULARIO DIRECTO -->
+            <div class="tarjeta-login-real">
+                <div class="titulo-acceso-real">Acceso al sistema</div>
+                <div class="sub-acceso-real">Inicia sesión para continuar con RAP Digital.</div>
+                
+                <form action="/" method="get">
+                    <div class="input-html-grupo">
+                        <label class="input-html-label">Usuario</label>
+                        <input type="text" name="form_usuario" class="input-html-field" placeholder="Ingresa tu usuario" required>
+                    </div>
+                    <div class="input-html-grupo">
+                        <label class="input-html-label">Contraseña</label>
+                        <input type="password" name="form_pass" class="input-html-field" placeholder="Ingresa tu contraseña" required>
+                    </div>
+                    <button type="submit" class="btn-ingresar-real">➔ Ingresar al sistema</button>
+                </form>
+                
+                <div class="soporte-footer">
+                    <span>Support técnico académico RAP</span>
+                    <span>➔</span>
+                </div>
             </div>
-        """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
 
 else:
-    # --- INTERFAZ ADMINISTRATIVA (LOGUEADO) ---
+    # --- INTERFAZ ADMINISTRATIVA CONTROLADA ---
     st.sidebar.title(f"👨‍🏫 {st.session_state['usuario']}")
     if st.sidebar.button("Cerrar Sesión"):
         st.session_state['autenticado'] = False
