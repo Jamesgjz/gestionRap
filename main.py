@@ -156,22 +156,40 @@ if not st.session_state['autenticado']:
         st.subheader("📝 Formulario de Registro Público de Estudiantes")
         registro.render()
 
-# --- ESCENARIO B: ENTORNO ADMINISTRATIVO ---
+# --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
     st.markdown("""
         <style>
-        [data-testid="stSidebar"] { background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important; color: white !important; }
+        /* Ajuste estructural profundo de la barra lateral nativa */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
+        }
         [data-testid="stSidebarNav"] {display: none !important;}
+        
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
-        .kpi-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.01); }
-        .kpi-title { font-size: 0.9rem; color: #64748b; font-weight: 600; }
-        .kpi-value { font-size: 2.2rem; font-weight: 800; color: #0f172a; margin: 5px 0; }
-        .kpi-trend { font-size: 0.85rem; font-weight: 700; }
-        .dash-block { background: white; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; min-height: 380px; }
-        .block-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+        
+        /* CORRECCIÓN DE ALINEACIÓN E ICONOS DEL MENÚ LATERAL */
+        div[data-testid="stSidebar"] button {
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border: none !important;
+            text-align: left !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            padding: 12px 20px !important;
+            font-size: 0.95rem !important;
+            font-weight: 500 !important;
+            border-radius: 10px !important;
+            margin-bottom: 4px !important;
+            transition: all 0.2s ease !important;
+        }
+        div[data-testid="stSidebar"] button:hover {
+            background-color: #0056b3 !important;
+            box-shadow: 0 4px 12px rgba(0,86,179,0.3) !important;
+        }
         </style>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
     with st.sidebar:
