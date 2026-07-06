@@ -1,9 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
-# 1. Importamos el nuevo módulo de inicio junto a los demás
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración de la página en modo ancho total y limpio
+# Configuración de la página en modo ancho total y limpio para eliminar márgenes laterales innecesarios
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
 # --- CONTROLADOR DE NAVEGACIÓN Y AUTENTICACIÓN ---
@@ -158,38 +157,48 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
+    # Inyección de estilos global unificada con alta prioridad para forzar el rediseño del menú
     st.markdown("""
         <style>
-        /* Ajuste estructural profundo de la barra lateral nativa */
+        /* Transformación completa de la barra lateral nativa */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
-        [data-testid="stSidebarNav"] {display: none !important;}
+        [data-testid="stSidebarNav"] { display: none !important; }
         
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* CORRECCIÓN DE ALINEACIÓN E ICONOS DEL MENÚ LATERAL */
+        /* ANULACIÓN RADICAL Y CONTROL DE LOS BOTONES DE STREAMLIT */
         div[data-testid="stSidebar"] button {
             background-color: transparent !important;
-            color: #ffffff !important;
             border: none !important;
-            text-align: left !important;
+            padding: 12px 20px !important;
+            border-radius: 10px !important;
+            margin-bottom: 6px !important;
+            width: 100% !important;
             display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
-            padding: 12px 20px !important;
-            font-size: 0.95rem !important;
-            font-weight: 500 !important;
-            border-radius: 10px !important;
-            margin-bottom: 4px !important;
             transition: all 0.2s ease !important;
         }
+        
+        /* Forzar texto blanco e iconos alineados dentro de las etiquetas internas de Streamlit */
+        div[data-testid="stSidebar"] button p {
+            color: #ffffff !important;
+            font-size: 0.95rem !important;
+            font-weight: 500 !important;
+            margin: 0 !important;
+            text-align: left !important;
+        }
+        
+        /* Efecto Hover Premium */
         div[data-testid="stSidebar"] button:hover {
             background-color: #0056b3 !important;
             box-shadow: 0 4px 12px rgba(0,86,179,0.3) !important;
         }
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
     with st.sidebar:
@@ -213,6 +222,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
+        # Botonera de navegación
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
@@ -237,11 +247,10 @@ else:
             st.session_state['autenticado'] = False
             st.rerun()
 
-    # --- ENRUTADOR DE VISTAS ---
+    # --- ENRUTADOR GENERAL DE VISTAS ---
     opcion = st.session_state['opcion_menu']
 
     if opcion == "Inicio":
-        # 2. CONEXIÓN EXCLUSIVA: Llamamos de forma limpia a la función del submódulo de inicio
         inicio.render()
     elif opcion == "Registro Estudiantes":
         registro.render()
