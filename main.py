@@ -26,16 +26,18 @@ if "form_usuario" in query_params and "form_pass" in query_params:
 if 'autenticado' not in st.session_state:
     st.session_state['autenticado'] = False
 
-# --- ESCENARIO A: USUARIO NO AUTENTICADO (PANTALLA DE LOGIN IDÉNTICA AL MOCKUP) ---
+# --- ESCENARIO A: PANTALLA DE LOGIN IDÉNTICA AL MOCKUP ---
 if not st.session_state['autenticado']:
     
-    # Renderizado aislado mediante el componente HTML de Streamlit (Evita fugas de texto o deformaciones)
     components.html("""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <!-- Librerías de Iconos vectoriales profesionales -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <style>
             body {
                 font-family: 'Inter', sans-serif;
@@ -72,10 +74,10 @@ if not st.session_state['autenticado']:
                 border-radius: 24px;
                 overflow: hidden;
                 box-shadow: 0 15px 35px rgba(0, 31, 77, 0.08);
-                min-height: 560px;
+                min-height: 580px;
             }
 
-            /* PANEL IZQUIERDO: BANNER AZUL EXPANDIDO (45% DEL CONTENEDOR) */
+            /* PANEL IZQUIERDO: BANNER AZUL EXPANDIDO (45%) */
             .banner-azul {
                 flex: 0.45;
                 background: linear-gradient(135deg, #001f4d 0%, #00112c 100%);
@@ -84,48 +86,82 @@ if not st.session_state['autenticado']:
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                position: relative;
             }
+            
+            /* ESPACIO PARA SUBIR LA IMAGEN / LOGO */
+            .logo-upload-zone {
+                width: 100%;
+                max-width: 220px;
+                height: auto;
+                min-height: 60px;
+                margin-bottom: 2rem;
+                display: flex;
+                align-items: center;
+            }
+            .logo-upload-zone img {
+                width: 100%;
+                height: auto;
+                object-fit: contain;
+                /* Filtro opcional por si subes un logo negro y quieres que se vea blanco impecable */
+                filter: brightness(0) invert(1); 
+            }
+            
             .banner-top .sub-marca {
                 color: #38bdf8;
                 font-size: 0.9rem;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                margin-bottom: 8px;
+                margin-bottom: 4px;
             }
             .banner-top .main-logo-title {
-                font-size: 2.3rem;
+                font-size: 2.1rem;
                 font-weight: 800;
                 line-height: 1.1;
-                margin-bottom: 1.5rem;
+                margin-bottom: 1.2rem;
             }
             .banner-top .main-logo-title span { color: #f1c40f; }
             .banner-top .short-line {
-                width: 60px;
-                height: 4px;
+                width: 50px;
+                height: 3px;
                 background-color: #38bdf8;
-                margin-bottom: 2rem;
+                margin-bottom: 1.8rem;
             }
             .banner-top .main-description {
-                font-size: 1.15rem;
+                font-size: 1.1rem;
                 color: #cbd5e1;
                 line-height: 1.6;
             }
             
-            /* CARACTERÍSTICAS INFERIORES DEL BANNER */
+            /* CARACTERÍSTICAS INFERIORES CON ICONOS PREMIUM DEL MOCKUP */
             .banner-features {
                 display: flex;
                 justify-content: space-between;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
                 padding-top: 2rem;
-                gap: 10px;
+                gap: 15px;
             }
-            .feature-box { text-align: center; flex: 1; }
-            .feature-box .f-title { font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 4px; }
-            .feature-box .f-desc { font-size: 0.8rem; color: #94a3b8; }
+            .feature-box {
+                text-align: center;
+                flex: 1;
+            }
+            .feature-icon-wrapper {
+                background: rgba(255, 255, 255, 0.08);
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 10px auto;
+                color: #38bdf8;
+                font-size: 1.2rem;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            .feature-box .f-title { font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 3px; }
+            .feature-box .f-desc { font-size: 0.8rem; color: #94a3b8; display: block; line-height: 1.3; }
 
-            /* PANEL DERECHO: FORMULARIO BLANCO INSTITUCIONAL (55% DEL CONTENEDOR) */
+            /* PANEL DERECHO: FORMULARIO (55%) */
             .panel-formulario {
                 flex: 0.55;
                 padding: 4rem;
@@ -151,23 +187,27 @@ if not st.session_state['autenticado']:
                 display: flex;
                 border-bottom: 1px solid #e2e8f0;
                 margin-bottom: 2rem;
+                gap: 10px;
             }
             .tab-item {
-                padding: 10px 20px;
+                padding: 10px 15px;
                 font-size: 0.95rem;
                 font-weight: 600;
                 color: #64748b;
                 border-bottom: 2px solid transparent;
-                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
             .tab-item.active {
                 color: #0056b3;
                 border-bottom: 2px solid #0056b3;
             }
 
-            /* CAMPOS DE ENTRADA HTML PUROS */
+            /* CAMPOS DE ENTRADA */
             .form-group {
                 margin-bottom: 1.5rem;
+                position: relative;
             }
             .form-group label {
                 display: block;
@@ -176,20 +216,31 @@ if not st.session_state['autenticado']:
                 color: #334155;
                 margin-bottom: 0.5rem;
             }
+            .input-with-icon {
+                position: relative;
+                display: flex;
+                align-items: center;
+            }
+            .input-with-icon i {
+                position: absolute;
+                left: 15px;
+                color: #94a3b8;
+                font-size: 1.1rem;
+            }
             .form-group input {
                 width: 100%;
-                padding: 0.8rem 1rem;
+                padding: 0.8rem 1rem 0.8rem 2.8rem;
                 border-radius: 10px;
                 border: 1px solid #cbd5e1;
                 font-size: 0.95rem;
                 color: #0f172a;
                 background-color: #fff;
                 box-sizing: border-box;
-                transition: border-color 0.2s;
             }
             .form-group input:focus {
                 outline: none;
                 border-color: #0056b3;
+                box-shadow: 0 0 0 3px rgba(0,86,179,0.08);
             }
 
             /* BOTÓN COMPLETO */
@@ -198,18 +249,19 @@ if not st.session_state['autenticado']:
                 color: white;
                 width: 100%;
                 border: none;
-                padding: 0.85rem;
+                padding: 0.9rem;
                 border-radius: 10px;
                 font-size: 1rem;
                 font-weight: 700;
                 cursor: pointer;
                 box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25);
                 margin-top: 1rem;
-                transition: background 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
             }
-            .btn-submit-action:hover {
-                background-color: #004394;
-            }
+            .btn-submit-action:hover { background-color: #004394; }
 
             /* CAJA MORADA INFERIOR DE SOPORTE */
             .box-support-footer {
@@ -244,6 +296,11 @@ if not st.session_state['autenticado']:
             <!-- PANEL IZQUIERDO (BANNER AZUL ANCHO) -->
             <div class="banner-azul">
                 <div class="banner-top">
+                    <!-- CONTENEDOR IMAGEN LOGO: Cambia src="assets/tu_logo.png" cuando lo tengas en tu carpeta -->
+                    <div class="logo-upload-zone">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div style=\'border:2px dashed rgba(255,255,255,0.3); padding:10px; border-radius:8px; font-size:0.8rem; color:#94a3b8; text-align:center;\'>[Espacio reservado para Logo de Uniminuto]</div>')">
+                    </div>
+                    
                     <div class="sub-marca">RAP Digital</div>
                     <div class="main-logo-title">MD UNIMINUTO<br><span>VIRTUAL</span></div>
                     <div class="short-line"></div>
@@ -251,14 +308,28 @@ if not st.session_state['autenticado']:
                         Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.
                     </div>
                 </div>
+                
+                <!-- ICONOS VECTORIALES COMPLETA Y FIELMENTE ALINEADOS -->
                 <div class="banner-features">
-                    <div class="feature-box"><div class="f-title">📈 Seguimiento</div><span class="f-desc">Tiempo real</span></div>
-                    <div class="feature-box"><div class="f-title">📋 Evaluación</div><span class="f-desc">Asignación ágil</div></div>
-                    <div class="feature-box"><div class="f-title">🛡️ Trazabilidad</div><span class="f-desc">Históricos seguros</span></div>
+                    <div class="feature-box">
+                        <div class="feature-icon-wrapper"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="f-title">Seguimiento</div>
+                        <span class="f-desc">Tiempo real</span>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-icon-wrapper"><i class="fa-regular fa-clipboard"></i></div>
+                        <div class="f-title">Evaluación</div>
+                        <span class="f-desc">Asignación ágil</span>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-icon-wrapper"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="f-title">Trazabilidad</div>
+                        <span class="f-desc">Históricos seguros</span>
+                    </div>
                 </div>
             </div>
             
-            <!-- PANEL DERECHO (FORMULARIO SIN HUECOS EN BLANCO) -->
+            <!-- PANEL DERECHO -->
             <div class="panel-formulario">
                 <div class="form-header">
                     <h2 class="f-access-title">Acceso al sistema</h2>
@@ -266,25 +337,32 @@ if not st.session_state['autenticado']:
                 </div>
                 
                 <div class="mockup-tabs">
-                    <div class="tab-item active">👤 Administrativo</div>
-                    <div class="tab-item">🌐 Consulta pública</div>
+                    <div class="tab-item active"><i class="fa-regular fa-user"></i> Administrativo</div>
+                    <div class="tab-item"><i class="fa-solid fa-globe"></i> Consulta pública</div>
                 </div>
                 
-                <!-- Target del formulario redirige los valores directo al backend de Streamlit -->
                 <form action="/" method="GET">
                     <div class="form-group">
                         <label>Usuario</label>
-                        <input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required>
+                        <div class="input-with-icon">
+                            <i class="fa-regular fa-user"></i>
+                            <input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
-                        <input type="password" name="form_pass" placeholder="Ingresa tu contraseña" required>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-lock"></i>
+                            <input type="password" name="form_pass" placeholder="Ingresa tu contraseña" required>
+                        </div>
                     </div>
-                    <button type="submit" class="btn-submit-action">➔ Ingresar al sistema</button>
+                    <button type="submit" class="btn-submit-action">
+                        <i class="fa-solid fa-right-to-bracket"></i> Ingresar al sistema
+                    </button>
                 </form>
                 
                 <div class="box-support-footer">
-                    <span>Soporte académico RAP</span>
+                    <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
                     <span>➔</span>
                 </div>
             </div>
