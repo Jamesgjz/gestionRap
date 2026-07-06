@@ -1,7 +1,7 @@
 import streamlit as st
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# 1. Configuración limpia de la página en modo ancho total sin barras de scroll
+# Configuración limpia de la página en modo ancho total sin barras de scroll
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
 # Inicialización estricta de variables de sesión
@@ -10,9 +10,6 @@ if 'autenticado' not in st.session_state:
 
 if 'opcion_menu' not in st.session_state:
     st.session_state['opcion_menu'] = "Inicio"
-
-if 'modo_login' not in st.session_state:
-    st.session_state['modo_login'] = "admin"
 
 # --- PROCESADOR DE NAVEGACIÓN RECIENTE (MENÚ LATERAL) ---
 query_params = st.query_params
@@ -27,24 +24,24 @@ if menu_click:
 # --- ESCENARIO A: PANTALLA DE LOGIN PREMIUM SIN SCROLLS ---
 if not st.session_state['autenticado']:
     
-    # 2. INYECCIÓN CSS CORPORATIVA: Limpia cabeceras, elimina scrolls y maqueta la tarjeta centradora
+    # INYECCIÓN CSS CORPORATIVA: Limpia cabeceras, elimina scrolls y fija la tarjeta centradora
     st.markdown("""
         <style>
         /* Desactivar elementos nativos superiores de Streamlit para el Login */
         [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
-        html, body, [data-testid="stAppViewContainer"] { overflow: hidden !important; background-color: #fcfdfe !important; }
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: hidden !important; background-color: #fcfdfe !important; }
         .block-container { padding: 0 !important; max-width: 100% !important; }
         
         /* Contenedor Cascarón del Layout Principal */
-        .page-wrapper { padding: 20px 40px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        .page-wrapper { padding: 20px 40px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; font-family: 'Inter', sans-serif; position: relative; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e2e8f0; height: 60px; box-sizing: border-box; }
-        .top-logo { color: #001f4d; font-family: 'Inter', sans-serif; }
+        .top-logo { color: #001f4d; }
         .top-logo .bold-md { font-weight: 800; font-size: 1.4rem; }
         .top-logo .text-uni { font-weight: 700; font-size: 1.2rem; letter-spacing: 1px; }
         .top-logo .sub-virtual { font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px; }
         .top-date { color: #64748b; font-size: 0.9rem; }
         
-        .center-container { display: flex; justify-content: center; align-items: center; flex-grow: 1; height: calc(100vh - 80px); }
+        .center-container { display: flex; justify-content: center; align-items: center; flex-grow: 1; height: calc(100vh - 80px); position: relative; }
         .main-container { display: flex; width: 100%; max-width: 1150px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 31, 77, 0.07); height: 560px; }
         
         /* Mitad Izquierda: Banner Azul Universitario */
@@ -61,25 +58,39 @@ if not st.session_state['autenticado']:
         .feature-box .f-title { font-weight: 700; font-size: 0.9rem; color: white; margin-bottom: 2px; }
         .feature-box .f-desc { font-size: 0.75rem; color: #94a3b8; }
         
-        /* Mitad Derecha: Espacio Base del Formulario */
-        .panel-formulario-vacio { flex: 1.1; background-color: #ffffff; padding: 3.5rem; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+        /* Mitad Derecha: Espacio Base reservado */
+        .panel-formulario-vacio { flex: 1.1; background-color: #ffffff; padding: 3.5rem; box-sizing: border-box; }
+        
+        /* CAPA FLOTANTE ABSOLUTA INTERNA: Sienta los elementos de Streamlit encima del espacio blanco */
+        .floating-form-layer {
+            position: absolute !important;
+            right: calc(50% - 535px + 40px) !important;
+            width: 480px !important;
+            top: calc(50% - 240px) !important;
+            z-index: 9999 !important;
+            display: flex;
+            flex-direction: column;
+        }
         
         /* ESTILIZACIÓN DE ENTRADAS NATIVAS DE PYTHON */
         div[data-testid="stTextInput"] label { font-size: 0.9rem !important; font-weight: 600 !important; color: #334155 !important; }
-        div[data-testid="stTextInput"] input { border-radius: 10px !important; padding: 0.65rem 1rem !important; border: 1px solid #cbd5e1 !important; font-size: 0.95rem !important; color: #0f172a !important; }
+        div[data-testid="stTextInput"] input { border-radius: 10px !important; padding: 0.65rem 1rem !important; border: 1px solid #cbd5e1 !important; font-size: 0.95rem !important; color: #0f172a !important; background-color: #ffffff !important; }
         
-        /* Botón de envío principal */
-        div.stButton > button {
+        /* Botón de envío principal nativo */
+        div.floating-form-layer div.stButton > button {
             background-color: #0056b3 !important; color: white !important; width: 100% !important; padding: 0.8rem !important;
             border-radius: 10px !important; font-weight: 700 !important; font-size: 1rem !important; border: none !important;
-            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25) !important; margin-top: 15px !important; transition: all 0.2s !important;
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25) !important; margin-top: 10px !important; transition: all 0.2s !important;
         }
-        div.stButton > button:hover { background-color: #004494 !important; }
+        div.floating-form-layer div.stButton > button:hover { background-color: #004494 !important; }
+        
+        /* Ajuste específico para el contenedor de pestañas de radio */
+        div[data-testid="stRadio"] div[role="radiogroup"] { gap: 20px !important; }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
-    # 3. Estructura visual externa (Fondo y Banner Izquierdo)
+    # Renderizado de la estructura visual del fondo
     st.markdown("""
         <div class="page-wrapper">
             <div class="top-bar">
@@ -102,24 +113,21 @@ if not st.session_state['autenticado']:
                             <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-solid fa-shield-halved"></i></div><div class="f-title">Trazabilidad</div><span class="f-desc">Históricos seguros</span></div>
                         </div>
                     </div>
-                    <div class="panel-formulario-vacio">
-                        <!-- Posicionador para los inputs nativos colgados abajo -->
-                    </div>
+                    <div class="panel-formulario-vacio"></div>
                 </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # 4. Inyección matemática de los campos nativos de Python encima de la mitad derecha del contenedor
-    col_vacio, col_formulario_real, col_vacio2 = st.columns([1.16, 1, 0.84])
-    
-    with col_formulario_real:
-        st.markdown("<h2 style='color: #0f172a; margin-top: -555px; font-weight:700; font-size:1.9rem; font-family:\"Inter\",sans-serif; margin-bottom:4px;'>Acceso al sistema</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #64748b; font-size:0.95rem; font-family:\"Inter\",sans-serif; margin-bottom: 25px;'>Inicia sesión para continuar con RAP Digital.</p>", unsafe_allow_html=True)
+    # Encapsulamos el contenedor nativo flotante mediante un contenedor de Streamlit controlado por la clase CSS superior
+    with st.container():
+        st.markdown('<div class="floating-form-layer">', unsafe_allow_html=True)
         
-        # Pestañas conmutadoras nativas con persistencia en el backend
+        st.markdown("<h2 style='color: #0f172a; font-weight:700; font-size:1.9rem; font-family:\"Inter\",sans-serif; margin: 0 0 4px 0;'>Acceso al sistema</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #64748b; font-size:0.95rem; font-family:\"Inter\",sans-serif; margin: 0 0 20px 0;'>Inicia sesión para continuar con RAP Digital.</p>", unsafe_allow_html=True)
+        
         modo_seleccionado = st.radio("Rol", ["Administrativo", "Consulta pública"], horizontal=True, label_visibility="collapsed")
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
         
         if modo_seleccionado == "Administrativo":
             usuario = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="usr_real")
@@ -139,29 +147,31 @@ if not st.session_state['autenticado']:
                 <div style='text-align:center; padding: 25px 0; color:#64748b; font-family:\"Inter\",sans-serif;'>
                     <i class='fa-solid fa-circle-info' style='font-size:2.5rem; color:#0056b3; margin-bottom:15px;'></i><br>
                     <b>Formulario de Registro Habilitado Abajo</b><br>
-                    Utilice el panel inferior de la plataforma para agregar estudiantes directamente al sistema.
+                    Por favor, baje un poco en la pantalla para diligenciar los campos del registro público.
                 </div>
             """, unsafe_allow_html=True)
             
         st.markdown("""
-            <div style="background-color: #f4f0ff; border: 1px solid #e0d4ff; border-radius: 10px; padding: 12px 20px; color: #4c1d95; font-size: 0.9rem; font-weight: 500; margin-top: 25px; display: flex; justify-content: space-between; align-items: center; font-family:\"Inter\",sans-serif;">
+            <div style="background-color: #f4f0ff; border: 1px solid #e0d4ff; border-radius: 10px; padding: 12px 20px; color: #4c1d95; font-size: 0.9rem; font-weight: 500; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; font-family:\"Inter\",sans-serif;">
                 <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
                 <span>➔</span>
             </div>
         """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if modo_seleccionado == "Consulta pública":
-        st.markdown("<div style='margin-top: 80px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
         st.divider()
         st.subheader("📝 Formulario de Registro Público de Estudiantes")
         registro.render()
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # Restablecemos las barras de scroll globales únicamente para el entorno de trabajo interno
+    # Restablecemos las barras de scroll globales y contenedores estables únicamente para el panel interno
     st.markdown("""
         <style>
-        html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: auto !important; background-color: #fcfdfe !important; }
         div.block-container { padding: 2.5rem 4rem !important; }
         
         [data-testid="stSidebar"] {
@@ -172,7 +182,7 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Configuración estricta de botones secundarios de la barra lateral con tus espaciados */
+        /* Configuración estricta de botones secundarios de la barra lateral con tus espaciados de 20px */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus,
@@ -191,7 +201,7 @@ else:
             border-radius: 10px !important;
         }
         
-        /* Blindaje de fuentes blancas permanente (Evita el bloqueo en hover) */
+        /* Blindaje de fuentes blancas permanente (Evita que el texto se tape en hover) */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div,
@@ -234,7 +244,6 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botones estables de navegación
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
