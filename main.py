@@ -157,63 +157,73 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-  # Nuevo bloque CSS ultraespecífico para anular las pastillas de Streamlit sin romper el texto al pasar el cursor
+    # 1. Detectar si el usuario hizo clic en una opción del menú HTML a través de parámetros de URL
+    menu_click = query_params.get("view", None)
+    if menu_click:
+        st.session_state['opcion_menu'] = menu_click
+        st.query_params.clear()  # Limpiamos el parámetro para mantener las URLs limpias
+        st.rerun()
+
+    # 2. Inyección de estilos CSS puros para la barra lateral corporativa
     st.markdown("""
         <style>
-        /* Fondo de la barra lateral oscura institucional */
+        /* Ajuste de contenedor general de la barra lateral */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
         [data-testid="stSidebarNav"] { display: none !important; }
         
+        /* Contenedores de marca y usuario */
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* 1. ANULACIÓN DE LA CAJA BLANCA EN REPOSO Y EN HOVER */
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:active,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
-            background: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            
-            /* 2. PADDINGS Y MÁRGENES DE 20PX SEGÚN TU SUGERENCIA */
-            padding: 20px !important;
-            margin-bottom: 12px !important;
-            
-            width: 100% !important;
+        /* DISEÑO DE LOS BOTONES DE MENÚ EN HTML PURO (Sugerencias de James) */
+        .custom-menu-link {
             display: flex !important;
             align-items: center !important;
+            justify-content: flex-start !important; /* Alineados a la izquierda */
+            text-align: left !important;
+            color: #ffffff !important; /* Texto blanco impecable */
+            text-decoration: none !important;
             
-            /* 3. ALINEACIÓN MILIMÉTRICA AL EXTREMO IZQUIERDO */
-            justify-content: flex-start !important;
-            text-align: left !important;
-        }
-        
-        /* FORZAR COLOR BLANCO EN EL TEXTO INTERNO (REPOSO Y HOVER) */
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
-            color: #ffffff !important;
-            font-size: 1rem !important;
+            /* Ajustes de espacio sugeridos: padding interno y separación de 20px */
+            padding: 14px 20px !important;
+            margin-bottom: 15px !important;
+            
+            font-size: 0.95rem !important;
             font-weight: 500 !important;
-            margin: 0 !important;
-            text-align: left !important;
-            justify-content: flex-start !important;
+            border-radius: 10px !important;
+            transition: all 0.2s ease-in-out !important;
         }
         
-        /* CAMBIO DE COLOR EXCLUSIVO EN EL HOVER SIN TAPAR EL TEXTO */
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+        /* Separación interna fija entre el ícono vectorial y el texto */
+        .custom-menu-link i {
+            margin-right: 15px !important;
+            font-size: 1.1rem !important;
+            width: 20px !important;
+            text-align: center !important;
+        }
+        
+        /* Estado Activo (Módulo seleccionado) */
+        .custom-menu-link.active-item {
             background-color: #0056b3 !important;
-            background: #0056b3 !important;
-            border-radius: 10px !important;
-            cursor: pointer !important;
+            box-shadow: 0 4px 12px rgba(0,86,179,0.3) !important;
+        }
+        
+        /* Efecto Hover Premium sin bloquear enunciados */
+        .custom-menu-link:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+        .custom-menu-link.active-item:hover {
+            background-color: #0056b3 !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
+
     with st.sidebar:
+        # Cabecera Institucional
         st.markdown("""
             <div class="sidebar-brand">
                 <div style="color:#38bdf8; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">RAP Digital</div>
@@ -221,6 +231,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
+        # Estado del Administrador en línea
         st.markdown(f"""
             <div class="user-badge">
                 <div style="display:flex; align-items:center; gap:12px;">
@@ -234,25 +245,29 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botonera de navegación
-        if st.button("🏠 Inicio", use_container_width=True):
-            st.session_state['opcion_menu'] = "Inicio"
-            st.rerun()
-        if st.button("🎓 Registro de Estudiantes", use_container_width=True):
-            st.session_state['opcion_menu'] = "Registro Estudiantes"
-            st.rerun()
-        if st.button("📋 Estado de Pruebas", use_container_width=True):
-            st.session_state['opcion_menu'] = "Estado de Pruebas"
-            st.rerun()
-        if st.button("📅 Programación", use_container_width=True):
-            st.session_state['opcion_menu'] = "Programación"
-            st.rerun()
-        if st.button("📝 Evaluación", use_container_width=True):
-            st.session_state['opcion_menu'] = "Evaluación"
-            st.rerun()
-        if st.button("📊 Dashboard / KPIs", use_container_width=True):
-            st.session_state['opcion_menu'] = "Dashboard / KPIs"
-            st.rerun()
+        # 3. RENDERIZADO DEL MENÚ EN HTML (Evita las cajitas blancas de Streamlit por completo)
+        opc_actual = st.session_state['opcion_menu']
+        
+        st.markdown(f"""
+            <a href="/?view=Inicio" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Inicio' else ''}">
+                <i class="fa-solid fa-house"></i><span>Inicio</span>
+            </a>
+            <a href="/?view=Registro+Estudiantes" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Registro Estudiantes' else ''}">
+                <i class="fa-solid fa-graduation-cap"></i><span>Registro de Estudiantes</span>
+            </a>
+            <a href="/?view=Estado+de+Pruebas" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Estado de Pruebas' else ''}">
+                <i class="fa-regular fa-clipboard"></i><span>Estado de Pruebas</span>
+            </a>
+            <a href="/?view=Programacion" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Programación' else ''}">
+                <i class="fa-regular fa-calendar-days"></i><span>Programación</span>
+            </a>
+            <a href="/?view=Evaluacion" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Evaluación' else ''}">
+                <i class="fa-regular fa-pen-to-square"></i><span>Evaluación</span>
+            </a>
+            <a href="/?view=Dashboard" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Dashboard / KPIs' else ''}">
+                <i class="fa-solid fa-chart-line"></i><span>Dashboard / KPIs</span>
+            </a>
+        """, unsafe_allow_html=True)
             
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("🚪 Cerrar sesión", use_container_width=True):
@@ -262,15 +277,15 @@ else:
     # --- ENRUTADOR GENERAL DE VISTAS ---
     opcion = st.session_state['opcion_menu']
 
-    if opcion == "Inicio":
+    if opcion == "Inicio" or opcion == "Inicio":
         inicio.render()
-    elif opcion == "Registro Estudiantes":
+    elif opcion == "Registro Estudiantes" or opcion == "Registro+Estudiantes":
         registro.render()
-    elif opcion == "Estado de Pruebas":
+    elif opcion == "Estado de Pruebas" or opcion == "Estado+de+Pruebas":
         estado_pruebas.render()
-    elif opcion == "Programación":
+    elif opcion == "Programación" or opcion == "Programacion":
         programacion.render()
-    elif opcion == "Evaluación":
+    elif opcion == "Evaluación" or opcion == "Evaluacion":
         evaluacion.render()
-    elif opcion == "Dashboard / KPIs":
+    elif opcion == "Dashboard / KPIs" or opcion == "Dashboard":
         dashboard.render()
