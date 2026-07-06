@@ -157,9 +157,9 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # ARREGLO ESTRICTO DEL MENÚ LATERAL: Destrucción total de cajitas grises/blancas y control de Hover
     st.markdown("""
         <style>
+        /* Fondo de la barra lateral oscura institucional */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
@@ -168,29 +168,39 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* ANULACIÓN RADICAL DE LOS CONTENEDORES NATIVOS SECUNDARIOS DE STREAMLIT */
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:active,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
+        /* 1. DESTRUCCIÓN DE LA CAJA BLANCA NATIVA DE STREAMLIT (EL CONTENEDOR) */
+        div.stButton {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            width: 100% !important;
+            padding: 0 !important;
+        }
+
+        /* 2. CONFIGURACIÓN DEL BOTÓN REAL CON TUS PADDINGS Y ALINEACIÓN DE 20PX */
+        div.stButton > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             
-            /* Sugerencias de James: alineación izquierda y padding interno de 20px */
-            padding: 20px !important;
-            margin-bottom: 10px !important;
+            /* Ajustes sugeridos por James */
+            padding: 20px 25px !important;
+            margin-bottom: 8px !important;
+            
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
-            justify-content: flex-start !important;
+            justify-content: flex-start !important; /* Totalmente alineados a la izquierda */
             text-align: left !important;
+            border-radius: 10px !important;
+            transition: all 0.2s ease-in-out !important;
         }
         
-        /* FORZADO ABSOLUTO DE TEXTO BLANCO EN ELEMENTOS INTERNOS (REPOSO Y HOVER) */
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
+        /* 3. FORZADO RADICAL DE TEXTO E ICONOS EN COLOR BLANCO PURO */
+        div.stButton > button p,
+        div.stButton > button span,
+        div.stButton > button div {
             color: #ffffff !important;
             font-size: 1rem !important;
             font-weight: 500 !important;
@@ -199,11 +209,15 @@ else:
             justify-content: flex-start !important;
         }
         
-        /* EFECTO HOVER CORPORATIVO LIMPIO SIN INTERFERIR CON EL ENUNCIADO */
-        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+        /* 4. EFECTO HOVER PREMIUM EN AZUL CORPORATIVO SIN TAPAR EL ENUNCIADO */
+        div.stButton > button:hover {
             background: #0056b3 !important;
             background-color: #0056b3 !important;
-            border-radius: 10px !important;
+        }
+        
+        /* Asegurar consistencia del texto blanco en el hover */
+        div.stButton > button:hover p {
+            color: #ffffff !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -230,7 +244,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botones nativos estables, ahora controlados milimétricamente por el CSS superior
+        # Botonera de navegación nativa
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
