@@ -13,15 +13,22 @@ if 'opcion_menu' not in st.session_state:
     st.session_state['opcion_menu'] = "Inicio"
 
 # --- PROCESADOR DE LOGUEO LIMPIO (Previene que se sobreponga) ---
+# --- PROCESADOR DE LOGUEO LIMPIO (Previene que se sobreponga y extrae el string) ---
 query_params = st.query_params
 
 if "form_usuario" in query_params and "form_pass" in query_params:
+    # Obtenemos el primer elemento de la lista para asegurar que sea un string puro
     u_ingresado = query_params["form_usuario"]
     p_ingresado = query_params["form_pass"]
     
+    # Si viene como lista o tupla por la URL, extraemos el primer índice
+    if isinstance(u_ingresado, list) or isinstance(u_ingresado, tuple):
+        u_ingresado = u_ingresado[0] if len(u_ingresado) > 0 else ""
+    if isinstance(p_ingresado, list) or isinstance(p_ingresado, tuple):
+        p_ingresado = p_ingresado[0] if len(p_ingresado) > 0 else ""
+
     if u_ingresado == "admin" and p_ingresado == "admin123":
-        # LA CLAVE: Limpiamos absolutamente la URL antes de cambiar el estado para romper el bucle
-        st.query_params.clear() 
+        st.query_params.clear() # Limpiamos la URL para evitar bucles de sobreposición
         st.session_state['autenticado'] = True
         st.session_state['usuario'] = "James Jaramillo"
         st.session_state['rol'] = "admin"
