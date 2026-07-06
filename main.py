@@ -4,7 +4,7 @@ from modules import registro, estado_pruebas, programacion, evaluacion, dashboar
 # Configuración de la página en modo ancho
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
-# --- CSS DEFINITIVO Y TOTALMENTE CONTROLADO ---
+# --- CSS DEFINITIVO (Usamos triple comilla limpia sin 'f' para evitar conflictos con las llaves de CSS) ---
 st.markdown("""
     <style>
     /* Ocultar interfaces y barras nativas de la plataforma */
@@ -23,7 +23,7 @@ st.markdown("""
         align-items: stretch;
         width: 100%;
         max-width: 1200px;
-        margin: 2rem auto;
+        margin: 1rem auto;
         gap: 2rem;
     }
     
@@ -171,10 +171,6 @@ st.markdown("""
         margin-top: 1rem;
     }
     
-    .btn-ingresar-real:hover {
-        background-color: #004394;
-    }
-    
     /* Enlace inferior de soporte */
     .soporte-footer {
         background-color: #f4f0ff;
@@ -215,14 +211,13 @@ if 'autenticado' not in st.session_state:
 
 if not st.session_state['autenticado']:
     
-    # Procesamos el login capturando las variables URL que inyectará el formulario HTML nativo
+    # Procesamos las variables que inyectará el formulario HTML nativo en la URL
     query_params = st.query_params
     if "form_usuario" in query_params and "form_pass" in query_params:
         u_ingresado = query_params["form_usuario"]
         p_ingresado = query_params["form_pass"]
         
-        # Limpiamos los parámetros de la URL inmediatamente para evitar ciclos
-        st.query_params.clear()
+        st.query_params.clear() # Limpiamos la barra de direcciones
         
         if u_ingresado == "admin" and p_ingresado == "admin123":
             st.session_state['autenticado'] = True
@@ -232,8 +227,8 @@ if not st.session_state['autenticado']:
         else:
             st.error("Credenciales incorrectas")
 
-    # RENDERIZADO COMPLETO DEL CONTENEDOR FLEX SIN ESPACIOS MUERTOS
-    st.markdown(f"""
+    # RENDERIZADO COMPLETO REPARADO (Sin f-string, código HTML interpretado puro)
+    st.markdown("""
         <div class="contenedor-mockup">
             <!-- PARTE IZQUIERDA: EL BANNER INSTITUCIONAL -->
             <div class="banner-izquierdo-real">
