@@ -200,20 +200,13 @@ if not st.session_state['autenticado']:
     # CORRECCIÓN DE ALTURA: Pasamos a height=760 para darle el aire perfecto abajo y no recortar nada
     components.html(html_layout_premium + js_bridge, height=760, scrolling=False)
 
-    # CORRECCIÓN DE PARÁMETROS SEGUROS CONTRA EL NAMEERROR
-    user_token = None
-    pass_token = None
-    
-    if hasattr(st, "query_params"):
-        if "user_token" in st.query_params:
-            user_token = st.query_params["user_token"]
-        if "pass_token" in st.query_params:
-            pass_token = st.query_params["pass_token"]
+
+    # CORRECCIÓN DE PARÁMETROS SEGUROS: Conversión a diccionario puro de Python
+    params_dict = st.query_params.to_dict()
+    user_token = params_dict.get("user_token", None)
+    pass_token = params_dict.get("pass_token", None)
             
     if user_token and pass_token:
-        if isinstance(user_token, list): user_token = user_token[0]
-        if isinstance(pass_token, list): pass_token = pass_token[0]
-        
         if user_token == "admin" and pass_token == "admin123":
             st.query_params.clear()
             try:
