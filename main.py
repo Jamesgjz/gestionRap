@@ -1,7 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import sqlite3
-import random
 from streamlit_cookies_controller import CookieController
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
@@ -11,12 +10,15 @@ st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="�
 # Inicialización obligatoria del controlador de cookies para evitar que F5 te saque
 controller = CookieController()
 
-# Intentar recuperar sesión persistente de la cookie
-cookie_auth = controller.get('rap_session_active')
-if cookie_auth == 'true' and 'autenticado' not in st.session_state:
-    st.session_state['autenticado'] = True
-    st.session_state['usuario'] = controller.get('rap_user_name') or "James Jaramillo"
-    st.session_state['opcion_menu'] = "Inicio"
+# Intentar recuperar sesión persistente de la cookie de forma segura
+try:
+    cookie_auth = controller.get('rap_session_active')
+    if cookie_auth == 'true' and 'autenticado' not in st.session_state:
+        st.session_state['autenticado'] = True
+        st.session_state['usuario'] = controller.get('rap_user_name') or "James Jaramillo"
+        st.session_state['opcion_menu'] = "Inicio"
+except Exception:
+    pass
 
 if 'autenticado' not in st.session_state:
     st.session_state['autenticado'] = False
@@ -45,10 +47,9 @@ def cargar_kpis_panel():
 
 data_db = cargar_kpis_panel()
 
-# --- ESCENARIO A: PANTALLA DE LOGIN (HTML PURO INTEGRADO E INMUNE A LA CACHÉ) ---
+# --- ESCENARIO A: PANTALLA DE LOGIN IDÉNTICA A IMAGEN 2 ---
 if not st.session_state['autenticado']:
     
-    # Inyección drástica de estilos para limpiar el entorno nativo de Streamlit
     st.markdown("""
         <style>
         [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
@@ -57,7 +58,7 @@ if not st.session_state['autenticado']:
         </style>
     """, unsafe_allow_html=True)
 
-    # API de escucha asíncrona para interconectar el clic del formulario HTML con Streamlit sin fallas
+    # API de escucha asíncrona para interconectar el formulario con Streamlit sin fallas
     js_bridge = """
     <script>
     window.addEventListener('message', function(e) {
@@ -69,7 +70,7 @@ if not st.session_state['autenticado']:
     </script>
     """
     
-    # Renderizado exacto de la plantilla premium de tu imagen objetivo (Bordes, pestañas, tipografía e iconos)
+    # Réplica exacta del diseño premium
     html_layout_premium = """
     <!DOCTYPE html>
     <html>
@@ -79,10 +80,10 @@ if not st.session_state['autenticado']:
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
             html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
-            .page-wrapper { width: 100%; max-width: 1200px; padding: 0 40px; display: flex; flex-direction: column; height: 90vh; justify-content: center; }
+            .page-wrapper { width: 100%; max-width: 1200px; padding: 0 40px; display: flex; flex-direction: column; justify-content: center; margin-top: 10px; }
             
-            /* Navbar Superior Exacto */
-            .top-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; margin-bottom: 35px; width: 100%; }
+            /* Navbar Superior */
+            .top-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; margin-bottom: 25px; width: 100%; }
             .top-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; color: #001f4d; font-size: 1.3rem; }
             .top-logo span { color: #0056b3; }
             .right-nav-items { display: flex; align-items: center; gap: 25px; color: #1e293b; }
@@ -90,48 +91,47 @@ if not st.session_state['autenticado']:
             .icon-badge { position: absolute; top: -5px; right: -5px; background: #0056b3; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: 700; }
             .top-date { color: #64748b; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
             
-            /* Tarjeta de Login Unificada */
-            .main-container { display: flex; width: 100%; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.03); min-height: 550px; border: 1px solid #e2e8f0; }
+            /* Tarjeta de Login Unificada con más aire vertical interno */
+            .main-container { display: flex; width: 100%; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.03); min-height: 600px; border: 1px solid #e2e8f0; }
             
-            /* Banner Azul con Escudo Institucional de Fondo */
-            .banner-azul { flex: 1; background: linear-gradient(180deg, #001737 0%, #00224f 100%); padding: 4rem 3.5rem; color: white; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-sizing: border-box; }
+            /* Banner Azul */
+            .banner-azul { flex: 1; background: linear-gradient(180deg, #001737 0%, #00224f 100%); padding: 4.5rem 3.5rem; color: white; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-sizing: border-box; }
             .banner-azul::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png'); background-position: bottom -10% right -25%; background-repeat: no-repeat; background-size: 85%; opacity: 0.03; pointer-events: none; }
             .banner-top-content { position: relative; z-index: 2; }
             .sub-marca { color: #38bdf8; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
             .main-logo-title { font-size: 2.3rem; font-weight: 800; line-height: 1.15; margin: 0 0 1.2rem 0; letter-spacing: -0.5px; }
             .main-description { font-size: 1.05rem; color: #94a3b8; line-height: 1.6; }
             
-            /* Indicadores Inferiores del Banner */
+            /* Indicadores Inferiores */
             .banner-features { display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 2rem; gap: 10px; position: relative; z-index: 2; }
             .feature-box { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; }
             .feature-icon-wrapper { background: rgba(255, 255, 255, 0.04); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: #38bdf8; font-size: 1.1rem; border: 1px solid rgba(255, 255, 255, 0.04); }
             .feature-box .f-title { font-weight: 600; font-size: 0.85rem; color: #f8fafc; }
             
-            /* Panel Formulario Derecho */
+            /* Panel Formulario */
             .panel-formulario { flex: 1.1; padding: 4.5rem; display: flex; flex-direction: column; justify-content: center; background-color: #ffffff; box-sizing: border-box; }
             .f-access-title { color: #0f172a; font-size: 2.1rem; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.5px; }
-            .f-access-subtitle { color: #64748b; font-size: 0.95rem; margin: 0 0 2.5rem 0; }
+            .f-access-subtitle { color: #64748b; font-size: 0.95rem; margin: 0 0 2.2rem 0; }
             
-            /* Pestañas Rectangulares Estilizadas de la Imagen 2 */
-            .mockup-tabs { display: flex; background: #f1f5f9; padding: 6px; border-radius: 12px; margin-bottom: 2.5rem; gap: 5px; }
+            /* Pestañas */
+            .mockup-tabs { display: flex; background: #f1f5f9; padding: 6px; border-radius: 12px; margin-bottom: 2.2rem; gap: 5px; }
             .tab-link { flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 600; color: #64748b; border: none; border-radius: 8px; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; text-decoration: none; }
             .tab-link.active { color: #0056b3; background: #ffffff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03); }
             
-            /* Grupos de Inputs con Iconos Internos */
-            .form-group { margin-bottom: 1.8rem; }
+            /* Inputs */
+            .form-group { margin-bottom: 1.6rem; }
             .form-group label { display: block; font-size: 0.95rem; font-weight: 600; color: #334155; margin-bottom: 0.6rem; }
             .input-with-icon { display: flex; align-items: center; position: relative; }
             .input-with-icon i { position: absolute; left: 16px; color: #94a3b8; font-size: 1.1rem; }
-            .input-with-icon .toggle-password { left: auto; right: 16px; cursor: pointer; }
             .form-group input { width: 100%; padding: 0.85rem 1rem 0.85rem 3rem; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 1rem; color: #0f172a; box-sizing: border-box; background-color: #ffffff; transition: all 0.2s; }
             .form-group input:focus { outline: none; border-color: #0056b3; box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.08); }
             
-            /* Botón de Ingreso Azul Rey */
-            .btn-submit-action { background-color: #0056b3; color: white; width: 100%; border: none; padding: 1rem; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 86, 179, 0.15); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
+            /* Botón de Ingreso */
+            .btn-submit-action { background-color: #0056b3; color: white; width: 100%; border: none; padding: 1rem; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 86, 179, 0.15); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; margin-top: 5px; }
             .btn-submit-action:hover { background-color: #004494; }
             
             /* Caja de Soporte Violeta */
-            .box-support-footer { background-color: #f5f3ff; border: 1px solid #e9e3ff; border-radius: 12px; padding: 14px 20px; color: #5b21b6; font-size: 0.95rem; font-weight: 600; margin-top: 2.5rem; display: flex; justify-content: space-between; align-items: center; text-decoration: none; cursor: pointer; }
+            .box-support-footer { background-color: #f5f3ff; border: 1px solid #e9e3ff; border-radius: 12px; padding: 14px 20px; color: #5b21b6; font-size: 0.95rem; font-weight: 600; margin-top: 2.2rem; display: flex; justify-content: space-between; align-items: center; text-decoration: none; }
         </style>
     </head>
     <body>
@@ -183,7 +183,6 @@ if not st.session_state['autenticado']:
                             <div class="input-with-icon">
                                 <i class="fa-solid fa-lock"></i>
                                 <input type="password" id="pwd" placeholder="Ingresa tu contraseña" required>
-                                <i class="fa-regular fa-eye toggle-password" onclick="const p = document.getElementById('pwd'); p.type = p.type === 'password' ? 'text' : 'password'; this.classList.toggle('fa-eye'); this.classList.toggle('fa-eye-slash');"></i>
                             </div>
                         </div>
                         <button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar al sistema</button>
@@ -198,21 +197,30 @@ if not st.session_state['autenticado']:
     </body>
     </html>
     """
-    components.html(html_layout_premium + js_bridge, height=680, scrolling=False)
+    # CORRECCIÓN DE ALTURA: Pasamos a height=760 para darle el aire perfecto abajo y no recortar nada
+    components.html(html_layout_premium + js_bridge, height=760, scrolling=False)
 
-    # Captura limpia de los datos interceptados por URL para dar el acceso directo
-    user_token = query_params.get("user_token", None)
-    pass_token = query_params.get("pass_token", None)
+    # CORRECCIÓN DE PARÁMETROS SEGUROS CONTRA EL NAMEERROR
+    user_token = None
+    pass_token = None
     
+    if hasattr(st, "query_params"):
+        if "user_token" in st.query_params:
+            user_token = st.query_params["user_token"]
+        if "pass_token" in st.query_params:
+            pass_token = st.query_params["pass_token"]
+            
     if user_token and pass_token:
         if isinstance(user_token, list): user_token = user_token[0]
         if isinstance(pass_token, list): pass_token = pass_token[0]
         
         if user_token == "admin" and pass_token == "admin123":
             st.query_params.clear()
-            # Fijación de cookies seguras para blindar el refresco (F5)
-            controller.set('rap_session_active', 'true')
-            controller.set('rap_user_name', "James Jaramillo")
+            try:
+                controller.set('rap_session_active', 'true')
+                controller.set('rap_user_name', "James Jaramillo")
+            except Exception:
+                pass
             st.session_state['autenticado'] = True
             st.session_state['usuario'] = "James Jaramillo"
             st.session_state['opcion_menu'] = "Inicio"
@@ -222,7 +230,6 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # 5. FIJACIÓN TOTAL DEL HOVER DEL MENÚ IZQUIERDO (Elimina el oscurecimiento traslúcido)
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: auto !important; background-color: #fcfdfe !important; }
@@ -236,7 +243,6 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* ANULACIÓN RADICAL DE OPACIDAD GRIS EN HOVER */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background: transparent !important;
             background-color: transparent !important;
@@ -253,7 +259,6 @@ else:
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* Mantener textos siempre blancos fijos sin importar el estado */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div,
@@ -266,7 +271,6 @@ else:
             text-align: left !important;
         }
         
-        /* HOVER BRILLANTE SEGURO: Cambia a azul claro nítido e institucional */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:active {
@@ -300,7 +304,6 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botones nativos estables controlados quirúrgicamente por CSS
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
@@ -322,12 +325,14 @@ else:
             
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("🚪 Cerrar sesión", use_container_width=True):
-            controller.remove('rap_session_active')
-            controller.remove('rap_user_name')
+            try:
+                controller.remove('rap_session_active')
+                controller.remove('rap_user_name')
+            except Exception:
+                pass
             st.session_state['autenticado'] = False
             st.rerun()
 
-    # --- ENRUTADOR GENERAL DE VISTAS CON CONEXIÓN COMPLETA RAP ---
     opcion = st.session_state['opcion_menu']
 
     if opcion == "Inicio":
