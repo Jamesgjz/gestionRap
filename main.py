@@ -160,6 +160,7 @@ else:
     # NUEVO CSS ULTRA-ESPECÍFICO: Apuntamos directamente a los selectores react de Streamlit (!important)
     st.markdown("""
         <style>
+        /* Fondo de la barra lateral */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
@@ -168,14 +169,17 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* DESTRUCCIÓN DE PASTILLAS BLANCAS NATIVAS EN LA BARRA LATERAL */
+        /* ELIMINACIÓN TOTAL DEL FONDO BLANCO NATIVO Y CONFIGURACIÓN DE ESPACIOS */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
-            background-color: transparent !important;
             background: transparent !important;
+            background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 12px 20px !important;
-            margin-bottom: 6px !important;
+            
+            /* Tus sugerencias: Espaciado interno generoso y separación de 20px entre botones */
+            padding: 14px 20px !important;
+            margin-bottom: 20px !important; 
+            
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
@@ -184,20 +188,30 @@ else:
             border-radius: 10px !important;
         }
         
-        /* Forzar texto e iconos en color blanco puro alineados al extremo izquierdo */
+        /* ALINEACIÓN A LA IZQUIERDA Y FORZADO DE TEXTO BLANCO */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span {
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] div {
             color: #ffffff !important;
-            font-size: 0.95rem !important;
+            font-size: 1rem !important;
             font-weight: 500 !important;
             margin: 0 !important;
             text-align: left !important;
             justify-content: flex-start !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
         }
         
-        /* Efecto de selección / Hover en azul institucional */
+        /* EFECTO HOVER EN AZUL INSTITUCIONAL SIN BLOQUEAR EL TEXTO */
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+            background: #0056b3 !important;
             background-color: #0056b3 !important;
+        }
+        
+        /* Forzar que el texto interno siga siendo visible en el hover */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
+            color: #ffffff !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
