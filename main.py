@@ -31,8 +31,7 @@ if 'autenticado' not in st.session_state:
 # --- ESCENARIO A: PANTALLA DE LOGIN TOTALMENTE CENTRADA ---
 if not st.session_state['autenticado']:
     
-    # Renderizado aislado mediante el componente HTML de Streamlit con centrado absoluto
-    components.html(f"""
+    html_template = """
     <!DOCTYPE html>
     <html>
     <head>
@@ -41,7 +40,7 @@ if not st.session_state['autenticado']:
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
-            html, body {{
+            html, body {
                 margin: 0;
                 padding: 0;
                 width: 100%;
@@ -50,18 +49,18 @@ if not st.session_state['autenticado']:
                 font-family: 'Inter', sans-serif;
                 box-sizing: border-box;
                 overflow-x: hidden;
-            }}
+            }
             
-            .page-wrapper {{
+            .page-wrapper {
                 padding: 10px 40px;
                 display: flex;
                 flex-direction: column;
                 min-height: 100vh;
                 box-sizing: border-box;
-            }}
+            }
             
             /* BARRA SUPERIOR INSTITUCIONAL */
-            .top-bar {{
+            .top-bar {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -69,25 +68,25 @@ if not st.session_state['autenticado']:
                 border-bottom: 1px solid #e2e8f0;
                 margin-bottom: 30px;
                 width: 100%;
-            }}
-            .top-logo {{ color: #001f4d; line-height: 1.2; }}
-            .top-logo .bold-md {{ font-weight: 800; font-size: 1.4rem; }}
-            .top-logo .text-uni {{ font-weight: 700; font-size: 1.2rem; letter-spacing: 1px; }}
-            .top-logo .sub-virtual {{ font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px; }}
-            .top-date {{ color: #64748b; font-size: 0.9rem; }}
+            }
+            .top-logo { color: #001f4d; line-height: 1.2; }
+            .top-logo .bold-md { font-weight: 800; font-size: 1.4rem; }
+            .top-logo .text-uni { font-weight: 700; font-size: 1.2rem; letter-spacing: 1px; }
+            .top-logo .sub-virtual { font-size: 0.85rem; font-weight: 400; color: #64748b; display: block; margin-top: -3px; }
+            .top-date { color: #64748b; font-size: 0.9rem; }
 
             /* CENTRADOR CENTRAL DEL LOGIN */
-            .center-container {{
+            .center-container {
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 flex-grow: 1;
                 width: 100%;
                 padding-bottom: 40px;
-            }}
+            }
 
             /* CONTENEDOR PRINCIPAL DIVIDIDO OPTIMIZADO */
-            .main-container {{
+            .main-container {
                 display: flex;
                 width: 100%;
                 max-width: 1150px;
@@ -96,10 +95,10 @@ if not st.session_state['autenticado']:
                 overflow: hidden;
                 box-shadow: 0 20px 40px rgba(0, 31, 77, 0.07);
                 min-height: 560px;
-            }}
+            }
 
             /* PANEL IZQUIERDO: BANNER AZUL EXPANDIDO */
-            .banner-azul {{
+            .banner-azul {
                 flex: 1;
                 background: linear-gradient(135deg, #001f4d 0%, #00112c 100%);
                 padding: 3.5rem 3rem;
@@ -107,57 +106,57 @@ if not st.session_state['autenticado']:
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-            }}
+            }
             
-            .logo-upload-zone {{
+            .logo-upload-zone {
                 width: 100%;
                 max-width: 220px;
                 margin-bottom: 2rem;
-            }}
-            .logo-upload-zone img {{
+            }
+            .logo-upload-zone img {
                 width: 100%;
                 height: auto;
                 object-fit: contain;
                 filter: brightness(0) invert(1); 
-            }}
+            }
             
-            .banner-top .sub-marca {{
+            .banner-top .sub-marca {
                 color: #38bdf8;
                 font-size: 0.9rem;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 1px;
                 margin-bottom: 6px;
-            }}
-            .banner-top .main-logo-title {{
+            }
+            .banner-top .main-logo-title {
                 font-size: 2.2rem;
                 font-weight: 800;
                 line-height: 1.1;
                 margin-bottom: 1.2rem;
-            }}
-            .banner-top .main-logo-title span {{ color: #f1c40f; }}
-            .banner-top .short-line {{
+            }
+            .banner-top .main-logo-title span { color: #f1c40f; }
+            .banner-top .short-line {
                 width: 50px;
                 height: 3px;
                 background-color: #38bdf8;
                 margin-bottom: 1.8rem;
-            }}
-            .banner-top .main-description {{
+            }
+            .banner-top .main-description {
                 font-size: 1.1rem;
                 color: #cbd5e1;
                 line-height: 1.6;
-            }}
+            }
             
             /* CARACTERÍSTICAS INFERIORES */
-            .banner-features {{
+            .banner-features {
                 display: flex;
                 justify-content: space-between;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
                 padding-top: 2rem;
                 gap: 15px;
-            }}
-            .feature-box {{ text-align: center; flex: 1; }}
-            .feature-icon-wrapper {{
+            }
+            .feature-box { text-align: center; flex: 1; }
+            .feature-icon-wrapper {
                 background: rgba(255, 255, 255, 0.08);
                 width: 42px;
                 height: 42px;
@@ -168,39 +167,39 @@ if not st.session_state['autenticado']:
                 margin: 0 auto 10px auto;
                 color: #38bdf8;
                 font-size: 1.2rem;
-            }}
-            .feature-box .f-title {{ font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 3px; }}
-            .feature-box .f-desc {{ font-size: 0.8rem; color: #94a3b8; }}
+            }
+            .feature-box .f-title { font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 3px; }
+            .feature-box .f-desc { font-size: 0.8rem; color: #94a3b8; }
 
             /* PANEL DERECHO: FORMULARIO */
-            .panel-formulario {{
+            .panel-formulario {
                 flex: 1.1;
                 padding: 4rem;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 background-color: #ffffff;
-            }}
-            .form-header .f-access-title {{
+            }
+            .form-header .f-access-title {
                 color: #0f172a;
                 font-size: 2rem;
                 font-weight: 700;
                 margin: 0 0 5px 0;
             }
-            .form-header .f-access-subtitle {{
+            .form-header .f-access-subtitle {
                 color: #64748b;
                 font-size: 0.95rem;
                 margin: 0 0 2.5rem 0;
-            }}
+            }
 
             /* SELECTOR DE PESTAÑAS REDIRECCIONABLES */
-            .mockup-tabs {{
+            .mockup-tabs {
                 display: flex;
                 border-bottom: 1px solid #e2e8f0;
                 margin-bottom: 2rem;
                 gap: 5px;
-            }}
-            .tab-link {{
+            }
+            .tab-link {
                 padding: 10px 18px;
                 font-size: 0.95rem;
                 font-weight: 600;
@@ -214,32 +213,32 @@ if not st.session_state['autenticado']:
                 gap: 8px;
                 text-decoration: none;
                 transition: all 0.2s;
-            }}
-            .tab-link.active {{
+            }
+            .tab-link.active {
                 color: #0056b3;
                 border-bottom: 2px solid #0056b3;
-            }}
+            }
 
-            .form-group {{ margin-bottom: 1.5rem; }}
-            .form-group label {{
+            .form-group { margin-bottom: 1.5rem; }
+            .form-group label {
                 display: block;
                 font-size: 0.9rem;
                 font-weight: 600;
                 color: #334155;
                 margin-bottom: 0.5rem;
-            }}
-            .input-with-icon {{
+            }
+            .input-with-icon {
                 position: relative;
                 display: flex;
                 align-items: center;
-            }}
-            .input-with-icon i {{
+            }
+            .input-with-icon i {
                 position: absolute;
                 left: 15px;
                 color: #94a3b8;
                 font-size: 1.1rem;
-            }}
-            .form-group input {{
+            }
+            .form-group input {
                 width: 100%;
                 padding: 0.8rem 1rem 0.8rem 2.8rem;
                 border-radius: 10px;
@@ -247,13 +246,13 @@ if not st.session_state['autenticado']:
                 font-size: 0.95rem;
                 color: #0f172a;
                 box-sizing: border-box;
-            }}
-            .form-group input:focus {{
+            }
+            .form-group input:focus {
                 outline: none;
                 border-color: #0056b3;
-            }}
+            }
 
-            .btn-submit-action {{
+            .btn-submit-action {
                 background-color: #0056b3;
                 color: white;
                 width: 100%;
@@ -269,9 +268,9 @@ if not st.session_state['autenticado']:
                 align-items: center;
                 justify-content: center;
                 gap: 10px;
-            }}
+            }
 
-            .box-support-footer {{
+            .box-support-footer {
                 background-color: #f4f0ff;
                 border: 1px solid #e0d4ff;
                 border-radius: 10px;
@@ -283,12 +282,12 @@ if not st.session_state['autenticado']:
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-            }}
+            }
 
-            @media (max-width: 850px) {{
-                .main-container {{ flex-direction: column; min-height: auto; }}
-                .banner-azul, .panel-formulario {{ width: 100%; padding: 2.5rem; }}
-            }}
+            @media (max-width: 850px) {
+                .main-container { flex-direction: column; min-height: auto; }
+                .banner-azul, .panel-formulario { width: 100%; padding: 2.5rem; }
+            }
         </style>
     </head>
     <body>
@@ -346,12 +345,11 @@ if not st.session_state['autenticado']:
                         </div>
                         
                         <div class="mockup-tabs">
-                            <a href="/?modo=admin" class="tab-link {'active' if modo_actual == 'admin' else ''}"><i class="fa-regular fa-user"></i> Administrativo</a>
-                            <a href="/?modo=publico" class="tab-link {'active' if modo_actual == 'publico' else ''}"><i class="fa-solid fa-globe"></i> Consulta pública</a>
+                            <a href="/?modo=admin" class="tab-link {cls_admin}"><i class="fa-regular fa-user"></i> Administrativo</a>
+                            <a href="/?modo=publico" class="tab-link {cls_publico}"><i class="fa-solid fa-globe"></i> Consulta pública</a>
                         </div>
                         
-                        <!-- Si el modo seleccionado es 'admin' muestra las cajas tradicionales -->
-                        {"<form action='/' method='GET'><div class='form-group'><label>Usuario</label><div class='input-with-icon'><i class='fa-regular fa-user'></i><input type='text' name='form_usuario' placeholder='Ingresa tu usuario' required></div></div><div class='form-group'><label>Contraseña</label><div class='input-with-icon'><i class='fa-solid fa-lock'></i><input type='password' name='form_pass' placeholder='Ingresa tu contraseña' required></div></div><button type='submit' class='btn-submit-action'><i class='fa-solid fa-right-to-bracket'></i> Ingresar al sistema</button></form>" if modo_actual == "admin" else "<div style='text-align:center; padding: 20px 0; color:#64748b;'><i class='fa-solid fa-circle-info' style='font-size:2rem; color:#0056b3; margin-bottom:10px;'></i><br><b>Formulario de Registro Habilitado Abajo</b><br>Utilice el panel inferior de la plataforma para agregar estudiantes directamente al sistema.</div>"}
+                        {dinamic_form}
                         
                         <div class="box-support-footer">
                             <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
@@ -365,7 +363,45 @@ if not st.session_state['autenticado']:
 
     </body>
     </html>
-    """, height=780)
+    """
+    
+    # Inyectamos las clases dinámicas de pestañas y formularios usando .format() limpio
+    cls_admin = "active" if modo_actual == 'admin' else ""
+    cls_publico = "active" if modo_actual == 'publico' else ""
+    
+    if modo_actual == "admin":
+        dinamic_form = """
+        <form action="/" method="GET">
+            <div class="form-group">
+                <label>Usuario</label>
+                <div class="input-with-icon">
+                    <i class="fa-regular fa-user"></i>
+                    <input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-with-icon">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" name="form_pass" placeholder="Ingresa tu contraseña" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-submit-action">
+                <i class="fa-solid fa-right-to-bracket"></i> Ingresar al sistema
+            </button>
+        </form>
+        """
+    else:
+        dinamic_form = """
+        <div style='text-align:center; padding: 20px 0; color:#64748b;'>
+            <i class='fa-solid fa-circle-info' style='font-size:2rem; color:#0056b3; margin-bottom:10px;'></i><br>
+            <b>Formulario de Registro Habilitado Abajo</b><br>
+            Utilice el panel inferior de la plataforma para agregar estudiantes directamente al sistema.
+        </div>
+        """
+        
+    # Renderizamos de forma segura el HTML formateado
+    components.html(html_template.format(cls_admin=cls_admin, cls_publico=cls_publico, dinamic_form=dinamic_form), height=780)
 
     # Si se pulsa la pestaña pública, inyectamos de forma nativa el formulario abajo del iframe para interactuar
     if modo_actual == "publico":
