@@ -129,7 +129,7 @@ if not st.session_state['autenticado']:
     
     if modo_actual == "admin":
         dinamic_form = """
-        <form action="/" method="GET">
+        <form action="/" method="GET" target="_parent">
             <div class="form-group">
                 <label>Usuario</label>
                 <div class="input-with-icon"><i class="fa-regular fa-user"></i><input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required></div>
