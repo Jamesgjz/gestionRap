@@ -2,8 +2,25 @@ import streamlit as st
 import streamlit.components.v1 as components
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración limpia de la página en modo ancho total
+# Configuración de la página en modo ancho total y limpio
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
+
+# --- CONTROLADOR DE NAVEGACIÓN Y AUTENTICACIÓN ---
+query_params = st.query_params
+modo_actual = query_params.get("modo", "admin")
+
+if "form_usuario" in query_params and "form_pass" in query_params:
+    u_ingresado = query_params["form_usuario"]
+    p_ingresado = query_params["form_pass"]
+    st.query_params.clear() 
+    if u_ingresado == "admin" and p_ingresado == "admin123":
+        st.session_state['autenticado'] = True
+        st.session_state['usuario'] = "James Jaramillo"
+        st.session_state['rol'] = "admin"
+        st.session_state['opcion_menu'] = "Inicio" 
+        st.rerun()
+    else:
+        st.sidebar.error("❌ Credenciales incorrectas.")
 
 if 'autenticado' not in st.session_state:
     st.session_state['autenticado'] = False
@@ -11,41 +28,8 @@ if 'autenticado' not in st.session_state:
 if 'opcion_menu' not in st.session_state:
     st.session_state['opcion_menu'] = "Inicio"
 
-# --- PROCESADOR DE NAVEGACIÓN ADMINISTRATIVA (MENÚ HTML) ---
-query_params = st.query_params
-menu_click = query_params.get("view", None)
-if menu_click:
-    st.session_state['opcion_menu'] = menu_click
-    st.query_params.clear()
-    st.rerun()
-
-# --- ESCENARIO A: PANTALLA DE LOGIN PREMIUM TOTALMENTE INTEGRADA ---
+# --- ESCENARIO A: PANTALLA DE LOGIN ---
 if not st.session_state['autenticado']:
-    
-    # Ocultamos cabeceras por defecto para que no estorben la interfaz limpia
-    st.markdown("""
-        <style>
-        [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
-        div.block-container { padding: 0rem !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Captura de datos asíncrona desde el formulario HTML hacia Python usando local storage temporal
-    js_listener = """
-    <script>
-    window.addEventListener('message', function(e) {
-        if (e.data.type === 'LOGIN_SUBMIT') {
-            const parentWindow = window.parent;
-            // Guardamos temporalmente en el navegador principal para que Python lo lea al instante
-            parentWindow.localStorage.setItem('rap_user', e.data.user);
-            parentWindow.localStorage.setItem('rap_pass', e.data.pass);
-            parentWindow.location.reload();
-        }
-    });
-    </script>
-    """
-    
-    # Maqueta HTML interactiva unificada con el Login integrado por dentro (Sin saltos de caja)
     html_template = """
     <!DOCTYPE html>
     <html>
@@ -55,8 +39,8 @@ if not st.session_state['autenticado']:
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
-            html, body {{ margin: 0; padding: 0; width: 100%; height: 100%; background-color: #fcfdfe; font-family: 'Inter', sans-serif; box-sizing: border-box; overflow: hidden; }}
-            .page-wrapper {{ padding: 20px 40px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }}
+            html, body {{ margin: 0; padding: 0; width: 100%; height: 100%; background-color: #fcfdfe; font-family: 'Inter', sans-serif; box-sizing: border-box; overflow-x: hidden; }}
+            .page-wrapper {{ padding: 10px 40px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }}
             .top-bar {{ display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 30px; width: 100%; }}
             .top-logo {{ color: #001f4d; line-height: 1.2; }}
             .top-logo .bold-md {{ font-weight: 800; font-size: 1.4rem; }}
@@ -98,14 +82,19 @@ if not st.session_state['autenticado']:
     <body>
         <div class="page-wrapper">
             <div class="top-bar">
-                <div class="top-logo"><span class="bold-md">MD</span><span class="text-uni"> UNIMINUTO</span><span class="sub-virtual">VIRTUAL</span></div>
+                <div class="top-logo">
+                    <span class="bold-md">MD</span><span class="text-uni"> UNIMINUTO</span>
+                    <span class="sub-virtual">VIRTUAL</span>
+                </div>
                 <div class="top-date">📅 06 de Julio de 2026</div>
             </div>
             <div class="center-container">
                 <div class="main-container">
                     <div class="banner-azul">
                         <div class="banner-top">
-                            <div class="logo-upload-zone"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png"></div>
+                            <div class="logo-upload-zone">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" onerror="this.style.display='none';">
+                            </div>
                             <div class="sub-marca">RAP Digital</div>
                             <div class="main-logo-title">MD UNIMINUTO<br><span>VIRTUAL</span></div>
                             <div class="short-line"></div>
@@ -122,20 +111,11 @@ if not st.session_state['autenticado']:
                             <h2 class="f-access-title">Acceso al sistema</h2>
                             <p class="f-access-subtitle">Inicia sesión para continuar con RAP Digital.</p>
                         </div>
-                        
-                        <!-- Formulario HTML puro con envío por mensajes cruzados seguros -->
-                        <form onsubmit="event.preventDefault(); window.parent.postMessage({{type: 'LOGIN_SUBMIT', user: document.getElementById('u').value, pass: document.getElementById('p').value}}, '*');">
-                            <div class="form-group">
-                                <label>Usuario</label>
-                                <div class="input-with-icon"><i class="fa-regular fa-user"></i><input type="text" id="u" placeholder="Ingresa tu usuario" required></div>
-                            </div>
-                            <div class="form-group">
-                                <label>Contraseña</label>
-                                <div class="input-with-icon"><i class="fa-solid fa-lock"></i><input type="password" id="p" placeholder="Ingresa tu contraseña" required></div>
-                            </div>
-                            <button type="submit" class="btn-submit-action"><i class="fa-solid fa-right-to-bracket"></i> Ingresar al sistema</button>
-                        </form>
-                        
+                        <div class="mockup-tabs">
+                            <a href="/?modo=admin" class="tab-link {cls_admin}"><i class="fa-regular fa-user"></i> Administrativo</a>
+                            <a href="/?modo=publico" class="tab-link {cls_publico}"><i class="fa-solid fa-globe"></i> Consulta pública</a>
+                        </div>
+                        {dinamic_form}
                         <div class="box-support-footer"><span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span><span>➔</span></div>
                     </div>
                 </div>
@@ -144,57 +124,87 @@ if not st.session_state['autenticado']:
     </body>
     </html>
     """
-    components.html(html_template + js_listener, height=780)
+    cls_admin = "active" if modo_actual == 'admin' else ""
+    cls_publico = "active" if modo_actual == 'publico' else ""
+    
+    if modo_actual == "admin":
+        dinamic_form = """
+        <form action="/" method="GET">
+            <div class="form-group">
+                <label>Usuario</label>
+                <div class="input-with-icon"><i class="fa-regular fa-user"></i><input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required></div>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-with-icon"><i class="fa-solid fa-lock"></i><input type="password" name="form_pass" placeholder="Ingresa tu contraseña" required></div>
+            </div>
+            <button type="submit" class="btn-submit-action"><i class="fa-solid fa-right-to-bracket"></i> Ingresar al sistema</button>
+        </form>
+        """
+    else:
+        dinamic_form = """
+        <div style='text-align:center; padding: 20px 0; color:#64748b;'>
+            <i class='fa-solid fa-circle-info' style='font-size:2rem; color:#0056b3; margin-bottom:10px;'></i><br>
+            <b>Formulario de Registro Habilitado Abajo</b><br>Utilice el panel inferior de la plataforma para agregar estudiantes directamente al sistema.</div>
+        </div>
+        """
+    components.html(html_template.format(cls_admin=cls_admin, cls_publico=cls_publico, dinamic_form=dinamic_form), height=780)
 
-    # Bloque de captura rápida desde Python leyendo el almacenamiento local
-    st.markdown("""
-        <script>
-        const u = window.localStorage.getItem('rap_user');
-        const p = window.localStorage.getItem('rap_pass');
-        if (u && p) {
-            window.localStorage.removeItem('rap_user');
-            window.localStorage.removeItem('rap_pass');
-            // Enviamos el trigger directo a la sesión de Python
-            const link = document.createElement('a');
-            link.href = '/?loguser=' + encodeURIComponent(u) + '&logpass=' + encodeURIComponent(p);
-            link.target = '_self';
-            link.click();
-        }
-        </script>
-    """, unsafe_allow_html=True)
-
-    # Validamos las credenciales enviadas limpiamente por el trigger sin iFrames anidados
-    user_auth = query_params.get("loguser", None)
-    pass_auth = query_params.get("logpass", None)
-    if user_auth and pass_auth:
-        if user_auth == "admin" and pass_auth == "admin123":
-            st.session_state['autenticado'] = True
-            st.session_state['usuario'] = "James Jaramillo"
-            st.session_state['rol'] = "admin"
-            st.session_state['opcion_menu'] = "Inicio"
-            st.query_params.clear()
-            st.rerun()
-        else:
-            st.sidebar.error("❌ Credenciales incorrectas.")
+    if modo_actual == "publico":
+        st.divider()
+        st.subheader("📝 Formulario de Registro Público de Estudiantes")
+        registro.render()
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
+    # ARREGLO ESTRICTO DEL MENÚ LATERAL: Destrucción total de cajitas grises/blancas y control de Hover
     st.markdown("""
         <style>
-        [data-testid="stSidebar"] { background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important; }
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
+        }
         [data-testid="stSidebarNav"] { display: none !important; }
+        
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        .custom-menu-link {
-            display: flex !important; align-items: center !important; justify-content: flex-start !important;
-            text-align: left !important; color: #ffffff !important; text-decoration: none !important;
-            padding: 14px 20px !important; margin-bottom: 15px !important; font-size: 0.95rem !important;
-            font-weight: 500 !important; border-radius: 10px !important; transition: all 0.2s ease-in-out !important;
+        /* ANULACIÓN RADICAL DE LOS CONTENEDORES NATIVOS SECUNDARIOS DE STREAMLIT */
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:active,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            
+            /* Sugerencias de James: alineación izquierda y padding interno de 20px */
+            padding: 20px !important;
+            margin-bottom: 10px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
         }
-        .custom-menu-link i { margin-right: 15px !important; font-size: 1.1rem !important; width: 20px !important; text-align: center !important; }
-        .custom-menu-link.active-item { background-color: #0056b3 !important; box-shadow: 0 4px 12px rgba(0,86,179,0.3) !important; }
-        .custom-menu-link:hover { background-color: rgba(255, 255, 255, 0.1) !important; color: #ffffff !important; }
+        
+        /* FORZADO ABSOLUTO DE TEXTO BLANCO EN ELEMENTOS INTERNOS (REPOSO Y HOVER) */
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
+            color: #ffffff !important;
+            font-size: 1rem !important;
+            font-weight: 500 !important;
+            margin: 0 !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
+        }
+        
+        /* EFECTO HOVER CORPORATIVO LIMPIO SIN INTERFERIR CON EL ENUNCIADO */
+        div[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+            background: #0056b3 !important;
+            background-color: #0056b3 !important;
+            border-radius: 10px !important;
+        }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
@@ -220,28 +230,25 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        opc_actual = st.session_state['opcion_menu']
-        
-        st.markdown(f"""
-            <a href="/?view=Inicio" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Inicio' else ''}">
-                <i class="fa-solid fa-house"></i><span>Inicio</span>
-            </a>
-            <a href="/?view=Registro+Estudiantes" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Registro Estudiantes' else ''}">
-                <i class="fa-solid fa-graduation-cap"></i><span>Registro de Estudiantes</span>
-            </a>
-            <a href="/?view=Estado+de+Pruebas" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Estado de Pruebas' else ''}">
-                <i class="fa-regular fa-clipboard"></i><span>Estado de Pruebas</span>
-            </a>
-            <a href="/?view=Programacion" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Programación' else ''}">
-                <i class="fa-regular fa-calendar-days"></i><span>Programación</span>
-            </a>
-            <a href="/?view=Evaluacion" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Evaluación' else ''}">
-                <i class="fa-regular fa-pen-to-square"></i><span>Evaluación</span>
-            </a>
-            <a href="/?view=Dashboard" target="_self" class="custom-menu-link {'active-item' if opc_actual == 'Dashboard / KPIs' else ''}">
-                <i class="fa-solid fa-chart-line"></i><span>Dashboard / KPIs</span>
-            </a>
-        """, unsafe_allow_html=True)
+        # Botones nativos estables, ahora controlados milimétricamente por el CSS superior
+        if st.button("🏠 Inicio", use_container_width=True):
+            st.session_state['opcion_menu'] = "Inicio"
+            st.rerun()
+        if st.button("🎓 Registro de Estudiantes", use_container_width=True):
+            st.session_state['opcion_menu'] = "Registro Estudiantes"
+            st.rerun()
+        if st.button("📋 Estado de Pruebas", use_container_width=True):
+            st.session_state['opcion_menu'] = "Estado de Pruebas"
+            st.rerun()
+        if st.button("📅 Programación", use_container_width=True):
+            st.session_state['opcion_menu'] = "Programación"
+            st.rerun()
+        if st.button("📝 Evaluación", use_container_width=True):
+            st.session_state['opcion_menu'] = "Evaluación"
+            st.rerun()
+        if st.button("📊 Dashboard / KPIs", use_container_width=True):
+            st.session_state['opcion_menu'] = "Dashboard / KPIs"
+            st.rerun()
             
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("🚪 Cerrar sesión", use_container_width=True):
@@ -251,15 +258,15 @@ else:
     # --- ENRUTADOR GENERAL DE VISTAS ---
     opcion = st.session_state['opcion_menu']
 
-    if opcion in ["Inicio", "Inicio"]:
+    if opcion == "Inicio":
         inicio.render()
-    elif opcion in ["Registro Estudiantes", "Registro+Estudiantes"]:
+    elif opcion == "Registro Estudiantes":
         registro.render()
-    elif opcion in ["Estado de Pruebas", "Estado+de+Pruebas"]:
+    elif opcion == "Estado de Pruebas":
         estado_pruebas.render()
-    elif opcion in ["Programación", "Programacion"]:
+    elif opcion == "Programación":
         programacion.render()
-    elif opcion == "Evaluación" or opcion == "Evaluacion":
+    elif opcion == "Evaluación":
         evaluacion.render()
-    elif opcion == "Dashboard / KPIs" or opcion == "Dashboard":
+    elif opcion == "Dashboard / KPIs":
         dashboard.render()
