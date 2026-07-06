@@ -2,18 +2,26 @@ import streamlit as st
 import streamlit.components.v1 as components
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración de la página en modo ancho total y limpio
+# 1. Configuración de la página en modo ancho total y limpio
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
-# --- CONTROLADOR DE NAVEGACIÓN Y AUTENTICACIÓN ---
+# Inicialización estricta del estado de la sesión
+if 'autenticado' not in st.session_state:
+    st.session_state['autenticado'] = False
+
+if 'opcion_menu' not in st.session_state:
+    st.session_state['opcion_menu'] = "Inicio"
+
+# --- PROCESADOR DE LOGUEO LIMPIO (Previene que se sobreponga) ---
 query_params = st.query_params
-modo_actual = query_params.get("modo", "admin")
 
 if "form_usuario" in query_params and "form_pass" in query_params:
     u_ingresado = query_params["form_usuario"]
     p_ingresado = query_params["form_pass"]
-    st.query_params.clear() 
+    
     if u_ingresado == "admin" and p_ingresado == "admin123":
+        # LA CLAVE: Limpiamos absolutamente la URL antes de cambiar el estado para romper el bucle
+        st.query_params.clear() 
         st.session_state['autenticado'] = True
         st.session_state['usuario'] = "James Jaramillo"
         st.session_state['rol'] = "admin"
@@ -22,14 +30,10 @@ if "form_usuario" in query_params and "form_pass" in query_params:
     else:
         st.sidebar.error("❌ Credenciales incorrectas.")
 
-if 'autenticado' not in st.session_state:
-    st.session_state['autenticado'] = False
-
-if 'opcion_menu' not in st.session_state:
-    st.session_state['opcion_menu'] = "Inicio"
-
 # --- ESCENARIO A: PANTALLA DE LOGIN ---
 if not st.session_state['autenticado']:
+    modo_actual = query_params.get("modo", "admin")
+    
     html_template = """
     <!DOCTYPE html>
     <html>
@@ -82,19 +86,14 @@ if not st.session_state['autenticado']:
     <body>
         <div class="page-wrapper">
             <div class="top-bar">
-                <div class="top-logo">
-                    <span class="bold-md">MD</span><span class="text-uni"> UNIMINUTO</span>
-                    <span class="sub-virtual">VIRTUAL</span>
-                </div>
+                <div class="top-logo"><span class="bold-md">MD</span><span class="text-uni"> UNIMINUTO</span><span class="sub-virtual">VIRTUAL</span></div>
                 <div class="top-date">📅 06 de Julio de 2026</div>
             </div>
             <div class="center-container">
                 <div class="main-container">
                     <div class="banner-azul">
                         <div class="banner-top">
-                            <div class="logo-upload-zone">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" onerror="this.style.display='none';">
-                            </div>
+                            <div class="logo-upload-zone"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" onerror="this.style.display='none';"></div>
                             <div class="sub-marca">RAP Digital</div>
                             <div class="main-logo-title">MD UNIMINUTO<br><span>VIRTUAL</span></div>
                             <div class="short-line"></div>
@@ -129,7 +128,7 @@ if not st.session_state['autenticado']:
     
     if modo_actual == "admin":
         dinamic_form = """
-        <form action="/" method="GET">
+        <form action="/" method="GET" target="_parent">
             <div class="form-group">
                 <label>Usuario</label>
                 <div class="input-with-icon"><i class="fa-regular fa-user"></i><input type="text" name="form_usuario" placeholder="Ingresa tu usuario" required></div>
@@ -157,10 +156,10 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
-    # REGLAS CSS CORREGIDAS: Apuntamos EXCLUSIVAMENTE a la barra lateral con alta especificidad
+    # FILTRO QUIRÚRGICO DE CSS: Corregimos la barra lateral sin tocar los botones del centro
     st.markdown("""
         <style>
-        /* Fondo de la barra lateral oscura institucional */
+        /* Fondo degradado corporativo de la barra lateral */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #001f4d 0%, #00112c 100%) !important;
         }
@@ -169,26 +168,16 @@ else:
         .sidebar-brand { padding: 20px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .user-badge { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* 1. SECTORIZACIÓN: Rompemos cajas blancas ÚNICAMENTE dentro del Sidebar */
-        [data-testid="stSidebar"] div.stButton {
-            background: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            width: 100% !important;
-            padding: 0 !important;
-        }
-
-        /* 2. DISEÑO DEL BOTÓN INTERNO DE LA BARRA LATERAL CON PADDING DE 20PX */
-        [data-testid="stSidebar"] div.stButton -> button,
-        [data-testid="stSidebar"] div.stButton > button {
+        /* CORRECCIÓN MÉDICA: Modificamos EXCLUSIVAMENTE los botones de tipo secondary que estén dentro del Sidebar */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             
-            /* Alineación y espaciados perfectos solicitados */
-            padding: 20px 25px !important;
-            margin-bottom: 8px !important;
+            /* Ajustes exactos: alineación a la izquierda y padding de 20px */
+            padding: 20px !important;
+            margin-bottom: 10px !important;
             
             width: 100% !important;
             display: flex !important;
@@ -199,10 +188,9 @@ else:
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* 3. TEXTO BLANCO PERMANENTE SÓLO EN LA BARRA LATERAL */
-        [data-testid="stSidebar"] div.stButton > button p,
-        [data-testid="stSidebar"] div.stButton > button span,
-        [data-testid="stSidebar"] div.stButton > button div {
+        /* Forzar texto e iconos en color blanco puro de forma permanente sólo en el Sidebar */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
             color: #ffffff !important;
             font-size: 1rem !important;
             font-weight: 500 !important;
@@ -211,14 +199,10 @@ else:
             justify-content: flex-start !important;
         }
         
-        /* 4. HOVER AZUL DE MENÚ */
-        [data-testid="stSidebar"] div.stButton > button:hover {
+        /* Efecto Hover en Azul Institucional sin alterar enunciados */
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
             background: #0056b3 !important;
             background-color: #0056b3 !important;
-        }
-        
-        [data-testid="stSidebar"] div.stButton > button:hover p {
-            color: #ffffff !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -245,7 +229,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Botones nativos estables de navegación
+        # Botones nativos estables controlados quirúrgicamente
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
