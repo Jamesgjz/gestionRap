@@ -4,43 +4,65 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 def conectar_neon_db():
+    # Comprobar si las llaves existen en secrets antes de intentar conectar
+    if "postgres" not in st.secrets:
+        st.sidebar.error("⚠️ Falta la sección [postgres] en los Secrets de Streamlit Cloud.")
+        return None
     try:
         return psycopg2.connect(
             host=st.secrets["postgres"]["host"],
             database=st.secrets["postgres"]["database"],
             user=st.secrets["postgres"]["user"],
             password=st.secrets["postgres"]["password"],
-            port=st.secrets["postgres"]["port"]
+            port=st.secrets["postgres"]["port"],
+            connect_timeout=5
         )
-    except Exception:
+    except Exception as e:
+        # Exponer el error real en el sidebar para saber si es contraseña, host o red
+        st.sidebar.error(f"❌ Fallo de conexión DB: {str(e)}")
         return None
 
 def obtener_datos_reales_dashboard():
     conn = conectar_neon_db()
     datos_mockup = {
-        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245
+        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245,
+        "is_real": False
     }
     if conn is None:
         return datos_mockup
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Consultas reales del esquema neondb
         cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado NOT IN ('Cerrado', 'Finalizado');")
-        datos_mockup["solicitudes_activas"] = cursor.fetchone()["total"] or 128
+        datos_mockup["solicitudes_activas"] = cursor.fetchone()["total"]
+        
         cursor.execute("SELECT COUNT(*) as total FROM public.programacion_pruebas;")
-        datos_mockup["pruebas_programadas"] = cursor.fetchone()["total"] or 56
+        datos_mockup["pruebas_programadas"] = cursor.fetchone()["total"]
+        
         cursor.execute("SELECT COUNT(*) as total FROM public.estado_pruebas WHERE estado ILIKE '%pendiente%';")
-        datos_mockup["resultados_pendientes"] = cursor.fetchone()["total"] or 34
+        datos_mockup["resultados_pendientes"] = cursor.fetchone()["total"]
+        
         cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado = 'Cerrado';")
-        datos_mockup["casos_cerrados"] = cursor.fetchone()["total"] or 245
+        datos_mockup["casos_cerrados"] = cursor.fetchone()["total"]
+        
+        datos_mockup["is_real"] = True
         cursor.close()
         conn.close()
         return datos_mockup
-    except Exception:
+    except Exception as e:
+        st.sidebar.error(f"⚠️ Error en queries SQL: {str(e)}")
         return datos_mockup
 
 def render():
     db = obtener_datos_reales_dashboard()
     
+    # Alerta visual para verificar el origen de los datos
+    if db["is_real"]:
+        st.toast("✅ Conectado con éxito a Neon PostgreSQL.", icon="📊")
+    else:
+        st.sidebar.warning("ℹ️ Mostrando datos de respaldo (Mockup). Revisa los errores de arriba.")
+
     st.markdown("""
         <style>
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
@@ -76,7 +98,6 @@ def render():
         </style>
     """, unsafe_allow_html=True)
 
-    # Bloque HTML inyectado por concatenación directa inmune a SyntaxError
     parte_superior = """
 <div class="panel-header">
 <div>

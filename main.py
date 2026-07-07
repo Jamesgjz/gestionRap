@@ -1,6 +1,7 @@
 import streamlit as st
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
+# Configuración de la página en modo ancho total y limpio
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
 if 'autenticado' not in st.session_state:
@@ -12,6 +13,7 @@ if 'opcion_menu' not in st.session_state:
 if 'rol' not in st.session_state:
     st.session_state['rol'] = "admin"
 
+# Procesador de navegación mediante parámetros de consulta
 query_params = st.query_params
 u_auth = query_params.get("u_auth", None)
 p_auth = query_params.get("p_auth", None)
@@ -40,6 +42,7 @@ if u_auth and p_auth:
         st.error("❌ Credenciales inválidas.")
         st.query_params.clear()
 
+# --- ESCENARIO A: LOGIN ---
 if not st.session_state['autenticado']:
     st.markdown("""
         <style>
@@ -142,7 +145,7 @@ if not st.session_state['autenticado']:
 <input type="password" name="p_auth" placeholder="Ingresa tu contraseña" required>
 </div>
 </div>
-<button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ngresar al sistema</button>
+<button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar al sistema</button>
 </form>
 <div class="box-support-footer">
 <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
@@ -154,7 +157,9 @@ if not st.session_state['autenticado']:
 </div>
     """, unsafe_allow_html=True)
 
+# --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
 else:
+    # REESCRITURA AGRESIVA E INDESTRUCTIBLE PARA LOS BOTONES DEL SIDEBAR
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
@@ -162,8 +167,11 @@ else:
         [data-testid="stSidebar"] { background-color: #031430 !important; width: 290px !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
         
+        /* Forzar la eliminación de cualquier estilo por defecto en los botones del sidebar */
+        [data-testid="stSidebar"] div.element-container div.stButton button,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
             background-color: transparent !important;
+            background: transparent !important;
             border: none !important;
             box-shadow: none !important;
             padding: 14px 20px !important;
@@ -176,17 +184,30 @@ else:
             border-radius: 12px !important;
             transition: all 0.2s ease-in-out !important;
         }
+        
+        /* Forzar texto visible gris claro por defecto */
+        [data-testid="stSidebar"] div.element-container div.stButton button p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
+        [data-testid="stSidebar"] div.element-container div.stButton button span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span {
             color: #94a3b8 !important;
             font-size: 0.98rem !important;
             font-weight: 500 !important;
             margin: 0 !important;
         }
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+        
+        /* CONTROL ABSOLUTO DEL HOVER: Fondo azul rey vivo y texto blanco obligatorios */
+        [data-testid="stSidebar"] div.element-container div.stButton button:hover,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
+        [data-testid="stSidebar"] div.element-container div.stButton button:focus,
+        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
             background-color: #0047ff !important;
+            background: #0047ff !important;
         }
+        
+        [data-testid="stSidebar"] div.element-container div.stButton button:hover p,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p,
+        [data-testid="stSidebar"] div.element-container div.stButton button:hover span,
         [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover span {
             color: #ffffff !important;
             font-weight: 600 !important;
