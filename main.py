@@ -12,24 +12,37 @@ if 'autenticado' not in st.session_state:
 if 'opcion_menu' not in st.session_state:
     st.session_state['opcion_menu'] = "Inicio"
 
+if 'rol' not in st.session_state:
+    st.session_state['rol'] = None
+
 # --- INTERCEPCIÓN DE CREDENCIALES DESDE EL FORMULARIO PREMIUM ---
 query_params = st.query_params
 u_auth = query_params.get("u_auth", None)
 p_auth = query_params.get("p_auth", None)
+auth_mode = query_params.get("auth_mode", "admin")
 
 if u_auth and p_auth:
     if isinstance(u_auth, list) or isinstance(u_auth, tuple): u_auth = u_auth[0]
     if isinstance(p_auth, list) or isinstance(p_auth, tuple): p_auth = p_auth[0]
+    if isinstance(auth_mode, list) or isinstance(auth_mode, tuple): auth_mode = auth_mode[0]
     
-    if u_auth == "admin" and p_auth == "admin123":
+    # Validación dinámica según la pestaña seleccionada
+    if auth_mode == "admin" and u_auth == "admin" and p_auth == "admin123":
         st.session_state['autenticado'] = True
         st.session_state['usuario'] = "James Jaramillo"
         st.session_state['rol'] = "admin"
         st.session_state['opcion_menu'] = "Inicio"
         st.query_params.clear()
         st.rerun()
+    elif auth_mode == "publico" and u_auth == "publico" and p_auth == "publico123":
+        st.session_state['autenticado'] = True
+        st.session_state['usuario'] = "Consultor Ciudadano"
+        st.session_state['rol'] = "publico"
+        st.session_state['opcion_menu'] = "Inicio"
+        st.query_params.clear()
+        st.rerun()
     else:
-        st.error("❌ Credenciales inválidas. Por favor intenta de nuevo.")
+        st.error("❌ Credenciales inválidas para el modo seleccionado.")
         st.query_params.clear()
 
 # --- PROCESADOR DE NAVEGACIÓN ADMINISTRATIVA (MENÚ LATERAL) ---
@@ -68,9 +81,9 @@ if not st.session_state['autenticado']:
         /* Mitad Derecha: Formulario */
         .panel-formulario { flex: 1.1; padding: 4.5rem; display: flex; flex-direction: column; justify-content: center; background-color: #ffffff; box-sizing: border-box; }
         
-        /* Pestañas de Selección Rectangulares */
+        /* Pestañas de Selección Interactivas */
         .mockup-tabs { display: flex; background: #f1f5f9; padding: 6px; border-radius: 12px; margin-bottom: 2rem; gap: 5px; }
-        .tab-link { flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 600; color: #64748b; border: none; border-radius: 8px; background: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .tab-link { flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 600; color: #64748b; border: none; border-radius: 8px; background: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; }
         .tab-link.active { color: #0056b3; background: #ffffff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04); }
         
         /* Inputs Estilizados */
@@ -93,9 +106,25 @@ if not st.session_state['autenticado']:
         .feature-icon-wrapper { background: rgba(255, 255, 255, 0.05); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; color: #38bdf8; font-size: 1.1rem; }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        
+        <script>
+        function seleccionarPestana(modo) {
+            document.getElementById('auth_mode').value = mode;
+            const btnAdmin = document.getElementById('btn-tab-admin');
+            const btnPublic = document.getElementById('btn-tab-publico');
+            
+            if (modo === 'admin') {
+                btnAdmin.classList.add('active');
+                btnPublic.classList.remove('active');
+            } else {
+                btnPublic.classList.add('active');
+                btnAdmin.classList.remove('active');
+            }
+        }
+        </script>
     """, unsafe_allow_html=True)
 
-    # Marcador HTML crudo sin indentaciones de bloque para evitar el error del intérprete Markdown
+    # Estructura del HTML Maquetado en una sola pieza limpia y reactiva
     st.markdown("""
 <div class="page-wrapper">
 <div class="top-bar">
@@ -132,10 +161,11 @@ if not st.session_state['autenticado']:
 <p style="color: #64748b; font-size: 0.95rem; margin: 0;">Inicia sesión para continuar con RAP Digital.</p>
 </div>
 <div class="mockup-tabs">
-<div class="tab-link active"><i class="fa-regular fa-user"></i> Administrativo</div>
-<div class="tab-link"><i class="fa-solid fa-globe"></i> Consulta pública</div>
+<button type="button" id="btn-tab-admin" class="tab-link active" onclick="seleccionarPestana('admin')"><i class="fa-regular fa-user"></i> Administrativo</button>
+<button type="button" id="btn-tab-publico" class="tab-link" onclick="seleccionarPestana('publico')"><i class="fa-solid fa-globe"></i> Consulta pública</button>
 </div>
 <form action="/" method="GET">
+<input type="hidden" id="auth_mode" name="auth_mode" value="admin">
 <div class="form-group">
 <label>Usuario</label>
 <div class="input-with-icon">
@@ -224,34 +254,43 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
+        # Etiqueta de rol dinámica en la tarjeta de perfil lateral
+        badge_rol = "Administrador" if st.session_state.get('rol') == "admin" else "Consulta Pública"
+        
         st.markdown(f"""
             <div class="user-badge">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div style="background:#38bdf8; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white;"><i class="fa-regular fa-user"></i></div>
                     <div>
                         <div style="font-weight:700; font-size:0.95rem; color:white;">{st.session_state['usuario']}</div>
-                        <div style="font-size:0.75rem; color:#94a3b8;">Administrador</div>
+                        <div style="font-size:0.75rem; color:#94a3b8;">{badge_rol}</div>
                     </div>
                 </div>
                 <div style="margin-top:10px; font-size:0.75rem; color:#22c55e;"><i class="fa-solid fa-circle" style="font-size:0.6rem; margin-right:5px;"></i> En línea</div>
             </div>
         """, unsafe_allow_html=True)
         
+        # --- MENÚ LATERAL FILTRADO POR ROL ---
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
-        if st.button("🎓 Registro de Estudiantes", use_container_width=True):
-            st.session_state['opcion_menu'] = "Registro Estudiantes"
-            st.rerun()
-        if st.button("📋 Estado de Pruebas", use_container_width=True):
-            st.session_state['opcion_menu'] = "Estado de Pruebas"
-            st.rerun()
-        if st.button("📅 Programación", use_container_width=True):
-            st.session_state['opcion_menu'] = "Programación"
-            st.rerun()
-        if st.button("📝 Evaluación", use_container_width=True):
-            st.session_state['opcion_menu'] = "Evaluación"
-            st.rerun()
+            
+        # Solo el Administrador tiene acceso a los módulos de gestión y parametrización académica
+        if st.session_state.get('rol') == "admin":
+            if st.button("🎓 Registro de Estudiantes", use_container_width=True):
+                st.session_state['opcion_menu'] = "Registro Estudiantes"
+                st.rerun()
+            if st.button("📋 Estado de Pruebas", use_container_width=True):
+                st.session_state['opcion_menu'] = "Estado de Pruebas"
+                st.rerun()
+            if st.button("📅 Programación", use_container_width=True):
+                st.session_state['opcion_menu'] = "Programación"
+                st.rerun()
+            if st.button("📝 Evaluación", use_container_width=True):
+                st.session_state['opcion_menu'] = "Evaluación"
+                st.rerun()
+                
+        # El módulo de Dashboards y KPIs analíticos queda disponible para ambas opciones
         if st.button("📊 Dashboard / KPIs", use_container_width=True):
             st.session_state['opcion_menu'] = "Dashboard / KPIs"
             st.rerun()
@@ -259,20 +298,21 @@ else:
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("🚪 Cerrar sesión", use_container_width=True):
             st.session_state['autenticado'] = False
+            st.session_state['rol'] = None
             st.rerun()
 
-    # --- ENRUTADOR GENERAL DE VISTAS ---
+    # --- ENRUTADOR GENERAL DE VISTAS MÓDULO POR MÓDULO ---
     opcion = st.session_state['opcion_menu']
 
     if opcion == "Inicio":
         inicio.render()
-    elif opcion == "Registro Estudiantes":
+    elif opcion == "Registro Estudiantes" and st.session_state.get('rol') == "admin":
         registro.render()
-    elif opcion == "Estado de Pruebas":
+    elif opcion == "Estado de Pruebas" and st.session_state.get('rol') == "admin":
         estado_pruebas.render()
-    elif opcion == "Programación":
+    elif opcion == "Programación" and st.session_state.get('rol') == "admin":
         programacion.render()
-    elif opcion == "Evaluación":
+    elif opcion == "Evaluación" and st.session_state.get('rol') == "admin":
         evaluacion.render()
     elif opcion == "Dashboard / KPIs":
         dashboard.render()
