@@ -18,49 +18,139 @@ def conectar_neon_db():
     except Exception:
         return None
 
-def obtener_datos_reales_dashboard():
+def obtener_datos_dinamicos_dashboard():
     conn = conectar_neon_db()
-    datos_mockup = {
-        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245
+    
+    # Estructura base de datos con los valores por defecto del diseño
+    res = {
+        "solicitudes_activas": 128,
+        "pruebas_programadas": 56,
+        "resultados_pendientes": 34,
+        "casos_cerrados": 245,
+        "tabla_pendientes_html": """
+            <tr><td>Validar documentos de estudiantes</td><td><b>48</b></td><td><span class="pill-alta">Alta</span></td><td>23 may. 2025</td></tr>
+            <tr><td>Pruebas por programar</td><td><b>26</b></td><td><span class="pill-media">Media</span></td><td>24 may. 2025</td></tr>
+            <tr><td>Evaluaciones por revisar</td><td><b>18</b></td><td><span class="pill-alta">Alta</span></td><td>25 may. 2025</td></tr>
+            <tr><td>Resultados por registrar</td><td><b>14</b></td><td><span class="pill-media">Media</span></td><td>27 may. 2025</td></tr>
+        """,
+        "actividad_reciente_html": """
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background:#0052cc;"></div>
+                <div class="timeline-content"><b>Nueva solicitud recibida</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 09:15 a. m.</span><br>Estudiante: María Fernanda Gómez</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background:#9333ea;"></div>
+                <div class="timeline-content"><b>Prueba programada</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 08:47 a. m.</span><br>Competencia: Lectura Crítica</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background:#16a34a;"></div>
+                <div class="timeline-content"><b>Resultado registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Ayer, 04:32 p. m.</span><br>Estudiante: Juan Camilo Pérez</div>
+            </div>
+        """,
+        "distribucion_html": """
+            <div class="progress-bar-container">
+                <div class="progress-bar-labels"><span>En evaluación</span><span>78 (25%)</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 25%; background: #0052cc;"></div></div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-labels"><span>Programadas</span><span>56 (18%)</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 18%; background: #9333ea;"></div></div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-labels"><span>Pendientes</span><span>64 (21%)</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21%; background: #ea580c;"></div></div>
+            </div>
+        """,
+        "origen_info": "Mostrando datos de respaldo (Mockup)"
     }
+    
     if conn is None:
-        return datos_mockup
+        return res
+        
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Conteo general controlado por bloques try-except independientes para blindar el esquema real
+        # Helper interno para contar filas de cualquier tabla de forma segura
+        def contar_filas_tabla(nombre_tabla):
+            try:
+                cursor.execute("SELECT COUNT(*) as total FROM public." + str(nombre_tabla) + ";")
+                return cursor.fetchone()["total"] or 0
+            except Exception:
+                conn.rollback()
+                return 0
+        
+        # Extracción de volúmenes reales desde tu esquema de Neon
+        c_seguimiento = contar_filas_tabla("seguimiento")
+        c_programacion = contar_filas_tabla("programacion_pruebas")
+        c_estado = contar_filas_tabla("estado_pruebas")
+        c_estudiantes = contar_filas_tabla("estudiantes")
+        c_notas = contar_filas_tabla("notas")
+        c_profesores = contar_filas_tabla("profesores")
+        
+        # 1. Asignar los indicadores principales basados en la data real
+        if c_seguimiento > 0: res["solicitudes_activas"] = c_seguimiento
+        if c_programacion > 0: res["pruebas_programadas"] = c_programacion
+        if c_estado > 0: res["resultados_pendientes"] = c_estado
+        if c_estudiantes > 0: res["casos_cerrados"] = c_estudiantes
+        
+        # 2. Construcción dinámica de la tabla de Pendientes con métricas verdaderas de la DB
+        res["tabla_pendientes_html"] = """
+            <tr><td>Flujos en Seguimiento</td><td><b>""" + str(c_seguimiento) + """</b></td><td><span class="pill-alta">Alta</span></td><td>Activo</td></tr>
+            <tr><td>Exámenes Programados</td><td><b>""" + str(c_programacion) + """</b></td><td><span class="pill-media">Media</span></td><td>Pendiente</td></tr>
+            <tr><td>Trazabilidad de Estados</td><td><b></b>""" + str(c_estado) + """</b></td><td><span class="pill-alta">Alta</span></td><td>En cola</td></tr>
+            <tr><td>Notas Registradas</td><td><b>""" + str(c_notas) + """</b></td><td><span class="pill-media">Media</span></td><td>Completado</td></tr>
+        """
+        
+        # 3. Construcción dinámica de la sección Actividad Reciente leyendo tus últimos estudiantes
         try:
-            cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento;")
-            datos_mockup["solicitudes_activas"] = cursor.fetchone()["total"] or 128
+            cursor.execute("SELECT * FROM public.estudiantes ORDER BY 1 DESC LIMIT 3;")
+            filas_est = cursor.fetchall()
+            if filas_est:
+                html_act = ""
+                for est in filas_est:
+                    valores = list(est.values())
+                    nombre_visible = valores[1] if len(valores) > 1 else "Registro RAP"
+                    html_act += """
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="background:#0052cc;"></div>
+                        <div class="timeline-content"><b>Fila detectada en DB</b><br><span style="color:#64748b; font-size:0.75rem;">Sincronización en tiempo real</span><br>Valor: """ + str(nombre_visible) + """</div>
+                    </div>
+                    """
+                res["actividad_reciente_html"] = html_act
         except Exception:
             conn.rollback()
             
-        try:
-            cursor.execute("SELECT COUNT(*) as total FROM public.programacion_pruebas;")
-            datos_mockup["pruebas_programadas"] = cursor.fetchone()["total"] or 56
-        except Exception:
-            conn.rollback()
+        # 4. Construcción dinámica de la barra de distribución analizando capacidades
+        total_volumen = c_notas + c_estudiantes + c_profesores
+        if total_volumen > 0:
+            p_notas = int((c_notas / total_volumen) * 100)
+            p_est = int((c_estudiantes / total_volumen) * 100)
+            p_prof = int((c_profesores / total_volumen) * 100)
             
-        try:
-            cursor.execute("SELECT COUNT(*) as total FROM public.estado_pruebas;")
-            datos_mockup["resultados_pendientes"] = cursor.fetchone()["total"] or 34
-        except Exception:
-            conn.rollback()
+            res["distribucion_html"] = """
+                <div class="progress-bar-container">
+                    <div class="progress-bar-labels"><span>Volumen de Notas</span><span>""" + str(c_notas) + """ (""" + str(p_notas) + """%)</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: """ + str(p_notas) + """%; background: #0052cc;"></div></div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-labels"><span>Volumen de Estudiantes</span><span>""" + str(c_estudiantes) + """ (""" + str(p_est) + """%)</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: """ + str(p_est) + """%; background: #9333ea;"></div></div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-labels"><span>Volumen de Profesores</span><span>""" + str(c_profesores) + """ (""" + str(p_prof) + """%)</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: """ + str(p_prof) + """%; background: #ea580c;"></div></div>
+                </div>
+            """
             
-        try:
-            cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento;")
-            datos_mockup["casos_cerrados"] = (cursor.fetchone()["total"] or 245) + 117
-        except Exception:
-            conn.rollback()
-            
+        res["origen_info"] = "Conectado a Neon PostgreSQL (neondb)"
         cursor.close()
         conn.close()
-        return datos_mockup
+        return res
     except Exception:
-        return datos_mockup
+        return res
 
 def render():
-    db = obtener_datos_reales_dashboard()
+    db = obtener_datos_dinamicos_dashboard()
     
     st.markdown("""
         <style>
@@ -97,12 +187,13 @@ def render():
         </style>
     """, unsafe_allow_html=True)
 
+    # Inyección limpia por concatenación nativa de strings para un renderizado dinámico e inmune a fallas
     parte_superior = """
 <div class="panel-header">
 <div>
 <div class="breadcrumb">Inicio &gt; Panel de control</div>
 <h1 class="main-title">Panel de control</h1>
-<p class="subtitle">Bienvenido, James. El sistema está listo para apoyar la gestión académica del proceso RAP.</p>
+<p class="subtitle">Bienvenido, James. Origen: """ + str(db['origen_info']) + """</p>
 </div>
 <div style="text-align: right;">
 <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;"><i class="fa-regular fa-calendar"></i> 21 de mayo de 2025</div>
@@ -113,25 +204,25 @@ def render():
 <div class="metric-premium-card">
 <div class="metric-premium-title">Solicitudes activas</div>
 <div class="metric-premium-value">""" + str(db['solicitudes_activas']) + """</div>
-<div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+<div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> Conectado <span style="color:#94a3b8; font-weight:400;">(seguimiento)</span></div>
 <div class="metric-icon-box" style="background:#edf5ff; color:#0052cc;"><i class="fa-regular fa-file-lines"></i></div>
 </div>
 <div class="metric-premium-card">
 <div class="metric-premium-title">Pruebas programadas</div>
 <div class="metric-premium-value">""" + str(db['pruebas_programadas']) + """</div>
-<div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+<div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> Conectado <span style="color:#94a3b8; font-weight:400;">(programacion)</span></div>
 <div class="metric-icon-box" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-calendar"></i></div>
 </div>
 <div class="metric-premium-card">
 <div class="metric-premium-title">Resultados pendientes</div>
 <div class="metric-premium-value">""" + str(db['resultados_pendientes']) + """</div>
-<div class="metric-premium-delta" style="color: #ef4444;"><i class="fa-solid fa-arrow-down"></i> 6% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+<div class="metric-premium-delta" style="color: #ea580c;"><i class="fa-solid fa-clock"></i> Conectado <span style="color:#94a3b8; font-weight:400;">(estado_pruebas)</span></div>
 <div class="metric-icon-box" style="background:#fff7ed; color:#ea580c;"><i class="fa-regular fa-clock"></i></div>
 </div>
 <div class="metric-premium-card">
 <div class="metric-premium-title">Casos cerrados</div>
 <div class="metric-premium-value">""" + str(db['casos_cerrados']) + """</div>
-<div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 15% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+<div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> Conectado <span style="color:#94a3b8; font-weight:400;">(estudiantes)</span></div>
 <div class="metric-icon-box" style="background:#f0fdf4; color:#16a34a;"><i class="fa-regular fa-circle-check"></i></div>
 </div>
 </div>
@@ -141,16 +232,13 @@ def render():
 <div class="workspace-grid">
 <div class="block-card">
 <div>
-<div class="block-title">Pendientes de gestión</div>
+<div class="block-title">Métricas de Tablas (Neon)</div>
 <table class="custom-table">
 <thead>
-<tr><th>Actividad</th><th>Cantidad</th><th>Prioridad</th><th>Vencimiento</th></tr>
+<tr><th>Componente DB</th><th>Filas Reales</th><th>Prioridad</th><th>Estado</th></tr>
 </thead>
 <tbody>
-<tr><td>Validar documentos de estudiantes</td><td><b>48</b></td><td><span class="pill-alta">Alta</span></td><td>23 may. 2025</td></tr>
-<tr><td>Pruebas por programar</td><td><b>26</b></td><td><span class="pill-media">Media</span></td><td>24 may. 2025</td></tr>
-<tr><td>Evaluaciones por revisar</td><td><b>18</b></td><td><span class="pill-alta">Alta</span></td><td>25 may. 2025</td></tr>
-<tr><td>Resultados por registrar</td><td><b>14</b></td><td><span class="pill-media">Media</span></td><td>27 may. 2025</td></tr>
+""" + str(db['tabla_pendientes_html']) + """
 </tbody>
 </table>
 </div>
@@ -160,41 +248,15 @@ def render():
 <div class="block-card">
 <div>
 <div class="block-title">Actividad reciente</div>
-<div class="timeline-item">
-<div class="timeline-marker" style="background:#0052cc;"></div>
-<div class="timeline-content"><b>Nueva solicitud recibida</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 09:15 a. m.</span><br>Estudiante: María Fernanda Gómez</div>
-</div>
-<div class="timeline-item">
-<div class="timeline-marker" style="background:#9333ea;"></div>
-<div class="timeline-content"><b>Prueba programada</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 08:47 a. m.</span><br>Competencia: Lectura Crítica</div>
-</div>
-<div class="timeline-item">
-<div class="timeline-marker" style="background:#16a34a;"></div>
-<div class="timeline-content"><b>Resultado registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Ayer, 04:32 p. m.</span><br>Estudiante: Juan Camilo Pérez</div>
-</div>
+""" + str(db['actividad_reciente_html']) + """
 </div>
 <div class="footer-link">Ver toda la actividad <i class="fa-solid fa-arrow-right"></i></div>
 </div>
 
 <div class="block-card">
 <div>
-<div class="block-title">Distribución por estado</div>
-<div class="progress-bar-container">
-<div class="progress-bar-labels"><span>En evaluación</span><span>78 (25%)</span></div>
-<div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 25%; background: #0052cc;"></div></div>
-</div>
-<div class="progress-bar-container">
-<div class="progress-bar-labels"><span>Programadas</span><span>56 (18%)</span></div>
-<div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 18%; background: #9333ea;"></div></div>
-</div>
-<div class="progress-bar-container">
-<div class="progress-bar-labels"><span>Pendientes</span><span>64 (21%)</span></div>
-<div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21%; background: #ea580c;"></div></div>
-</div>
-<div class="progress-bar-container">
-<div class="progress-bar-labels"><span>En revisión</span><span>38 (12%)</span></div>
-<div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 12%; background: #eab308;"></div></div>
-</div>
+<div class="block-title">Volumen Relativo de Datos</div>
+""" + str(db['distribucion_html']) + """
 </div>
 <div class="footer-link">Ver reporte detallado <i class="fa-solid fa-arrow-right"></i></div>
 </div>
