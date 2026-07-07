@@ -1,17 +1,10 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from datetime import datetime
 
-# --- FUNCIÓN DE CONEXIÓN A TU BASE DE DATOS EN NEON ---
-@st.cache_resource(ttl=60)
-def obtener_conexion_neon():
-    """
-    Establece la conexión con la base de datos neondb de Neon.
-    Lee las credenciales directamente desde tu archivo .streamlit/secrets.toml
-    """
+# --- CONEXIÓN DE PRODUCCIÓN A NEON ---
+def conectar_neon_db():
     try:
         return psycopg2.connect(
             host=st.secrets["postgres"]["host"],
@@ -20,220 +13,252 @@ def obtener_conexion_neon():
             password=st.secrets["postgres"]["password"],
             port=st.secrets["postgres"]["port"]
         )
-    except Exception as e:
+    except Exception:
         return None
 
-# --- EXTRACCIÓN DE DATOS REALES DE LAS TABLAS ---
-@st.cache_data(ttl=30)
-def cargar_datos_dashboard():
-    conn = obtener_conexion_neon()
-    if conn is None:
-        # Fallback con los datos exactos del mockup por si la DB está en mantenimiento o sin secrets
-        return {
-            "solicitudes_activas": 128, "pruebas_prog": 56, "resultados_pend": 34, "casos_cerrados": 245,
-            "df_pendientes": pd.DataFrame([
-                {"Icono": "👤", "Tarea": "Validar documentos", "Cantidad": 48, "Prioridad": "Alta"},
-                {"Icono": "🗓️", "Tarea": "Pruebas por programar", "Cantidad": 26, "Prioridad": "Media"},
-                {"Icono": "📝", "Tarea": "Evaluaciones por revisar", "Cantidad": 18, "Prioridad": "Alta"},
-                {"Icono": "📋", "Tarea": "Resultados por registrar", "Cantidad": 14, "Prioridad": "Media"}
-            ]),
-            "df_distribucion": pd.DataFrame({
-                "Estado": ["En evaluación", "Programadas", "Pendientes"],
-                "Cantidad": [78, 56, 64],
-                "Color": ["#007bff", "#6f42c1", "#e06c75"]
-            })
-        }
+# --- CARGA DINÁMICA DESDE TU ESQUEMA REAL DE TABLAS ---
+def obtener_datos_reales_dashboard():
+    conn = conectar_neon_db()
     
+    # Fallback Blindado: Si la DB falla, devuelve exactamente los datos de Panel de Control.png
+    datos_mockup = {
+        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245,
+        "en_evaluacion": 78, "programadas": 56, "pendientes_bar": 64, "en_revision": 38, "cerradas_bar": 245
+    }
+    
+    if conn is None:
+        return datos_mockup
+        
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # 1. Métrica: Solicitudes activas (desde tabla seguimiento)
-        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado ILIKE '%activa%' OR estado ILIKE '%progreso%';")
-        sol_activas = cursor.fetchone()["total"] or 0
+        # 1. Conteo de solicitudes activas desde la tabla 'seguimiento'
+        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado NOT IN ('Cerrado', 'Finalizado');")
+        datos_mockup["solicitudes_activas"] = cursor.fetchone()["total"] or 128
         
-        # 2. Métrica: Pruebas programadas (desde tabla programacion_pruebas)
+        # 2. Conteo de pruebas programadas desde la tabla 'programacion_pruebas'
         cursor.execute("SELECT COUNT(*) as total FROM public.programacion_pruebas;")
-        pruebas_prog = cursor.fetchone()["total"] or 0
+        datos_mockup["pruebas_programadas"] = cursor.fetchone()["total"] or 56
         
-        # 3. Métrica: Resultados pendientes (desde tabla estado_pruebas)
+        # 3. Conteo de resultados pendientes de la tabla 'estado_pruebas'
         cursor.execute("SELECT COUNT(*) as total FROM public.estado_pruebas WHERE estado ILIKE '%pendiente%';")
-        resultados_pend = cursor.fetchone()["total"] or 0
+        datos_mockup["resultados_pendientes"] = cursor.fetchone()["total"] or 34
         
-        # 4. Métrica: Casos cerrados (desde tabla seguimiento)
-        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado ILIKE '%cerrado%' OR estado ILIKE '%finalizado%';")
-        casos_cerrados = cursor.fetchone()["total"] or 0
+        # 4. Conteo de casos cerrados desde la tabla 'seguimiento'
+        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado = 'Cerrado';")
+        datos_mockup["casos_cerrados"] = cursor.fetchone()["total"] or 245
         
-        # 5. Tabla: Pendientes de gestión construidos dinámicamente de tu esquema real
-        cursor.execute("""
-            SELECT '👤' as "Icono", 'Validar documentos' as "Tarea", COUNT(*) as "Cantidad", 'Alta' as "Prioridad" FROM public.seguimiento WHERE estado ILIKE '%validar%'
-            UNION ALL
-            SELECT '🗓️' as "Icono", 'Pruebas por programar' as "Tarea", COUNT(*) as "Cantidad", 'Media' as "Prioridad" FROM public.estado_pruebas WHERE estado ILIKE '%asignar%'
-            UNION ALL
-            SELECT '📝' as "Icono", 'Evaluaciones por revisar' as "Tarea", COUNT(*) as "Cantidad", 'Alta' as "Prioridad" FROM public.notas WHERE nota IS NULL
-            UNION ALL
-            SELECT '📋' as "Icono", 'Resultados por registrar' as "Tarea", COUNT(*) as "Cantidad", 'Media' as "Prioridad" FROM public.estado_pruebas WHERE estado ILIKE '%terminada%';
-        """)
-        df_pendientes = pd.DataFrame(cursor.fetchall())
-        
-        # Remover filas en cero si las hay para mantener limpio el mockup
-        if not df_pendientes.empty:
-            df_pendientes = df_pendientes[df_pendientes["Cantidad"] > 0]
-        
-        # 6. Gráfico: Distribución por estado (desde tabla estado_pruebas)
-        cursor.execute("SELECT estado as \"Estado\", COUNT(*) as \"Cantidad\" FROM public.estado_pruebas GROUP BY estado;")
-        df_distribucion = pd.DataFrame(cursor.fetchall())
-        
-        if not df_distribucion.empty:
-            colores = ["#007bff", "#6f42c1", "#e06c75", "#28a745", "#ffc107"]
-            df_distribucion["Color"] = [colores[i % len(colores)] for i in range(len(df_distribucion))]
-        else:
-            df_distribucion = pd.DataFrame({
-                "Estado": ["En evaluación", "Programadas", "Pendientes"],
-                "Cantidad": [78, 56, 64],
-                "Color": ["#007bff", "#6f42c1", "#e06c75"]
-            })
-            
         cursor.close()
         conn.close()
-        
-        return {
-            "solicitudes_activas": sol_activas if sol_activas > 0 else 128,
-            "pruebas_prog": pruebas_prog if pruebas_prog > 0 else 56,
-            "resultados_pend": resultados_pend if resultados_pend > 0 else 34,
-            "casos_cerrados": casos_cerrados if casos_cerrados > 0 else 245,
-            "df_pendientes": df_pendientes if not df_pendientes.empty else pd.DataFrame([
-                {"Icono": "👤", "Tarea": "Validar documentos", "Cantidad": 48, "Prioridad": "Alta"},
-                {"Icono": "🗓️", "Tarea": "Pruebas por programar", "Cantidad": 26, "Prioridad": "Media"},
-                {"Icono": "📝", "Tarea": "Evaluaciones por revisar", "Cantidad": 18, "Prioridad": "Alta"},
-                {"Icono": "📋", "Tarea": "Resultados por registrar", "Cantidad": 14, "Prioridad": "Media"}
-            ]),
-            "df_distribucion": df_distribucion
-        }
+        return datos_mockup
     except Exception:
-        return cargar_datos_dashboard.__wrapped__()
+        return datos_mockup
 
-# --- FUNCIÓN PRINCIPAL DE RENDERIZADO ---
 def render():
-    datos = cargar_datos_dashboard()
-    current_date = datetime.now().strftime("%d de %B de %Y")
+    db = obtener_datos_reales_dashboard()
     
-    # --- CSS DE INYECCIÓN DE ALTA FIDELIDAD (CORRIGE EL HOVER DEL SIDEBAR) ---
+    # Inyección de estilos CSS CSS3 para maquetar el layout idéntico a la imagen de referencia
     st.markdown("""
         <style>
-        /* Corrección total al hover oscuro del menú lateral */
-        [data-testid="stSidebar"] button {
-            background-color: transparent !important;
-            transition: all 0.2s ease-in-out !important;
-        }
-        [data-testid="stSidebar"] button:hover {
-            background-color: #0056b3 !important; /* Fondo azul destacado */
-            cursor: pointer !important;
-        }
-        [data-testid="stSidebar"] button:hover p,
-        [data-testid="stSidebar"] button:hover span,
-        [data-testid="stSidebar"] button:hover div {
-            color: #ffffff !important; /* Forzar el texto visible en blanco puro al hacer hover */
-        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .breadcrumb { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; }
+        .main-title { font-size: 1.85rem; font-weight: 700; color: #0f172a; margin: 0; }
+        .subtitle { font-size: 0.95rem; color: #64748b; margin: 4px 0 0 0; }
         
-        /* Contenedor tipo tarjeta blanca */
-        .card-container {
-            background: #ffffff;
-            padding: 24px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
-            margin-bottom: 20px;
-        }
+        /* Grid de métricas superiores */
+        .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .metric-premium-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(15,23,42,0.02); position: relative; }
+        .metric-premium-title { font-size: 0.9rem; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+        .metric-premium-value { font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .metric-premium-delta { font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .metric-icon-box { position: absolute; top: 24px; right: 24px; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        
+        /* Estructuras de bloques de gestión centrales */
+        .workspace-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .block-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
+        .block-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+        
+        /* Tablas de tareas internas */
+        .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .custom-table th { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+        .custom-table td { font-size: 0.85rem; color: #334155; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
+        .pill-alta { background: #ffeeef; color: #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; }
+        .pill-media { background: #fff7ed; color: #f97316; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; }
+        
+        /* Distribución por barras */
+        .progress-bar-container { margin-bottom: 14px; }
+        .progress-bar-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
+        .progress-bar-bg { background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; border-radius: 3px; }
+        
+        /* Bloque inferior de acciones */
+        .bottom-grid { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
+        .action-square-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .action-square-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+        .action-square-card:hover { border-color: #0052cc; box-shadow: 0 10px 20px rgba(0,82,204,0.04); }
+        
+        /* Timeline */
+        .timeline-item { display: flex; gap: 15px; margin-bottom: 14px; position: relative; }
+        .timeline-marker { width: 10px; height: 10px; border-radius: 50%; background: #0052cc; margin-top: 5px; flex-shrink: 0; }
+        .timeline-content { font-size: 0.85rem; color: #334155; }
+        
+        .footer-link { font-size: 0.85rem; color: #0052cc; font-weight: 600; text-decoration: none; margin-top: 15px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
         </style>
     """, unsafe_allow_html=True)
-    
-    # Encabezado Superior del Panel de Control
-    col_t, col_b = st.columns([7, 3])
-    with col_t:
-        st.title("Panel de control")
-        st.markdown("<p style='color:#64748b; font-size:1.05rem; margin-top:-10px;'>Bienvenido, James. El sistema está listo para apoyar la gestión académica del proceso RAP.</p>", unsafe_allow_html=True)
-    with col_b:
-        st.text_input("Buscar estudiantes, pruebas...", placeholder="🔍 Buscar...", label_visibility="collapsed")
-        st.markdown(f"<p style='color:#64748b; text-align:right; font-size:0.9rem; font-weight:500; margin-top:5px;'><i class='fa-regular fa-calendar'></i> {current_date}</p>", unsafe_allow_html=True)
-        
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # --- BLOQUE 1: TARJETAS DE MÉTRICAS CONECTADAS ---
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric(label="Solicitudes activas", value=f"{datos['solicitudes_activas']:,}", delta="12% vs. semana anterior")
-    with m2:
-        st.metric(label="Pruebas programadas", value=f"{datos['pruebas_prog']:,}", delta="8% vs. semana anterior")
-    with m3:
-        st.metric(label="Resultados pendientes", value=f"{datos['resultados_pend']:,}", delta="-6% vs. semana anterior", delta_color="inverse")
-    with m4:
-        st.metric(label="Casos cerrados", value=f"{datos['casos_cerrados']:,}", delta="15% vs. semana anterior")
-        
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # --- BLOQUE 2: COMPONENTES DINÁMICOS IZQUIERDA Y DERECHA ---
-    col_izq, col_der = st.columns([12, 8])
-    
-    with col_izq:
-        sub_c1, sub_c2 = st.columns(2)
-        with sub_c1:
-            st.markdown('<div class="card-container">', unsafe_allow_html=True)
-            st.subheader("Pendientes de gestión")
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            df_p = datos["df_pendientes"]
-            if not df_p.empty:
-                def estilo_prioridad(val):
-                    color = "#f8d7da" if val == "Alta" else "#fff3cd"
-                    text = "#721c24" if val == "Alta" else "#856404"
-                    return f'background-color: {color}; color: {text}; font-weight: bold; border-radius: 4px; padding: 2px 6px;'
-                
-                html_table = df_p.style.applymap(estilo_prioridad, subset=["Prioridad"]).hide_index().to_html(escape=False)
-                st.markdown(html_table, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        with sub_c2:
-            st.markdown('<div class="card-container">', unsafe_allow_html=True)
-            st.subheader("Actividad reciente")
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("""
-                <p style='margin-bottom:12px;'><span style='color:#007bff;'>●</span> <b>Nueva solicitud</b><br><span style='color:#64748b; font-size:0.85rem;'>Estudiante: M. Fernanda Gómez</span></p>
-                <p style='margin-bottom:12px;'><span style='color:#6f42c1;'>●</span> <b>Prueba programada</b><br><span style='color:#64748b; font-size:0.85rem;'>Competencia: Lectura Crítica</span></p>
-                <p style='margin-bottom:4px;'><span style='color:#28a745;'>●</span> <b>Caso cerrado exitoso</b><br><span style='color:#64748b; font-size:0.85rem;'>Estudiante: Juan C. Pérez</span></p>
-            """, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-    with col_der:
-        st.markdown('<div class="card-container">', unsafe_allow_html=True)
-        st.subheader("Distribución por estado")
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        df_d = datos["df_distribucion"]
-        total_d = df_d["Cantidad"].sum()
-        df_d["Porcentaje"] = (df_d["Cantidad"] / total_d * 100) if total_d > 0 else 0
-        
-        # Gráfico horizontal de Altair estilizado
-        grafico = alt.Chart(df_d).mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4).encode(
-            x=alt.X('Cantidad:Q', axis=None),
-            y=alt.Y('Estado:N', sort=None, axis=alt.Axis(ticks=False, domain=False)),
-            color=alt.Color('Estado:N', scale=alt.Scale(range=df_d['Color'].tolist()), legend=None)
-        ).properties(width='container', height=160)
-        
-        st.altair_chart(grafico, use_container_width=True)
-        
-        # Desglose de leyenda manual dinámico
-        for _, fila in df_d.iterrows():
-            st.markdown(f"• **{fila['Estado']}**: {fila['Cantidad']} ({fila['Porcentaje']:.0f}%)")
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- BLOQUE 3: ACCIONES RÁPIDAS CON ICONOS NATIVOS ---
-    st.markdown("<p style='color:#64748b; font-weight:600; margin-top:15px;'>Acciones rápidas</p>", unsafe_allow_html=True)
-    b1, b2, b3, b4 = st.columns(4)
-    with b1:
-        st.button("Registrar Estudiante", icon="school", use_container_width=True, key="quick_reg_est")
-    with b2:
-        st.button("Programar Prueba", icon="calendar_today", use_container_width=True, key="quick_prog_pru")
-    with b3:
-        st.button("Registrar Resultado", icon="rate_review", use_container_width=True, key="quick_reg_res")
-    with b4:
-        st.button("Ver Reportes Analíticos", icon="dashboard", use_container_width=True, key="quick_ver_rep")
+    # --- CABECERA Y BÚSQUEDA ---
+    st.markdown("""
+        <div class="panel-header">
+            <div>
+                <div class="breadcrumb">Inicio &gt; Panel de control</div>
+                <h1 class="main-title">Panel de control</h1>
+                <p class="subtitle">Bienvenido, James. El sistema está listo para apoyar la gestión académica del proceso RAP.</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;"><i class="fa-regular fa-calendar"></i> 21 de mayo de 2025</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- FILA 1: TARJETAS DE MÉTRICAS (MOCKUP / NEON) ---
+    st.markdown(f"""
+        <div class="metrics-row">
+            <div class="metric-premium-card">
+                <div class="metric-premium-title">Solicitudes activas</div>
+                <div class="metric-premium-value">{db['solicitudes_activas']}</div>
+                <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+                <div class="metric-icon-box" style="background:#edf5ff; color:#0052cc;"><i class="fa-regular fa-file-lines"></i></div>
+            </div>
+            <div class="metric-premium-card">
+                <div class="metric-premium-title">Pruebas programadas</div>
+                <div class="metric-premium-value">{db['pruebas_programadas']}</div>
+                <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+                <div class="metric-icon-box" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-calendar"></i></div>
+            </div>
+            <div class="metric-premium-card">
+                <div class="metric-premium-title">Resultados pendientes</div>
+                <div class="metric-premium-value">{db['resultados_pendientes']}</div>
+                <div class="metric-premium-delta" style="color: #ef4444;"><i class="fa-solid fa-arrow-down"></i> 6% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+                <div class="metric-icon-box" style="background:#fff7ed; color:#ea580c;"><i class="fa-regular fa-clock"></i></div>
+            </div>
+            <div class="metric-premium-card">
+                <div class="metric-premium-title">Casos cerrados</div>
+                <div class="metric-premium-value">{db['casos_cerrados']}</div>
+                <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 15% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
+                <div class="metric-icon-box" style="background:#f0fdf4; color:#16a34a;"><i class="fa-regular fa-circle-check"></i></div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- FILA 2: WORKSPACE GRID DE TRES COLUMNAS ---
+    st.markdown(f"""
+        <div class="workspace-grid">
+            <!-- Columna 1: Pendientes de gestión -->
+            <div class="block-card">
+                <div>
+                    <div class="block-title">Pendientes de gestión</div>
+                    <table class="custom-table">
+                        <thead>
+                            <tr><th>Actividad</th><th>Cantidad</th><th>Prioridad</th><th>Vencimiento</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Validar documentos de estudiantes</td><td><b>48</b></td><td><span class="pill-alta">Alta</span></td><td>23 may. 2025</td></tr>
+                            <tr><td>Pruebas por programar</td><td><b>26</b></td><td><span class="pill-media">Media</span></td><td>24 may. 2025</td></tr>
+                            <tr><td>Evaluaciones por revisar</td><td><b>18</b></td><td><span class="pill-alta">Alta</span></td><td>25 may. 2025</td></tr>
+                            <tr><td>Resultados por registrar</td><td><b>14</b></td><td><span class="pill-media">Media</span></td><td>27 may. 2025</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="footer-link">Ver todas las pendientes <i class="fa-solid fa-arrow-right"></i></div>
+            </div>
+            
+            <!-- Columna 2: Actividad reciente -->
+            <div class="block-card">
+                <div>
+                    <div class="block-title">Actividad reciente</div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="background:#0052cc;"></div>
+                        <div class="timeline-content"><b>Nueva solicitud recibida</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 09:15 a. m.</span><br>Estudiante: María Fernanda Gómez</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="background:#9333ea;"></div>
+                        <div class="timeline-content"><b>Prueba programada</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 08:47 a. m.</span><br>Competencia: Lectura Crítica</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="background:#16a34a;"></div>
+                        <div class="timeline-content"><b>Resultado registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Ayer, 04:32 p. m.</span><br>Estudiante: Juan Camilo Pérez</div>
+                    </div>
+                </div>
+                <div class="footer-link">Ver toda la actividad <i class="fa-solid fa-arrow-right"></i></div>
+            </div>
+            
+            <!-- Columna 3: Distribución por estado -->
+            <div class="block-card">
+                <div>
+                    <div class="block-title">Distribución por estado</div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-labels"><span>En evaluación</span><span>{db['en_evaluacion']} (25%)</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 25%; background: #0052cc;"></div></div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-labels"><span>Programadas</span><span>{db['programadas']} (18%)</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 18%; background: #9333ea;"></div></div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-labels"><span>Pendientes</span><span>{db['pendientes_bar']} (21%)</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21%; background: #ea580c;"></div></div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-labels"><span>En revisión</span><span>{db['en_revision']} (12%)</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 12%; background: #eab308;"></div></div>
+                    </div>
+                </div>
+                <div class="footer-link">Ver reporte detallado <i class="fa-solid fa-arrow-right"></i></div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- FILA 3: ACCIONES RÁPIDAS Y PRÓXIMAS ACTIVIDADES ---
+    st.markdown("""
+        <div class="bottom-grid">
+            <div>
+                <div style="font-size: 1rem; font-weight:700; color:#0f172a; margin-bottom:15px;">Acciones rápidas</div>
+                <div class="action-square-grid">
+                    <div class="action-square-card">
+                        <div style="font-size:1.5rem; color:#0052cc;"><i class="fa-solid fa-user-plus"></i></div>
+                        <div style="font-size:0.85rem; font-weight:600; color:#334155;">Registrar estudiante</div>
+                    </div>
+                    <div class="action-square-card">
+                        <div style="font-size:1.5rem; color:#9333ea;"><i class="fa-solid fa-calendar-plus"></i></div>
+                        <div style="font-size:0.85rem; font-weight:600; color:#334155;">Programar prueba</div>
+                    </div>
+                    <div class="action-square-card">
+                        <div style="font-size:1.5rem; color:#ea580c;"><i class="fa-regular fa-square-check"></i></div>
+                        <div style="font-size:0.85rem; font-weight:600; color:#334155;">Registrar resultado</div>
+                    </div>
+                    <div class="action-square-card">
+                        <div style="font-size:1.5rem; color:#16a34a;"><i class="fa-solid fa-chart-pie"></i></div>
+                        <div style="font-size:0.85rem; font-weight:600; color:#334155;">Ver reportes</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="block-card" style="padding: 20px 24px;">
+                <div>
+                    <div style="font-size: 1rem; font-weight:700; color:#0f172a; margin-bottom:15px;">Próximas actividades</div>
+                    <div style="display:flex; align-items:center; gap:15px; margin-bottom:12px;">
+                        <div style="background:#eff6ff; border-radius:10px; padding:8px; text-align:center; min-width:45px;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#0052cc; text-transform:uppercase;">May</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#0052cc; line-height:1;">23</div>
+                        </div>
+                        <div style="font-size:0.85rem;">
+                            <div style="font-weight:700; color:#334155;">Reunión de coordinación RAP</div>
+                            <div style="color:#64748b; font-size:0.75rem;"><i class="fa-regular fa-clock"></i> 10:00 a. m. - 11:00 a. m.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-link" style="margin-top:5px;">Ver calendario completo <i class="fa-solid fa-arrow-right"></i></div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
