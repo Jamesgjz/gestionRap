@@ -145,57 +145,57 @@ if not st.session_state['autenticado']:
 
 # --- ESCENARIO B: PANEL DE CONTROL LOGUEADO ---
 else:
+    # REESCRITURA MAESTRA DEL SIDEBAR: ICONOS Y FUENTES GRANDES, BLANCOS Y ALINEADOS A LA IZQUIERDA
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
         div.block-container { padding: 2.5rem 4rem !important; max-width: 100% !important; }
-        [data-testid="stSidebar"] { background-color: #031430 !important; width: 290px !important; }
+        [data-testid="stSidebar"] { background-color: #031430 !important; width: 310px !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
         
-        /* Alineación izquierda estricta y eliminación de bordes grises */
+        /* Ajuste estructural de la base de los botones del menú */
         [data-testid="stSidebar"] div.element-container div.stButton button {
             background-color: transparent !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 12px 24px !important;
-            margin-bottom: 4px !important;
+            padding: 14px 24px !important;
+            margin-bottom: 6px !important;
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
-            justify-content: flex-start !important;
+            justify-content: flex-start !important; /* Forzar alineación a la izquierda */
             text-align: left !important;
-            border-radius: 10px !important;
+            border-radius: 12px !important;
+            gap: 16px !important; /* Separación simétrica uniforme entre icono y letras */
             transition: all 0.2s ease-in-out !important;
         }
         
+        /* TEXTO BLANCO POR DEFECTO Y MÁS GRANDE */
         [data-testid="stSidebar"] div.element-container div.stButton button p,
         [data-testid="stSidebar"] div.element-container div.stButton button span {
-            color: #94a3b8 !important;
-            font-size: 0.96rem !important;
-            font-weight: 500 !important;
+            color: #ffffff !important; /* Forzar blanco puro siempre */
+            font-size: 1.1rem !important; /* Fuente un poco más grande */
+            font-weight: 600 !important;
             margin: 0 !important;
             text-align: left !important;
         }
         
-        /* Forzar que los iconos vectoriales hereden el color correcto */
-        [data-testid="stSidebar"] div.element-container div.stButton button svg {
-            fill: #94a3b8 !important;
-            color: #94a3b8 !important;
+        /* ICONOS DELINEADOS BLANCOS Y MÁS GRANDES */
+        [data-testid="stSidebar"] div.element-container div.stButton button svg,
+        [data-testid="stSidebar"] div.element-container div.stButton button data-testid-icon {
+            color: #ffffff !important; /* Iconos blancos por defecto */
+            fill: #ffffff !important;
+            width: 24px !important; /* Iconos escalados más grandes */
+            height: 24px !important;
+            flex-shrink: 0 !important;
         }
         
-        /* HOVER SEGURO: Botón azul, texto blanco e icono blanco garantizados */
+        /* HOVER ELEGANTE: Mantiene el blanco y resalta con fondo azul rey */
         [data-testid="stSidebar"] div.element-container div.stButton button:hover,
         [data-testid="stSidebar"] div.element-container div.stButton button:focus {
             background-color: #0047ff !important;
             background: #0047ff !important;
-        }
-        [data-testid="stSidebar"] div.element-container div.stButton button:hover p,
-        [data-testid="stSidebar"] div.element-container div.stButton button:hover span,
-        [data-testid="stSidebar"] div.element-container div.stButton button:hover svg {
-            color: #ffffff !important;
-            fill: #ffffff !important;
-            font-weight: 600 !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -224,7 +224,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # SINTAXIS REESCRITA CON IDENTIFICADORES DE MATERIAL SYMBOLS
+        # Opciones usando la especificación Material nativa
         if st.button("Inicio", icon=":material/home:", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
