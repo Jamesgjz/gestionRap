@@ -3,171 +3,6 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-# --- CONEXIÓN DE PRODUCCIÓN A NEON ---
-def conectar_neon_db():
-    try:
-        return psycopg2.connect(
-            host=st.secrets["postgres"]["host"],
-            database=st.secrets["postgres"]["database"],
-            user=st.secrets["postgres"]["user"],
-            password=st.secrets["postgres"]["password"],
-            port=st.secrets["postgres"]["port"]
-        )
-    except Exception:
-        return None
-
-# --- CARGA DINÁMICA DESDE TU ESQUEMA REAL DE TABLAS ---
-def obtener_datos_reales_dashboard():
-    conn = conectar_neon_db()
-    
-    # Fallback Blindado: Si la DB falla, devuelve exactamente los datos de Panel de Control.png
-    datos_mockup = {
-        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245,
-        "en_evaluacion": 78, "programadas": 56, "pendientes_bar": 64, "en_revision": 38, "cerradas_bar": 245
-    }
-    
-    if conn is None:
-        return datos_mockup
-        
-    try:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # 1. Conteo de solicitudes activas desde la tabla 'seguimiento'
-        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado NOT IN ('Cerrado', 'Finalizado');")
-        datos_mockup["solicitudes_activas"] = cursor.fetchone()["total"] or 128
-        
-        # 2. Conteo de pruebas programadas desde la tabla 'programacion_pruebas'
-        cursor.execute("SELECT COUNT(*) as total FROM public.programacion_pruebas;")
-        datos_mockup["pruebas_programadas"] = cursor.fetchone()["total"] or 56
-        
-        # 3. Conteo de resultados pendientes de la tabla 'estado_pruebas'
-        cursor.execute("SELECT COUNT(*) as total FROM public.estado_pruebas WHERE estado ILIKE '%pendiente%';")
-        datos_mockup["resultados_pendientes"] = cursor.fetchone()["total"] or 34
-        
-        # 4. Conteo de casos cerrados desde la tabla 'seguimiento'
-        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado = 'Cerrado';")
-        datos_mockup["casos_cerrados"] = cursor.fetchone()["total"] or 245
-        
-        cursor.close()
-        conn.close()
-        return datos_mockup
-    except Exception:
-        return datos_mockup
-
-def render():
-    db = obtener_datos_reales_dashboard()
-    
-    # Inyección de estilos CSS CSS3 para maquetar el layout idéntico a la imagen de referencia
-    st.markdown("""
-        <style>
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .breadcrumb { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; }
-        .main-title { font-size: 1.85rem; font-weight: 700; color: #0f172a; margin: 0; }
-        .subtitle { font-size: 0.95rem; color: #64748b; margin: 4px 0 0 0; }
-        
-        /* Grid de métricas superiores */
-        .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .metric-premium-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(15,23,42,0.02); position: relative; }
-        .metric-premium-title { font-size: 0.9rem; font-weight: 600; color: #64748b; margin-bottom: 8px; }
-        .metric-premium-value { font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
-        .metric-premium-delta { font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-        .metric-icon-box { position: absolute; top: 24px; right: 24px; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        
-        /* Estructuras de bloques de gestión centrales */
-        .workspace-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .block-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
-        .block-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
-        
-        /* Tablas de tareas internas */
-        .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .custom-table th { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
-        .custom-table td { font-size: 0.85rem; color: #334155; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
-        .pill-alta { background: #ffeeef; color: #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; }
-        .pill-media { background: #fff7ed; color: #f97316; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; }
-        
-        /* Distribución por barras */
-        .progress-bar-container { margin-bottom: 14px; }
-        .progress-bar-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
-        .progress-bar-bg { background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; border-radius: 3px; }
-        
-        /* Bloque inferior de acciones */
-        .bottom-grid { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
-        .action-square-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        .action-square-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-        .action-square-card:hover { border-color: #0052cc; box-shadow: 0 10px 20px rgba(0,82,204,0.04); }
-        
-        /* Timeline */
-        .timeline-item { display: flex; gap: 15px; margin-bottom: 14px; position: relative; }
-        .timeline-marker { width: 10px; height: 10px; border-radius: 50%; background: #0052cc; margin-top: 5px; flex-shrink: 0; }
-        .timeline-content { font-size: 0.85rem; color: #334155; }
-        
-        .footer-link { font-size: 0.85rem; color: #0052cc; font-weight: 600; text-decoration: none; margin-top: 15px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # --- CABECERA Y BÚSQUEDA ---
-    st.markdown("""
-        <div class="panel-header">
-            <div>
-                <div class="breadcrumb">Inicio &gt; Panel de control</div>
-                <h1 class="main-title">Panel de control</h1>
-                <p class="subtitle">Bienvenido, James. El sistema está listo para apoyar la gestión académica del proceso RAP.</p>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;"><i class="fa-regular fa-calendar"></i> 21 de mayo de 2025</div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # --- FILA 1: TARJETAS DE MÉTRICAS (MOCKUP / NEON) ---
-    st.markdown(f"""
-        <div class="metrics-row">
-            <div class="metric-premium-card">
-                <div class="metric-premium-title">Solicitudes activas</div>
-                <div class="metric-premium-value">{db['solicitudes_activas']}</div>
-                <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-                <div class="metric-icon-box" style="background:#edf5ff; color:#0052cc;"><i class="fa-regular fa-file-lines"></i></div>
-            </div>
-            <div class="metric-premium-card">
-                <div class="metric-premium-title">Pruebas programadas</div>
-                <div class="metric-premium-value">{db['pruebas_programadas']}</div>
-                <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-                <div class="metric-icon-box" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-calendar"></i></div>
-            </div>
-            <div class="metric-premium-card">
-                <div class="metric-premium-title">Resultados pendientes</div>
-                <div class="metric-premium-value">{db['resultados_pendientes']}</div>
-                <div class="metric-premium-delta" style="color: #ef4444;"><i class="fa-solid fa-arrow-down"></i> 6% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-                <div class="metric-icon-box" style="background:#fff7ed; color:#ea580c;"><i class="fa-regular fa-clock"></i></div>
-            </div>
-            <div class="metric-premium-card">
-                <div class="metric-premium-title">Casos cerrados</div>
-                <div class="metric-premium-value">{db['casos_cerrados']}</div>
-                <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 15% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-                <div class="metric-icon-box" style="background:#f0fdf4; color:#16a34a;"><i class="fa-regular fa-circle-check"></i></div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # --- FILA 2: WORKSPACE GRID DE TRES COLUMNAS ---
-    st.markdown(f"""
-        <div class="workspace-grid">
-            <!-- Columna 1: Pendientes de gestión -->
-            <div class="block-card">
-                <div>
-                    <div class="block-title">Pendientes de gestión</div>
-                    <table class="custom-table">
-                        <thead>
-                            <tr><th>Actividad</th><th>Cantidad</th><th>Prioridad</th><th>Vencimiento</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>Validar documentos de estudiantes</td><td><b>48</b></td><td><span class="pill-alta">Alta</span></td><td>23 may. 2025</td></tr>
-import streamlit as st
-import pandas as pd
-import psycopg2
-from psycopg2.extras import RealDictCursor
-
 def conectar_neon_db():
     try:
         return psycopg2.connect(
@@ -212,34 +47,28 @@ def render():
         .breadcrumb { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; }
         .main-title { font-size: 1.85rem; font-weight: 700; color: #0f172a; margin: 0; }
         .subtitle { font-size: 0.95rem; color: #64748b; margin: 4px 0 0 0; }
-        
         .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .metric-premium-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(15,23,42,0.02); position: relative; }
         .metric-premium-title { font-size: 0.9rem; font-weight: 600; color: #64748b; margin-bottom: 8px; }
         .metric-premium-value { font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
         .metric-premium-delta { font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
         .metric-icon-box { position: absolute; top: 24px; right: 24px; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        
         .workspace-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
         .block-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
         .block-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
-        
         .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
         .custom-table th { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
         .custom-table td { font-size: 0.85rem; color: #334155; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
         .pill-alta { background: #ffeeef; color: #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; }
         .pill-media { background: #fff7ed; color: #f97316; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; }
-        
         .progress-bar-container { margin-bottom: 14px; }
         .progress-bar-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
         .progress-bar-bg { background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden; }
         .progress-bar-fill { height: 100%; border-radius: 3px; }
-        
         .bottom-grid { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
         .action-square-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         .action-square-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         .action-square-card:hover { border-color: #0052cc; box-shadow: 0 10px 20px rgba(0,82,204,0.04); }
-        
         .timeline-item { display: flex; gap: 15px; margin-bottom: 14px; position: relative; }
         .timeline-marker { width: 10px; height: 10px; border-radius: 50%; background: #0052cc; margin-top: 5px; flex-shrink: 0; }
         .timeline-content { font-size: 0.85rem; color: #334155; }
@@ -247,8 +76,8 @@ def render():
         </style>
     """, unsafe_allow_html=True)
 
-    # Bloque HTML de cabecera y KPI sin espacios de tabulación al inicio de línea
-    st.markdown(f"""
+    # Bloque HTML inyectado por concatenación directa inmune a SyntaxError
+    parte_superior = """
 <div class="panel-header">
 <div>
 <div class="breadcrumb">Inicio &gt; Panel de control</div>
@@ -263,30 +92,32 @@ def render():
 <div class="metrics-row">
 <div class="metric-premium-card">
 <div class="metric-premium-title">Solicitudes activas</div>
-<div class="metric-premium-value">{db['solicitudes_activas']}</div>
+<div class="metric-premium-value">""" + str(db['solicitudes_activas']) + """</div>
 <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
 <div class="metric-icon-box" style="background:#edf5ff; color:#0052cc;"><i class="fa-regular fa-file-lines"></i></div>
 </div>
 <div class="metric-premium-card">
 <div class="metric-premium-title">Pruebas programadas</div>
-<div class="metric-premium-value">{db['pruebas_programadas']}</div>
+<div class="metric-premium-value">""" + str(db['pruebas_programadas']) + """</div>
 <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
 <div class="metric-icon-box" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-calendar"></i></div>
 </div>
 <div class="metric-premium-card">
 <div class="metric-premium-title">Resultados pendientes</div>
-<div class="metric-premium-value">{db['resultados_pendientes']}</div>
+<div class="metric-premium-value">""" + str(db['resultados_pendientes']) + """</div>
 <div class="metric-premium-delta" style="color: #ef4444;"><i class="fa-solid fa-arrow-down"></i> 6% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
 <div class="metric-icon-box" style="background:#fff7ed; color:#ea580c;"><i class="fa-regular fa-clock"></i></div>
 </div>
 <div class="metric-premium-card">
 <div class="metric-premium-title">Casos cerrados</div>
-<div class="metric-premium-value">{db['casos_cerrados']}</div>
+<div class="metric-premium-value">""" + str(db['casos_cerrados']) + """</div>
 <div class="metric-premium-delta" style="color: #22c55e;"><i class="fa-solid fa-arrow-up"></i> 15% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
 <div class="metric-icon-box" style="background:#f0fdf4; color:#16a34a;"><i class="fa-regular fa-circle-check"></i></div>
 </div>
 </div>
+"""
 
+    parte_inferior = """
 <div class="workspace-grid">
 <div class="block-card">
 <div>
@@ -381,7 +212,7 @@ def render():
 <div style="font-size:1.1rem; font-weight:800; color:#0052cc; line-height:1;">23</div>
 </div>
 <div style="font-size:0.85rem;">
-<div style="font-weight:700; color:#334155;">Reunión de coordination RAP</div>
+<div style="font-weight:700; color:#334155;">Reunión de coordinación RAP</div>
 <div style="color:#64748b; font-size:0.75rem;"><i class="fa-regular fa-clock"></i> 10:00 a. m. - 11:00 a. m.</div>
 </div>
 </div>
@@ -389,4 +220,6 @@ def render():
 <div class="footer-link" style="margin-top:5px;">Ver calendario completo <i class="fa-solid fa-arrow-right"></i></div>
 </div>
 </div>
-    """, unsafe_allow_html=True)
+"""
+
+    st.markdown(parte_superior + parte_inferior, unsafe_allow_html=True)
