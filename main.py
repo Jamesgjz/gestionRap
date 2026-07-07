@@ -143,55 +143,55 @@ if not st.session_state['autenticado']:
 </div>
     """, unsafe_allow_html=True)
 
-# --- ESCENARIO B: PANEL DE CONTROL LOGUEADO ---
+# --- ESCENARIO B: ENTORNO CONECTADO ---
 else:
-    # REESCRITURA MAESTRA DEL SIDEBAR: ICONOS Y FUENTES GRANDES, BLANCOS Y ALINEADOS A LA IZQUIERDA
+    # ARQUITECTURA DE DISEÑO: PADDING DE 20PX EXIGIDO, LOGÍTICA MÁS GRANDE Y ALINEADO SEGURO
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
         div.block-container { padding: 2.5rem 4rem !important; max-width: 100% !important; }
-        [data-testid="stSidebar"] { background-color: #031430 !important; width: 310px !important; }
+        [data-testid="stSidebar"] { background-color: #031430 !important; width: 320px !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
         
-        /* Ajuste estructural de la base de los botones del menú */
+        /* Ajuste y Padding de 20px estricto sobre cada botón para alineación rectilínea */
         [data-testid="stSidebar"] div.element-container div.stButton button {
             background-color: transparent !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 14px 24px !important;
+            padding: 20px 20px 20px 20px !important; /* PADDING DE 20PX SOLICITADO */
             margin-bottom: 6px !important;
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
-            justify-content: flex-start !important; /* Forzar alineación a la izquierda */
+            justify-content: flex-start !important; /* ALINEADOS A LA IZQUIERDA */
             text-align: left !important;
             border-radius: 12px !important;
-            gap: 16px !important; /* Separación simétrica uniforme entre icono y letras */
+            gap: 18px !important;
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* TEXTO BLANCO POR DEFECTO Y MÁS GRANDE */
+        /* FUENTE BLANCA FIJA Y MÁS GRANDE */
         [data-testid="stSidebar"] div.element-container div.stButton button p,
         [data-testid="stSidebar"] div.element-container div.stButton button span {
-            color: #ffffff !important; /* Forzar blanco puro siempre */
-            font-size: 1.1rem !important; /* Fuente un poco más grande */
+            color: #ffffff !important;
+            font-size: 1.2rem !important; /* FUENTE MÁS GRANDE */
             font-weight: 600 !important;
             margin: 0 !important;
             text-align: left !important;
         }
         
-        /* ICONOS DELINEADOS BLANCOS Y MÁS GRANDES */
+        /* ICONOS DELINEADOS BLANCOS AMPLIADOS */
         [data-testid="stSidebar"] div.element-container div.stButton button svg,
         [data-testid="stSidebar"] div.element-container div.stButton button data-testid-icon {
-            color: #ffffff !important; /* Iconos blancos por defecto */
+            color: #ffffff !important;
             fill: #ffffff !important;
-            width: 24px !important; /* Iconos escalados más grandes */
-            height: 24px !important;
+            width: 28px !important; /* ICONOS MÁS GRANDES */
+            height: 28px !important;
             flex-shrink: 0 !important;
         }
         
-        /* HOVER ELEGANTE: Mantiene el blanco y resalta con fondo azul rey */
+        /* EFECTO HOVER CORPORATIVO AZUL */
         [data-testid="stSidebar"] div.element-container div.stButton button:hover,
         [data-testid="stSidebar"] div.element-container div.stButton button:focus {
             background-color: #0047ff !important;
@@ -224,7 +224,7 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Opciones usando la especificación Material nativa
+        # Bloques de navegación con inyección de iconos oficiales escalados
         if st.button("Inicio", icon=":material/home:", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
@@ -244,7 +244,7 @@ else:
             st.session_state['opcion_menu'] = "Dashboard / KPIs"
             st.rerun()
             
-        st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 3rem;'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", icon=":material/logout:", use_container_width=True):
             st.session_state['autenticado'] = False
             st.rerun()
