@@ -21,15 +21,14 @@ def conectar_neon_db():
 def obtener_datos_reales_dashboard():
     conn = conectar_neon_db()
     datos_mockup = {
-        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245,
-        "is_real": False
+        "solicitudes_activas": 128, "pruebas_programadas": 56, "resultados_pendientes": 34, "casos_cerrados": 245
     }
     if conn is None:
         return datos_mockup
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # SOLUCIÓN AL ERROR SQL: Conteo general robusto para evitar fallos de columnas inexistentes
+        # Conteo general controlado por bloques try-except independientes para blindar el esquema real
         try:
             cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento;")
             datos_mockup["solicitudes_activas"] = cursor.fetchone()["total"] or 128
@@ -54,7 +53,6 @@ def obtener_datos_reales_dashboard():
         except Exception:
             conn.rollback()
             
-        datos_mockup["is_real"] = True
         cursor.close()
         conn.close()
         return datos_mockup

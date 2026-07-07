@@ -143,9 +143,8 @@ if not st.session_state['autenticado']:
 </div>
     """, unsafe_allow_html=True)
 
-# --- ESCENARIO B: PANEL DE CONTROL ---
+# --- ESCENARIO B: PANEL DE CONTROL LOGUEADO ---
 else:
-    # REESCRITURA DE CSS COMPLETA PARA LOGRAR MENÚ DERECHO, ALINEADO E ICONOS DELINEADOS BLANCOS
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
@@ -153,7 +152,7 @@ else:
         [data-testid="stSidebar"] { background-color: #031430 !important; width: 290px !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
         
-        /* Forzar la alineación estricta a la izquierda y eliminar estilos toscos nativos */
+        /* Alineación izquierda estricta y eliminación de bordes grises */
         [data-testid="stSidebar"] div.element-container div.stButton button {
             background-color: transparent !important;
             background: transparent !important;
@@ -164,13 +163,12 @@ else:
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
-            justify-content: flex-start !important; /* Totalmente a la izquierda */
+            justify-content: flex-start !important;
             text-align: left !important;
             border-radius: 10px !important;
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* Forzar textos limpios alineados */
         [data-testid="stSidebar"] div.element-container div.stButton button p,
         [data-testid="stSidebar"] div.element-container div.stButton button span {
             color: #94a3b8 !important;
@@ -180,18 +178,27 @@ else:
             text-align: left !important;
         }
         
-        /* HOVER PREMIUM PERFECTO: Fondo azul e iconos/textos forzados a blanco puro */
+        /* Forzar que los iconos vectoriales hereden el color correcto */
+        [data-testid="stSidebar"] div.element-container div.stButton button svg {
+            fill: #94a3b8 !important;
+            color: #94a3b8 !important;
+        }
+        
+        /* HOVER SEGURO: Botón azul, texto blanco e icono blanco garantizados */
         [data-testid="stSidebar"] div.element-container div.stButton button:hover,
         [data-testid="stSidebar"] div.element-container div.stButton button:focus {
             background-color: #0047ff !important;
             background: #0047ff !important;
         }
         [data-testid="stSidebar"] div.element-container div.stButton button:hover p,
-        [data-testid="stSidebar"] div.element-container div.stButton button:hover span {
+        [data-testid="stSidebar"] div.element-container div.stButton button:hover span,
+        [data-testid="stSidebar"] div.element-container div.stButton button:hover svg {
             color: #ffffff !important;
+            fill: #ffffff !important;
             font-weight: 600 !important;
         }
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
     with st.sidebar:
@@ -217,28 +224,28 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # MENÚ CON ICONOS DELINEADOS NATIVOS TOTALMENTE RECTOS Y ALINEADOS
-        if st.button("Inicio", icon="home", use_container_width=True):
+        # SINTAXIS REESCRITA CON IDENTIFICADORES DE MATERIAL SYMBOLS
+        if st.button("Inicio", icon=":material/home:", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
-        if st.button("Registro de Estudiantes", icon="group", use_container_width=True):
+        if st.button("Registro de Estudiantes", icon=":material/group:", use_container_width=True):
             st.session_state['opcion_menu'] = "Registro Estudiantes"
             st.rerun()
-        if st.button("Estado de Pruebas", icon="assignment", use_container_width=True):
+        if st.button("Estado de Pruebas", icon=":material/assignment:", use_container_width=True):
             st.session_state['opcion_menu'] = "Estado de Pruebas"
             st.rerun()
-        if st.button("Programación", icon="calendar_today", use_container_width=True):
+        if st.button("Programación", icon=":material/calendar_today:", use_container_width=True):
             st.session_state['opcion_menu'] = "Programación"
             st.rerun()
-        if st.button("Evaluación", icon="rate_review", use_container_width=True):
+        if st.button("Evaluación", icon=":material/rate_review:", use_container_width=True):
             st.session_state['opcion_menu'] = "Evaluación"
             st.rerun()
-        if st.button("Dashboard / KPIs", icon="dashboard", use_container_width=True):
+        if st.button("Dashboard / KPIs", icon=":material/dashboard:", use_container_width=True):
             st.session_state['opcion_menu'] = "Dashboard / KPIs"
             st.rerun()
             
         st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
-        if st.button("Cerrar sesión", icon="logout", use_container_width=True):
+        if st.button("Cerrar sesión", icon=":material/logout:", use_container_width=True):
             st.session_state['autenticado'] = False
             st.rerun()
 
