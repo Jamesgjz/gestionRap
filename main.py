@@ -95,7 +95,7 @@ if not st.session_state['autenticado']:
         .form-group input:focus { border-color: #0056b3; box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.08); }
         
         /* Botón de Acción */
-        .btn-submit-action { background-color: #0047ff; color: white; width: 100%; border: none; padding: 1rem; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14px rgba(0, 71, 255, 0.2); }
+        .btn-submit-action { background-color: #0047ff; color: white; width: 100%; border: none; padding: 1rem; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14 rgba(0, 71, 255, 0.2); }
         .btn-submit-action:hover { background-color: #0036d9; }
         
         /* Footer de Soporte */
@@ -109,7 +109,7 @@ if not st.session_state['autenticado']:
         
         <script>
         function seleccionarPestana(modo) {
-            document.getElementById('auth_mode').value = mode;
+            document.getElementById('auth_mode').value = modo;
             const btnAdmin = document.getElementById('btn-tab-admin');
             const btnPublic = document.getElementById('btn-tab-publico');
             
@@ -254,7 +254,6 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Etiqueta de rol dinámica en la tarjeta de perfil lateral
         badge_rol = "Administrador" if st.session_state.get('rol') == "admin" else "Consulta Pública"
         
         st.markdown(f"""
@@ -270,12 +269,11 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # --- MENÚ LATERAL FILTRADO POR ROL ---
+        # Menu lateral filtrado
         if st.button("🏠 Inicio", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
             
-        # Solo el Administrador tiene acceso a los módulos de gestión y parametrización académica
         if st.session_state.get('rol') == "admin":
             if st.button("🎓 Registro de Estudiantes", use_container_width=True):
                 st.session_state['opcion_menu'] = "Registro Estudiantes"
@@ -290,7 +288,6 @@ else:
                 st.session_state['opcion_menu'] = "Evaluación"
                 st.rerun()
                 
-        # El módulo de Dashboards y KPIs analíticos queda disponible para ambas opciones
         if st.button("📊 Dashboard / KPIs", use_container_width=True):
             st.session_state['opcion_menu'] = "Dashboard / KPIs"
             st.rerun()
@@ -301,7 +298,7 @@ else:
             st.session_state['rol'] = None
             st.rerun()
 
-    # --- ENRUTADOR GENERAL DE VISTAS MÓDULO POR MÓDULO ---
+    # --- ENRUTADOR GENERAL DE VISTAS ---
     opcion = st.session_state['opcion_menu']
 
     if opcion == "Inicio":
