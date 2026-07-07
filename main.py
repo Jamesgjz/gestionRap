@@ -1,7 +1,7 @@
 import streamlit as st
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
 
-# Configuración de la página en modo ancho total y limpio
+# Configuración de la página en modo ancho total e impecable
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
 if 'autenticado' not in st.session_state:
@@ -74,20 +74,6 @@ if not st.session_state['autenticado']:
         .feature-icon-wrapper { background: rgba(255, 255, 255, 0.05); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; color: #38bdf8; font-size: 1.1rem; }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <script>
-        function seleccionarPestana(modo) {
-            document.getElementById('auth_mode').value = modo;
-            const btnAdmin = document.getElementById('btn-tab-admin');
-            const btnPublic = document.getElementById('btn-tab-publico');
-            if (modo === 'admin') {
-                btnAdmin.classList.add('active');
-                btnPublic.classList.remove('active');
-            } else {
-                btnPublic.classList.add('active');
-                btnAdmin.classList.remove('active');
-            }
-        }
-        </script>
     """, unsafe_allow_html=True)
 
     st.markdown("""
@@ -157,9 +143,9 @@ if not st.session_state['autenticado']:
 </div>
     """, unsafe_allow_html=True)
 
-# --- ESCENARIO B: ENTORNO ADMINISTRATIVO (LOGUEADO) ---
+# --- ESCENARIO B: PANEL DE CONTROL ---
 else:
-    # REESCRITURA AGRESIVA E INDESTRUCTIBLE PARA LOS BOTONES DEL SIDEBAR
+    # REESCRITURA DE CSS COMPLETA PARA LOGRAR MENÚ DERECHO, ALINEADO E ICONOS DELINEADOS BLANCOS
     st.markdown("""
         <style>
         html, body, [data-testid="stAppViewContainer"] { overflow: auto !important; background-color: #fcfdfe !important; }
@@ -167,53 +153,45 @@ else:
         [data-testid="stSidebar"] { background-color: #031430 !important; width: 290px !important; }
         [data-testid="stSidebarNav"] { display: none !important; }
         
-        /* Forzar la eliminación de cualquier estilo por defecto en los botones del sidebar */
-        [data-testid="stSidebar"] div.element-container div.stButton button,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
+        /* Forzar la alineación estricta a la izquierda y eliminar estilos toscos nativos */
+        [data-testid="stSidebar"] div.element-container div.stButton button {
             background-color: transparent !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 14px 20px !important;
-            margin-bottom: 6px !important;
+            padding: 12px 24px !important;
+            margin-bottom: 4px !important;
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
-            justify-content: flex-start !important;
+            justify-content: flex-start !important; /* Totalmente a la izquierda */
             text-align: left !important;
-            border-radius: 12px !important;
+            border-radius: 10px !important;
             transition: all 0.2s ease-in-out !important;
         }
         
-        /* Forzar texto visible gris claro por defecto */
+        /* Forzar textos limpios alineados */
         [data-testid="stSidebar"] div.element-container div.stButton button p,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
-        [data-testid="stSidebar"] div.element-container div.stButton button span,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span {
+        [data-testid="stSidebar"] div.element-container div.stButton button span {
             color: #94a3b8 !important;
-            font-size: 0.98rem !important;
+            font-size: 0.96rem !important;
             font-weight: 500 !important;
             margin: 0 !important;
+            text-align: left !important;
         }
         
-        /* CONTROL ABSOLUTO DEL HOVER: Fondo azul rey vivo y texto blanco obligatorios */
+        /* HOVER PREMIUM PERFECTO: Fondo azul e iconos/textos forzados a blanco puro */
         [data-testid="stSidebar"] div.element-container div.stButton button:hover,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover,
-        [data-testid="stSidebar"] div.element-container div.stButton button:focus,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:focus {
+        [data-testid="stSidebar"] div.element-container div.stButton button:focus {
             background-color: #0047ff !important;
             background: #0047ff !important;
         }
-        
         [data-testid="stSidebar"] div.element-container div.stButton button:hover p,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p,
-        [data-testid="stSidebar"] div.element-container div.stButton button:hover span,
-        [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover span {
+        [data-testid="stSidebar"] div.element-container div.stButton button:hover span {
             color: #ffffff !important;
             font-weight: 600 !important;
         }
         </style>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
     with st.sidebar:
@@ -239,29 +217,29 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🏠 Inicio", use_container_width=True):
+        # MENÚ CON ICONOS DELINEADOS NATIVOS TOTALMENTE RECTOS Y ALINEADOS
+        if st.button("Inicio", icon="home", use_container_width=True):
             st.session_state['opcion_menu'] = "Inicio"
             st.rerun()
-        if st.button("👥 Registro de Estudiantes", use_container_width=True):
+        if st.button("Registro de Estudiantes", icon="group", use_container_width=True):
             st.session_state['opcion_menu'] = "Registro Estudiantes"
             st.rerun()
-        if st.button("📋 Estado de Pruebas", use_container_width=True):
+        if st.button("Estado de Pruebas", icon="assignment", use_container_width=True):
             st.session_state['opcion_menu'] = "Estado de Pruebas"
             st.rerun()
-        if st.button("📅 Programación", use_container_width=True):
+        if st.button("Programación", icon="calendar_today", use_container_width=True):
             st.session_state['opcion_menu'] = "Programación"
             st.rerun()
-        if st.button("📝 Evaluación", use_container_width=True):
+        if st.button("Evaluación", icon="rate_review", use_container_width=True):
             st.session_state['opcion_menu'] = "Evaluación"
             st.rerun()
-        if st.button("📊 Dashboard / KPIs", use_container_width=True):
+        if st.button("Dashboard / KPIs", icon="dashboard", use_container_width=True):
             st.session_state['opcion_menu'] = "Dashboard / KPIs"
             st.rerun()
             
-        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Cerrar sesión", use_container_width=True):
+        st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
+        if st.button("Cerrar sesión", icon="logout", use_container_width=True):
             st.session_state['autenticado'] = False
-            st.session_state['rol'] = "admin"
             st.rerun()
 
     opcion = st.session_state['opcion_menu']
