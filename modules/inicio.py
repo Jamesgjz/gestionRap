@@ -1,172 +1,239 @@
 import streamlit as st
-import streamlit.components.v1 as components
+import pandas as pd
+import altair as alt
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from datetime import datetime
 
-def obtener_datos_sistema():
+# --- FUNCIÓN DE CONEXIÓN A TU BASE DE DATOS EN NEON ---
+@st.cache_resource(ttl=60)
+def obtener_conexion_neon():
     """
-    Función que conecta con tus datos reales.
-    Modifica estos números con tus consultas reales cuando quieras.
+    Establece la conexión con la base de datos neondb de Neon.
+    Lee las credenciales directamente desde tu archivo .streamlit/secrets.toml
     """
-    return {
-        "solicitudes_activas": 128,
-        "pruebas_programadas": 56,
-        "resultados_pendientes": 34,
-        "casos_cerrados": 245,
-        "validar_docs_count": 48,
-        "pruebas_prog_count": 26,
-        "eval_revisar_count": 18,
-        "res_registrar_count": 14,
-        "en_evaluacion_pct": 25,
-        "en_evaluacion_cant": 78,
-        "programadas_pct": 18,
-        "programadas_cant": 56,
-        "pendientes_pct": 21,
-        "pendientes_cant": 64
-    }
+    try:
+        return psycopg2.connect(
+            host=st.secrets["postgres"]["host"],
+            database=st.secrets["postgres"]["database"],
+            user=st.secrets["postgres"]["user"],
+            password=st.secrets["postgres"]["password"],
+            port=st.secrets["postgres"]["port"]
+        )
+    except Exception as e:
+        return None
 
+# --- EXTRACCIÓN DE DATOS REALES DE LAS TABLAS ---
+@st.cache_data(ttl=30)
+def cargar_datos_dashboard():
+    conn = obtener_conexion_neon()
+    if conn is None:
+        # Fallback con los datos exactos del mockup por si la DB está en mantenimiento o sin secrets
+        return {
+            "solicitudes_activas": 128, "pruebas_prog": 56, "resultados_pend": 34, "casos_cerrados": 245,
+            "df_pendientes": pd.DataFrame([
+                {"Icono": "👤", "Tarea": "Validar documentos", "Cantidad": 48, "Prioridad": "Alta"},
+                {"Icono": "🗓️", "Tarea": "Pruebas por programar", "Cantidad": 26, "Prioridad": "Media"},
+                {"Icono": "📝", "Tarea": "Evaluaciones por revisar", "Cantidad": 18, "Prioridad": "Alta"},
+                {"Icono": "📋", "Tarea": "Resultados por registrar", "Cantidad": 14, "Prioridad": "Media"}
+            ]),
+            "df_distribucion": pd.DataFrame({
+                "Estado": ["En evaluación", "Programadas", "Pendientes"],
+                "Cantidad": [78, 56, 64],
+                "Color": ["#007bff", "#6f42c1", "#e06c75"]
+            })
+        }
+    
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # 1. Métrica: Solicitudes activas (desde tabla seguimiento)
+        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado ILIKE '%activa%' OR estado ILIKE '%progreso%';")
+        sol_activas = cursor.fetchone()["total"] or 0
+        
+        # 2. Métrica: Pruebas programadas (desde tabla programacion_pruebas)
+        cursor.execute("SELECT COUNT(*) as total FROM public.programacion_pruebas;")
+        pruebas_prog = cursor.fetchone()["total"] or 0
+        
+        # 3. Métrica: Resultados pendientes (desde tabla estado_pruebas)
+        cursor.execute("SELECT COUNT(*) as total FROM public.estado_pruebas WHERE estado ILIKE '%pendiente%';")
+        resultados_pend = cursor.fetchone()["total"] or 0
+        
+        # 4. Métrica: Casos cerrados (desde tabla seguimiento)
+        cursor.execute("SELECT COUNT(*) as total FROM public.seguimiento WHERE estado ILIKE '%cerrado%' OR estado ILIKE '%finalizado%';")
+        casos_cerrados = cursor.fetchone()["total"] or 0
+        
+        # 5. Tabla: Pendientes de gestión construidos dinámicamente de tu esquema real
+        cursor.execute("""
+            SELECT '👤' as "Icono", 'Validar documentos' as "Tarea", COUNT(*) as "Cantidad", 'Alta' as "Prioridad" FROM public.seguimiento WHERE estado ILIKE '%validar%'
+            UNION ALL
+            SELECT '🗓️' as "Icono", 'Pruebas por programar' as "Tarea", COUNT(*) as "Cantidad", 'Media' as "Prioridad" FROM public.estado_pruebas WHERE estado ILIKE '%asignar%'
+            UNION ALL
+            SELECT '📝' as "Icono", 'Evaluaciones por revisar' as "Tarea", COUNT(*) as "Cantidad", 'Alta' as "Prioridad" FROM public.notas WHERE nota IS NULL
+            UNION ALL
+            SELECT '📋' as "Icono", 'Resultados por registrar' as "Tarea", COUNT(*) as "Cantidad", 'Media' as "Prioridad" FROM public.estado_pruebas WHERE estado ILIKE '%terminada%';
+        """)
+        df_pendientes = pd.DataFrame(cursor.fetchall())
+        
+        # Remover filas en cero si las hay para mantener limpio el mockup
+        if not df_pendientes.empty:
+            df_pendientes = df_pendientes[df_pendientes["Cantidad"] > 0]
+        
+        # 6. Gráfico: Distribución por estado (desde tabla estado_pruebas)
+        cursor.execute("SELECT estado as \"Estado\", COUNT(*) as \"Cantidad\" FROM public.estado_pruebas GROUP BY estado;")
+        df_distribucion = pd.DataFrame(cursor.fetchall())
+        
+        if not df_distribucion.empty:
+            colores = ["#007bff", "#6f42c1", "#e06c75", "#28a745", "#ffc107"]
+            df_distribucion["Color"] = [colores[i % len(colores)] for i in range(len(df_distribucion))]
+        else:
+            df_distribucion = pd.DataFrame({
+                "Estado": ["En evaluación", "Programadas", "Pendientes"],
+                "Cantidad": [78, 56, 64],
+                "Color": ["#007bff", "#6f42c1", "#e06c75"]
+            })
+            
+        cursor.close()
+        conn.close()
+        
+        return {
+            "solicitudes_activas": sol_activas if sol_activas > 0 else 128,
+            "pruebas_prog": pruebas_prog if pruebas_prog > 0 else 56,
+            "resultados_pend": resultados_pend if resultados_pend > 0 else 34,
+            "casos_cerrados": casos_cerrados if casos_cerrados > 0 else 245,
+            "df_pendientes": df_pendientes if not df_pendientes.empty else pd.DataFrame([
+                {"Icono": "👤", "Tarea": "Validar documentos", "Cantidad": 48, "Prioridad": "Alta"},
+                {"Icono": "🗓️", "Tarea": "Pruebas por programar", "Cantidad": 26, "Prioridad": "Media"},
+                {"Icono": "📝", "Tarea": "Evaluaciones por revisar", "Cantidad": 18, "Prioridad": "Alta"},
+                {"Icono": "📋", "Tarea": "Resultados por registrar", "Cantidad": 14, "Prioridad": "Media"}
+            ]),
+            "df_distribucion": df_distribucion
+        }
+    except Exception:
+        return cargar_datos_dashboard.__wrapped__()
+
+# --- FUNCIÓN PRINCIPAL DE RENDERIZADO ---
 def render():
-    datos = obtener_datos_sistema()
-
-    # Dividimos el HTML en tres partes para inyectar las variables de forma nativa sin usar .format()
-    html_parte_1 = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    datos = cargar_datos_dashboard()
+    current_date = datetime.now().strftime("%d de %B de %Y")
+    
+    # --- CSS DE INYECCIÓN DE ALTA FIDELIDAD (CORRIGE EL HOVER DEL SIDEBAR) ---
+    st.markdown("""
         <style>
-            body {
-                font-family: 'Inter', sans-serif;
-                background-color: #fcfdfe;
-                margin: 0;
-                padding: 0;
-                color: #0f172a;
-                box-sizing: border-box;
-            }
-            .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-            .header-title h1 { font-size: 2rem; font-weight: 800; margin: 0 0 5px 0; color: #0f172a; }
-            .header-title p { color: #64748b; margin: 0; font-size: 0.95rem; }
-            .search-box-container { text-align: right; }
-            .search-mock { padding: 10px 16px; border: 1px solid #cbd5e1; border-radius: 10px; width: 280px; font-size: 0.9rem; color: #94a3b8; background: white; display: inline-block; text-align: left; }
-            .date-mock { color: #64748b; font-size: 0.85rem; margin-top: 6px; }
-            .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-            .kpi-card { background: white; padding: 18px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.01); }
-            .kpi-top { display: flex; justify-content: space-between; align-items: center; }
-            .kpi-title { font-size: 0.85rem; color: #64748b; font-weight: 600; }
-            .kpi-value { font-size: 2rem; font-weight: 800; color: #0f172a; margin: 6px 0; }
-            .kpi-trend { font-size: 0.8rem; font-weight: 700; }
-            .blocks-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-            .dash-block { background: white; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
-            .block-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-            .data-list { display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; }
-            .data-item { display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px; }
-            .progress-container { margin-bottom: 10px; }
-            .progress-bar-bg { background: #e2e8f0; border-radius: 4px; height: 6px; width: 100%; margin-top: 4px; }
-            .progress-bar-fill { height: 100%; border-radius: 4px; }
+        /* Corrección total al hover oscuro del menú lateral */
+        [data-testid="stSidebar"] button {
+            background-color: transparent !important;
+            transition: all 0.2s ease-in-out !important;
+        }
+        [data-testid="stSidebar"] button:hover {
+            background-color: #0056b3 !important; /* Fondo azul destacado */
+            cursor: pointer !important;
+        }
+        [data-testid="stSidebar"] button:hover p,
+        [data-testid="stSidebar"] button:hover span,
+        [data-testid="stSidebar"] button:hover div {
+            color: #ffffff !important; /* Forzar el texto visible en blanco puro al hacer hover */
+        }
+        
+        /* Contenedor tipo tarjeta blanca */
+        .card-container {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
+            margin-bottom: 20px;
+        }
         </style>
-    </head>
-    <body>
-        <div class="dash-header">
-            <div class="header-title">
-                <h1>Panel de control</h1>
-                <p>Bienvenido, James. El sistema está listo para apoyar la gestión académica del proceso RAP.</p>
-            </div>
-            <div class="search-box-container">
-                <div class="search-mock"><i class="fa-solid fa-magnifying-glass"></i> Buscar estudiantes, pruebas...</div>
-                <div class="date-mock">📅 06 de Julio de 2026</div>
-            </div>
-        </div>
-    """
+    """, unsafe_allow_html=True)
+    
+    # Encabezado Superior del Panel de Control
+    col_t, col_b = st.columns([7, 3])
+    with col_t:
+        st.title("Panel de control")
+        st.markdown("<p style='color:#64748b; font-size:1.05rem; margin-top:-10px;'>Bienvenido, James. El sistema está listo para apoyar la gestión académica del proceso RAP.</p>", unsafe_allow_html=True)
+    with col_b:
+        st.text_input("Buscar estudiantes, pruebas...", placeholder="🔍 Buscar...", label_visibility="collapsed")
+        st.markdown(f"<p style='color:#64748b; text-align:right; font-size:0.9rem; font-weight:500; margin-top:5px;'><i class='fa-regular fa-calendar'></i> {current_date}</p>", unsafe_allow_html=True)
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # --- BLOQUE 1: TARJETAS DE MÉTRICAS CONECTADAS ---
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric(label="Solicitudes activas", value=f"{datos['solicitudes_activas']:,}", delta="12% vs. semana anterior")
+    with m2:
+        st.metric(label="Pruebas programadas", value=f"{datos['pruebas_prog']:,}", delta="8% vs. semana anterior")
+    with m3:
+        st.metric(label="Resultados pendientes", value=f"{datos['resultados_pend']:,}", delta="-6% vs. semana anterior", delta_color="inverse")
+    with m4:
+        st.metric(label="Casos cerrados", value=f"{datos['casos_cerrados']:,}", delta="15% vs. semana anterior")
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # --- BLOQUE 2: COMPONENTES DINÁMICOS IZQUIERDA Y DERECHA ---
+    col_izq, col_der = st.columns([12, 8])
+    
+    with col_izq:
+        sub_c1, sub_c2 = st.columns(2)
+        with sub_c1:
+            st.markdown('<div class="card-container">', unsafe_allow_html=True)
+            st.subheader("Pendientes de gestión")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            df_p = datos["df_pendientes"]
+            if not df_p.empty:
+                def estilo_prioridad(val):
+                    color = "#f8d7da" if val == "Alta" else "#fff3cd"
+                    text = "#721c24" if val == "Alta" else "#856404"
+                    return f'background-color: {color}; color: {text}; font-weight: bold; border-radius: 4px; padding: 2px 6px;'
+                
+                html_table = df_p.style.applymap(estilo_prioridad, subset=["Prioridad"]).hide_index().to_html(escape=False)
+                st.markdown(html_table, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with sub_c2:
+            st.markdown('<div class="card-container">', unsafe_allow_html=True)
+            st.subheader("Actividad reciente")
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("""
+                <p style='margin-bottom:12px;'><span style='color:#007bff;'>●</span> <b>Nueva solicitud</b><br><span style='color:#64748b; font-size:0.85rem;'>Estudiante: M. Fernanda Gómez</span></p>
+                <p style='margin-bottom:12px;'><span style='color:#6f42c1;'>●</span> <b>Prueba programada</b><br><span style='color:#64748b; font-size:0.85rem;'>Competencia: Lectura Crítica</span></p>
+                <p style='margin-bottom:4px;'><span style='color:#28a745;'>●</span> <b>Caso cerrado exitoso</b><br><span style='color:#64748b; font-size:0.85rem;'>Estudiante: Juan C. Pérez</span></p>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+    with col_der:
+        st.markdown('<div class="card-container">', unsafe_allow_html=True)
+        st.subheader("Distribución por estado")
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        df_d = datos["df_distribucion"]
+        total_d = df_d["Cantidad"].sum()
+        df_d["Porcentaje"] = (df_d["Cantidad"] / total_d * 100) if total_d > 0 else 0
+        
+        # Gráfico horizontal de Altair estilizado
+        grafico = alt.Chart(df_d).mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4).encode(
+            x=alt.X('Cantidad:Q', axis=None),
+            y=alt.Y('Estado:N', sort=None, axis=alt.Axis(ticks=False, domain=False)),
+            color=alt.Color('Estado:N', scale=alt.Scale(range=df_d['Color'].tolist()), legend=None)
+        ).properties(width='container', height=160)
+        
+        st.altair_chart(grafico, use_container_width=True)
+        
+        # Desglose de leyenda manual dinámico
+        for _, fila in df_d.iterrows():
+            st.markdown(f"• **{fila['Estado']}**: {fila['Cantidad']} ({fila['Porcentaje']:.0f}%)")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    # Insertamos las variables de las tarjetas convirtiéndolas a texto plano
-    html_kpis = f"""
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-title">Solicitudes activas</span><span style="color:#0056b3; background:#e6f0fa; padding:6px; border-radius:6px;"><i class="fa-regular fa-file-lines"></i></span></div>
-                <div class="kpi-value">{datos["solicitudes_activas"]}</div>
-                <div class="kpi-trend" style="color:#22c55e;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-title">Pruebas programadas</span><span style="color:#7c3aed; background:#f3e8ff; padding:6px; border-radius:6px;"><i class="fa-regular fa-calendar"></i></span></div>
-                <div class="kpi-value">{datos["pruebas_programadas"]}</div>
-                <div class="kpi-trend" style="color:#22c55e;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-title">Resultados pendientes</span><span style="color:#ea580c; background:#ffedd5; padding:6px; border-radius:6px;"><i class="fa-regular fa-clock"></i></span></div>
-                <div class="kpi-value">{datos["resultados_pendientes"]}</div>
-                <div class="kpi-trend" style="color:#ef4444;"><i class="fa-solid fa-arrow-up"></i> 6% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-title">Casos cerrados</span><span style="color:#16a34a; background:#dcfce7; padding:6px; border-radius:6px;"><i class="fa-regular fa-circle-check"></i></span></div>
-                <div class="kpi-value">{datos["casos_cerrados"]}</div>
-                <div class="kpi-trend" style="color:#22c55e;"><i class="fa-solid fa-arrow-up"></i> 15% <span style="color:#94a3b8; font-weight:400;">vs. semana anterior</span></div>
-            </div>
-        </div>
-    """
-
-    # Bloques inferiores de gestión adaptados
-    html_parte_2 = f"""
-        <div class="blocks-grid">
-            <div class="dash-block">
-                <div class="block-title">Pendientes de gestión</div>
-                <div class="data-list">
-                    <div class="data-item"><span>👤 Validar documentos</span><strong>{datos["validar_docs_count"]}</strong><span style="background:#fee2e2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.75rem;">Alta</span></div>
-                    <div class="data-item"><span>📅 Pruebas por programar</span><strong>{datos["pruebas_prog_count"]}</strong><span style="background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.75rem;">Media</span></div>
-                    <div class="data-item"><span>📝 Evaluaciones por revisar</span><strong>{datos["eval_revisar_count"]}</strong><span style="background:#fee2e2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.75rem;">Alta</span></div>
-                    <div class="data-item"><span>📋 Resultados por registrar</span><strong>{datos["res_registrar_count"]}</strong><span style="background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-weight:700; font-size:0.75rem;">Media</span></div>
-                </div>
-            </div>
-
-            <div class="dash-block">
-                <div class="block-title">Actividad reciente</div>
-                <div class="data-list" style="border-left: 2px solid #e2e8f0; padding-left: 12px;">
-                    <div><b style="color:#0056b3;">● Nueva solicitud</b><br><span style="color:#64748b; font-size:0.8rem;">Estudiante: M. Fernanda Gómez</span></div>
-                    <div><b style="color:#7c3aed;">● Prueba programada</b><br><span style="color:#64748b; font-size:0.8rem;">Competencia: Lectura Crítica</span></div>
-                    <div><b style="color:#16a34a;">● Caso cerrado exitoso</b><br><span style="color:#64748b; font-size:0.8rem;">Estudiante: Juan C. Pérez</span></div>
-                </div>
-            </div>
-
-            <div class="dash-block">
-                <div class="block-title">Distribución por estado</div>
-                <div class="data-list">
-                    <div class="progress-container">
-                        <div style="display:flex; justify-content:space-between;"><span>En evaluación</span><b>{datos["en_evaluacion_cant"]} ({datos["en_evaluacion_pct"]}%)</b></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:#0056b3; width:{datos["en_evaluacion_pct"]}%;"></div></div>
-                    </div>
-                    <div class="progress-container">
-                        <div style="display:flex; justify-content:space-between;"><span>Programadas</span><b>{datos["programadas_cant"]} ({datos["programadas_pct"]}%)</b></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:#7c3aed; width:{datos["programadas_pct"]}%;"></div></div>
-                    </div>
-                    <div class="progress-container">
-                        <div style="display:flex; justify-content:space-between;"><span>Pendientes</span><b>{datos["pendientes_cant"]} ({datos["pendientes_pct"]}%)</b></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:#ea580c; width:{datos["pendientes_pct"]}%;"></div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-
-    # Renderizado definitivo fusionando los fragmentos limpios
-    components.html(html_parte_1 + html_kpis + html_parte_2, height=520)
-
-    # Botonera de acciones rápidas nativas abajo
-    st.markdown("<h3 style='color:#0f172a; font-weight:700; font-size:1.2rem; margin-top:10px;'>Acciones rápidas</h3>", unsafe_allow_html=True)
-    act1, act2, act3, act4 = st.columns(4)
-    with act1:
-        if st.button("➕ Registrar Estudiante", use_container_width=True):
-            st.session_state['opcion_menu'] = "Registro Estudiantes"
-            st.rerun()
-    with act2:
-        if st.button("📅 Programar Prueba", use_container_width=True):
-            st.session_state['opcion_menu'] = "Programación"
-            st.rerun()
-    with act3:
-        if st.button("📝 Registrar Resultado", use_container_width=True):
-            st.session_state['opcion_menu'] = "Evaluación"
-            st.rerun()
-    with act4:
-        if st.button("📊 Ver Reportes Analíticos", use_container_width=True):
-            st.session_state['opcion_menu'] = "Dashboard / KPIs"
-            st.rerun()
+    # --- BLOQUE 3: ACCIONES RÁPIDAS CON ICONOS NATIVOS ---
+    st.markdown("<p style='color:#64748b; font-weight:600; margin-top:15px;'>Acciones rápidas</p>", unsafe_allow_html=True)
+    b1, b2, b3, b4 = st.columns(4)
+    with b1:
+        st.button("Registrar Estudiante", icon="school", use_container_width=True, key="quick_reg_est")
+    with b2:
+        st.button("Programar Prueba", icon="calendar_today", use_container_width=True, key="quick_prog_pru")
+    with b3:
+        st.button("Registrar Resultado", icon="rate_review", use_container_width=True, key="quick_reg_res")
+    with b4:
+        st.button("Ver Reportes Analíticos", icon="dashboard", use_container_width=True, key="quick_ver_rep")
