@@ -44,7 +44,7 @@ if menu_click:
 # --- ESCENARIO A: PANTALLA DE LOGIN EN ALTA FIDELIDAD ---
 if not st.session_state['autenticado']:
     
-    # Ocultar cabeceras y forzar el lienzo limpio del navegador
+    # Ocultar cabeceras y forzar el lienzo limpio del navegador sin márgenes rotos
     st.markdown("""
         <style>
         [data-testid="stHeader"], [data-testid="stToolbar"], footer, [data-testid="stDecoration"] { display: none !important; }
@@ -64,7 +64,6 @@ if not st.session_state['autenticado']:
         
         /* Mitad Izquierda: Banner Azul Premium */
         .banner-azul { flex: 1; background: linear-gradient(180deg, #001737 0%, #00224f 100%); padding: 3.5rem; color: white; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-sizing: border-box; }
-        .banner-azul::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://w7.pngwing.com/pngs/943/725/png-transparent-uniminuto-hd-logo.png'); background-position: center right -15%; background-repeat: no-repeat; background-size: 80%; opacity: 0.03; pointer-events: none; }
         
         /* Mitad Derecha: Formulario */
         .panel-formulario { flex: 1.1; padding: 4.5rem; display: flex; flex-direction: column; justify-content: center; background-color: #ffffff; box-sizing: border-box; }
@@ -96,77 +95,71 @@ if not st.session_state['autenticado']:
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
-    # Estructura del HTML Maquetado en una sola pieza fluida
+    # Marcador HTML crudo sin indentaciones de bloque para evitar el error del intérprete Markdown
     st.markdown("""
-        <div class="page-wrapper">
-            <div class="top-bar">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" style="height:45px; width:auto;">
-                </div>
-                <div class="right-nav-items">
-                    <div class="icon-badge-container"><i class="fa-regular fa-bell"></i><div class="icon-badge">3</div></div>
-                    <div style="font-size: 1.3rem; cursor:pointer; color:#64748b;"><i class="fa-regular fa-circle-question"></i></div>
-                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 500;"><i class="fa-regular fa-calendar"></i> 21 de mayo de 2025</div>
-                </div>
-            </div>
-            
-            <div class="center-container">
-                <div class="main-container">
-                    <div class="banner-azul">
-                        <div>
-                            <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2rem; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-graduation-cap" style="color:#38bdf8;"></i> MD UNIMINUTO
-                            </div>
-                            <div style="color: #38bdf8; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">RAP Digital</div>
-                            <h1 style="font-size: 2.3rem; font-weight: 800; line-height: 1.15; margin: 0 0 1.2rem 0;">UNIMINUTO<br><span style="color:#f1c40f; font-size:1.8rem;">VIRTUAL</span></h1>
-                            <div style="width: 45px; height: 3px; background-color: #38bdf8; margin-bottom: 1.5rem; border-radius: 2px;"></div>
-                            <p style="font-size: 1.05rem; color: #94a3b8; line-height: 1.6; margin: 0;">Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.</p>
-                        </div>
-                        
-                        <div class="banner-features">
-                            <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-solid fa-chart-line"></i></div><span style="color:#f8fafc; font-size:0.85rem; font-weight:600;">Seguimiento</span></div>
-                            <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-regular fa-clipboard"></i></div><span style="color:#f8fafc; font-size:0.85rem; font-weight:600;">Evaluación</span></div>
-                            <div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-regular fa-circle-check"></i></div><span style="color:#f8fafc; font-size:0.85rem; font-weight:600; text-align:center;">Trazabilidad<br><span style="font-size:0.75rem; color:#94a3b8; font-weight:400;">académica</span></span></div>
-                        </div>
-                    </div>
-                    
-                    <div class="panel-formulario">
-                        <div style="margin-bottom: 2rem;">
-                            <h2 style="color: #0f172a; font-size: 2rem; font-weight: 700; margin: 0 0 6px 0;">Acceso al sistema</h2>
-                            <p style="color: #64748b; font-size: 0.95rem; margin: 0;">Inicia sesión para continuar con RAP Digital.</p>
-                        </div>
-                        
-                        <div class="mockup-tabs">
-                            <div class="tab-link active"><i class="fa-regular fa-user"></i> Administrativo</div>
-                            <div class="tab-link"><i class="fa-solid fa-globe"></i> Consulta pública</div>
-                        </div>
-                        
-                        <form action="/" method="GET">
-                            <div class="form-group">
-                                <label>Usuario</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-regular fa-user"></i>
-                                    <input type="text" name="u_auth" placeholder="Ingresa tu usuario" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Contraseña</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-lock"></i>
-                                    <input type="password" name="p_auth" placeholder="Ingresa tu contraseña" required>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar al sistema</button>
-                        </form>
-                        
-                        <div class="box-support-footer">
-                            <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
-                            <i class="fa-solid fa-chevron-right" style="font-size: 0.85rem;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="page-wrapper">
+<div class="top-bar">
+<div style="display: flex; align-items: center; gap: 10px;">
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Logo_Uniminuto.png/640px-Logo_Uniminuto.png" style="height:45px; width:auto;">
+</div>
+<div class="right-nav-items">
+<div class="icon-badge-container"><i class="fa-regular fa-bell"></i><div class="icon-badge">3</div></div>
+<div style="font-size: 1.3rem; cursor:pointer; color:#64748b;"><i class="fa-regular fa-circle-question"></i></div>
+<div style="color: #64748b; font-size: 0.9rem; font-weight: 500;"><i class="fa-regular fa-calendar"></i> 21 de mayo de 2025</div>
+</div>
+</div>
+<div class="center-container">
+<div class="main-container">
+<div class="banner-azul">
+<div>
+<div style="font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2rem; display: flex; align-items: center; gap: 8px;">
+<i class="fa-solid fa-graduation-cap" style="color:#38bdf8;"></i> MD UNIMINUTO
+</div>
+<div style="color: #38bdf8; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">RAP Digital</div>
+<h1 style="font-size: 2.3rem; font-weight: 800; line-height: 1.15; margin: 0 0 1.2rem 0;">UNIMINUTO<br><span style="color:#f1c40f; font-size:1.8rem;">VIRTUAL</span></h1>
+<div style="width: 45px; height: 3px; background-color: #38bdf8; margin-bottom: 1.5rem; border-radius: 2px;"></div>
+<p style="font-size: 1.05rem; color: #94a3b8; line-height: 1.6; margin: 0;">Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.</p>
+</div>
+<div class="banner-features">
+<div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-solid fa-chart-line"></i></div><span style="color:#f8fafc; font-size:0.85rem; font-weight:600;">Seguimiento</span></div>
+<div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-regular fa-clipboard"></i></div><span style="color:#f8fafc; font-size:0.85rem; font-weight:600;">Evaluación</span></div>
+<div class="feature-box"><div class="feature-icon-wrapper"><i class="fa-regular fa-circle-check"></i></div><span style="color:#f8fafc; font-size:0.85rem; font-weight:600; text-align:center;">Trazabilidad<br><span style="font-size:0.75rem; color:#94a3b8; font-weight:400;">académica</span></span></div>
+</div>
+</div>
+<div class="panel-formulario">
+<div style="margin-bottom: 2rem;">
+<h2 style="color: #0f172a; font-size: 2rem; font-weight: 700; margin: 0 0 6px 0;">Acceso al sistema</h2>
+<p style="color: #64748b; font-size: 0.95rem; margin: 0;">Inicia sesión para continuar con RAP Digital.</p>
+</div>
+<div class="mockup-tabs">
+<div class="tab-link active"><i class="fa-regular fa-user"></i> Administrativo</div>
+<div class="tab-link"><i class="fa-solid fa-globe"></i> Consulta pública</div>
+</div>
+<form action="/" method="GET">
+<div class="form-group">
+<label>Usuario</label>
+<div class="input-with-icon">
+<i class="fa-regular fa-user"></i>
+<input type="text" name="u_auth" placeholder="Ingresa tu usuario" required>
+</div>
+</div>
+<div class="form-group">
+<label>Contraseña</label>
+<div class="input-with-icon">
+<i class="fa-solid fa-lock"></i>
+<input type="password" name="p_auth" placeholder="Ingresa tu contraseña" required>
+</div>
+</div>
+<button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar al sistema</button>
+</form>
+<div class="box-support-footer">
+<span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
+<i class="fa-solid fa-chevron-right" style="font-size: 0.85rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
     """, unsafe_allow_html=True)
 
 # --- ESCENARIO B: ENTORNO ADMINISTRATIVO COMPLETO (LOGUEADO) ---
