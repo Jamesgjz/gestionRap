@@ -2,7 +2,7 @@ import streamlit as st
 from database import traer_datos
 
 def render():
-    # --- CSS DE ALTA FIDELIDAD: ICONOS GRANDES, CENTRADOS Y FUENTES JERÁRQUICAS ---
+    # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
 <style>
 /* Reset de fondo */
@@ -14,7 +14,7 @@ def render():
 /* Títulos y Cabecera */
 .page-title { font-size: 2.2rem !important; font-weight: 800 !important; color: #0f172a; margin-bottom: 25px; }
 
-/* Grid de tarjetas de acción (Imagen 1) */
+/* Grid de tarjetas de acción */
 .action-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; }
 .action-card { 
     background: white; border: 1px solid #e2e8f0; border-radius: 16px; 
@@ -43,10 +43,17 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # --- LÓGICA DE DATOS ---
-    tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0] or 1248
-    tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0] or 86
-    
+    # --- LÓGICA DE DATOS REAL (CONECTADA A TU DB) ---
+    try:
+        # Consultas a la base de datos
+        tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
+        tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
+        tot_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")[0][0]
+        tot_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")[0][0]
+    except:
+        # Fallback en caso de error de conexión
+        tot_est, tot_prof, tot_pend, tot_asig = 0, 0, 0, 0
+
     st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
     
     # Cabecera
@@ -54,7 +61,7 @@ def render():
         <h1 class="page-title">Gestión de Registros</h1>
     </div>""", unsafe_allow_html=True)
 
-    # Fila de 3 Tarjetas de Acción (Iconos Grandes y Centrados)
+    # Fila de 3 Tarjetas de Acción
     st.markdown("""<div class="action-cards-grid">
         <div class="action-card">
             <div class="card-icon">🎓</div>
@@ -76,15 +83,15 @@ def render():
         </div>
     </div>""", unsafe_allow_html=True)
 
-    # Fila de 4 Métricas (Valores grandes)
+    # Fila de 4 Métricas (Valores dinámicos)
     st.markdown(f"""<div class="metrics-grid">
-        <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">↑ 12% vs. semana anterior</div></div>
-        <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">↑ 8% vs. semana anterior</div></div>
-        <div class="metric-card"><div class="metric-lbl">Pendientes de gestión</div><div class="metric-val">86</div><div style="color:#ef4444; font-size:0.85rem; font-weight:600;">↑ 5% vs. semana anterior</div></div>
-        <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">64</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">↑ 10% vs. semana anterior</div></div>
+        <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
+        <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
+        <div class="metric-card"><div class="metric-lbl">Pendientes de gestión</div><div class="metric-val">{tot_pend}</div><div style="color:#ef4444; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
+        <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
     </div>""", unsafe_allow_html=True)
 
-    # Split inferior (Actividad y Accesos)
+    # Split inferior
     st.markdown("""<div class="bottom-split">
         <div class="card-box">
             <div class="panel-card-title">Actividad reciente</div>
