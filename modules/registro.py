@@ -87,24 +87,37 @@ def render():
     </div>""", unsafe_allow_html=True)
 
     # Actividad Reciente (Timeline)
-    st.markdown("""<div class="bottom-split">
-        <div class="card-box">
-            <div class="panel-card-title">Actividad reciente</div>
-            <div class="timeline-wrapper">
-                <div class="timeline-line"></div>
+   # Asegúrate de que la tabla 'historial_actividad' tenga columnas: tipo, fecha, descripcion
+    actividades = traer_datos("""
+            SELECT tipo, fecha, descripcion 
+            FROM historial_actividad 
+            ORDER BY fecha DESC LIMIT 3
+        """)
+
+        html_actividades = ""
+        for act in actividades:
+            tipo, fecha, desc = act[0], act[1], act[2]
+            # Mapeo de colores y logos por tipo
+            color = "#00875a" if tipo == "estudiante" else "#0047ff"
+            html_actividades += f"""
                 <div class="timeline-item">
-                    <div class="timeline-dot" style="background:#00875a;"></div>
-                    <div class="timeline-content"><b>Nuevo estudiante registrado</b><br><small style="color:#64748b;">Hoy, 10:24 a. m.</small><br>Juan David Duque Aguirre</div>
+                    <div class="timeline-dot" style="background:{color};"></div>
+                    <div class="timeline-content"><b>{tipo.capitalize()} actualizado</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
                 </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot" style="background:#0047ff;"></div>
-                    <div class="timeline-content"><b>Docente evaluador actualizado</b><br><small style="color:#64748b;">Hoy, 09:46 a. m.</small><br>Richard Manuel Acosta Reyes</div>
+            """
+
+        # Renderizado del Split inferior
+        st.markdown(f"""<div class="bottom-split">
+            <div class="card-box">
+                <div class="panel-card-title">Actividad reciente</div>
+                <div class="timeline-wrapper">
+                    <div class="timeline-line"></div>
+                    {html_actividades if html_actividades else "No hay actividad reciente registrada."}
                 </div>
             </div>
-        </div>
-        <div class="card-box">
-            <div class="panel-card-title">Accesos rápidos</div>
-            <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">✅ Validar documentos de estudiantes</div>
-            <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">📅 Programar prueba por asignatura</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
+            <div class="card-box">
+                <div class="panel-card-title">Accesos rápidos</div>
+                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">✅ Validar documentos de estudiantes</div>
+                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">📅 Programar prueba por asignatura</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
