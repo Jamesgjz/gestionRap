@@ -2,7 +2,7 @@ import streamlit as st
 from database import traer_datos
 
 def render():
-    # --- CSS DE ALTA FIDELIDAD ---
+    # --- CSS ACTUALIZADO CON LÍNEA DE TIEMPO Y VIÑETAS DE COLORES ---
     st.markdown("""
 <style>
 /* Reset de fondo */
@@ -14,7 +14,7 @@ def render():
 /* Títulos y Cabecera */
 .page-title { font-size: 2.2rem !important; font-weight: 800 !important; color: #0f172a; margin-bottom: 25px; }
 
-/* Grid de tarjetas de acción */
+/* Grid de tarjetas de acción (Imagen 1) */
 .action-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; }
 .action-card { 
     background: white; border: 1px solid #e2e8f0; border-radius: 16px; 
@@ -40,18 +40,23 @@ def render():
 .bottom-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .card-box { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 25px; }
 .panel-card-title { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+
+/* --- NUEVO CSS PARA LÍNEA DE TIEMPO --- */
+.timeline-wrapper { position: relative; padding-left: 10px; }
+.timeline-line { position: absolute; left: 16px; top: 10px; bottom: 10px; width: 2px; background: #e2e8f0; z-index: 0; }
+.timeline-item { position: relative; margin-bottom: 20px; display: flex; align-items: flex-start; z-index: 1; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; margin-right: 18px; flex-shrink: 0; }
+.timeline-content { font-size: 1rem; color: #334155; }
 </style>
 """, unsafe_allow_html=True)
 
     # --- LÓGICA DE DATOS REAL (CONECTADA A TU DB) ---
     try:
-        # Consultas a la base de datos
         tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
         tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
         tot_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")[0][0]
         tot_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")[0][0]
     except:
-        # Fallback en caso de error de conexión
         tot_est, tot_prof, tot_pend, tot_asig = 0, 0, 0, 0
 
     st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
@@ -83,7 +88,7 @@ def render():
         </div>
     </div>""", unsafe_allow_html=True)
 
-    # Fila de 4 Métricas (Valores dinámicos)
+    # Fila de 4 Métricas
     st.markdown(f"""<div class="metrics-grid">
         <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
         <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
@@ -91,13 +96,22 @@ def render():
         <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div><div style="color:#16a34a; font-size:0.85rem; font-weight:600;">Actualizado en BD</div></div>
     </div>""", unsafe_allow_html=True)
 
-    # Split inferior
+    # Split inferior con Timeline
     st.markdown("""<div class="bottom-split">
         <div class="card-box">
             <div class="panel-card-title">Actividad reciente</div>
-            <div style="font-size: 1rem; color: #334155;">
-                <p><b>Nuevo estudiante registrado</b><br><small style="color:#64748b;">Hoy, 10:24 a. m.</small><br>Juan David Duque Aguirre</p>
-                <p><b>Docente evaluador actualizado</b><br><small style="color:#64748b;">Hoy, 09:46 a. m.</small><br>Richard Manuel Acosta Reyes</p>
+            <div class="timeline-wrapper">
+                <div class="timeline-line"></div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background:#00875a;"></div>
+                    <div class="timeline-content"><b>Nuevo estudiante registrado</b><br><small style="color:#64748b;">Hoy, 10:24 a. m.</small><br>Juan David Duque Aguirre</div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background:#0047ff;"></div>
+                    <div class="timeline-content"><b>Docente evaluador actualizado</b><br><small style="color:#64748b;">Hoy, 09:46 a. m.</small><br>Richard Manuel Acosta Reyes</div>
+                </div>
             </div>
         </div>
         <div class="card-box">
