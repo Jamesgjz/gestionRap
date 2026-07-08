@@ -3,23 +3,23 @@ import pandas as pd
 from database import ejecutar_query, traer_datos
 
 def render():
-    # --- ENRUTADOR INTERNO BASADO STRICTAMENTE EN TU FLUJO DE MOCKUPS ---
+    # --- ENRUTADOR INTERNO DE VISTAS (CALCO DE LOS FLUJOS DE LAS IMÁGENES 1 A 5) ---
     if 'reg_vista_actual' not in st.session_state:
         st.session_state['reg_vista_actual'] = "resumen"  # resumen, docentes_lista, docentes_nuevo, docentes_eliminar, estudiantes, maestra
 
     rol = st.session_state.get("rol", "visitante")
 
-    # --- INYECCIÓN MAESTRA DE ESTILOS CORPORATIVOS ---
+    # --- INYECCIÓN MAESTRA DE ESTILOS CSS CORPORATIVOS (ALTA FIDELIDAD) ---
     st.markdown("""
 <style>
 /* Forzar fondo gris claro unificado del sistema */
 html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { background-color: #f8fafc !important; }
 
-/* Contenedores Blancos de Alta Fidelidad */
+/* Contenedores Blancos Estilo Mockup */
 .mockup-container-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 25px !important; margin-bottom: 20px !important; box-shadow: 0 4px 12px rgba(15,23,42,0.01) !important; }
 .form-section-title-bar { font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
 
-/* Sobrescritura estricta para forzar botones con los colores exactos del mockup */
+/* Sobrescritura estricta para forzar botones con los colores exactos de las maquetas */
 div.stButton > button {
     font-weight: 600 !important;
     font-size: 0.9rem !important;
@@ -28,11 +28,11 @@ div.stButton > button {
     border: none !important;
     transition: all 0.2s ease-in-out !important;
 }
-/* Mapeo individual por llave para calcar la cromática institucional */
-div.stButton > button[key*="doc"] { background-color: #0047ff !important; color: white !important; }
-div.stButton > button[key*="est"] { background-color: #00875a !important; color: white !important; }
-div.stButton > button[key*="mae"] { background-color: #6b21a8 !important; color: white !important; }
-div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { background-color: #ffffff !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; }
+/* Mapeo individual por llave para anular el color coral anterior */
+div.stButton > button[key*="doc"] { background-color: #0047ff !important; color: white !important; box-shadow: 0 4px 10px rgba(0, 71, 255, 0.15) !important; }
+div.stButton > button[key*="est"] { background-color: #00875a !important; color: white !important; box-shadow: 0 4px 10px rgba(0, 135, 90, 0.15) !important; }
+div.stButton > button[key*="mae"] { background-color: #6b21a8 !important; color: white !important; box-shadow: 0 4px 10px rgba(107, 33, 168, 0.15) !important; }
+div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { background-color: #ffffff !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
 
 /* Barra de Pestañas Flats (Sub-navegación limpia de los mockups) */
 .subnav-tabs-container { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 25px; gap: 35px; }
@@ -57,13 +57,13 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
 .panel-card-workspace { background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; min-height: 260px; }
 .panel-card-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
 
-/* Línea de Tiempo con Círculos e Iconos del Mockup 1 */
+/* Línea de Tiempo de Actividad Reciente */
 .timeline-wrapper { display: flex; flex-direction: column; gap: 20px; position: relative; padding-left: 5px; }
 .timeline-item-box { display: flex; gap: 16px; align-items: flex-start; }
 .timeline-icon-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 .timeline-text-content { font-size: 0.85rem; color: #334155; line-height: 1.4; }
 
-/* Estructura de Formularios e Inputs en Rejilla de Dos Columnas */
+/* Estructura de Formularios e Inputs en Rejilla de Dos Columnas (Imagen 4) */
 .grid-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
 .summary-sticky-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; position: sticky; top: 15px; box-shadow: 0 4px 12px rgba(15,23,42,0.01); }
 .checklist-item-row { font-size: 0.85rem; color: #475569; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -76,7 +76,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
 .premium-data-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
 .avatar-text-bubble { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #0047ff; background: #edf5ff; }
 
-/* SCROLL HORIZONTAL FORZADO PARA LA MATRIZ MAESTRA */
+/* SCROLL HORIZONTAL FORZADO PARA LA MATRIZ MAESTRA (Imagen 5) */
 .scrollable-matrix-wrapper { width: 100%; overflow-x: auto; display: block; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; margin-top: 15px; }
 .master-matrix-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1200px; }
 .master-matrix-table th { background: #f8fafc; color: #475569; padding: 16px 12px; font-weight: 600; border-bottom: 1px solid #e2e8f0; vertical-align: bottom; }
@@ -88,7 +88,6 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
 .status-pill-built { background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
 .status-pill-pending { background: #fef7e0; color: #b06000; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
 .status-pill-process { background: #e8f0fe; color: #1a73e8; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
-.status-pill-reprobado { background: #fce8e6; color: #c5221f; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
 .status-pill-none { background: #f1f3f4; color: #5f6368; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -103,7 +102,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
     count_prof = total_profesores_db[0][0] if total_profesores_db else 86
     count_asig = total_asignaturas_db[0][0] if total_asignaturas_db else 64
 
-    # --- CONTROL DE LA BARRA DE SUB-NAVEGACIÓN (Excepto en la de Entrada) ---
+    # --- IMPLEMENTACIÓN DE LA BARRA DE SUB-NAVEGACIÓN FLAT TABS ---
     if st.session_state['reg_vista_actual'] != "resumen":
         c_t1, c_t2, c_t3, _ = st.columns([1.6, 1.1, 1.2, 4.5])
         with c_t1:
@@ -126,24 +125,24 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
         st.markdown("<hr style='margin-top:-15px; margin-bottom:25px; border-color:#e2e8f0;'>", unsafe_allow_html=True)
 
     # =========================================================================
-    # IMAGEN 1: `image_47b6a0.jpg` (PANEL DE CONTROL PRINCIPAL CON SUS BOTONES Y COLORES)
+    # IMAGEN 1: `image_4890d8.jpg` (PANEL DE CONTROL PRINCIPAL CORREGIDO)
     # =========================================================================
     if st.session_state['reg_vista_actual'] == "resumen":
         st.markdown("""<div class="card-nav-grid">
 <div class="card-nav-premium">
 <div class="card-nav-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-user-graduate"></i></div>
 <div><div style="font-weight:700; color:#0f172a; font-size:1.05rem; margin-bottom:4px;">Docentes evaluadores</div>
-<div style="font-size:0.82rem; color:#64748b; line-height:1.4; margin-bottom:12px;">Registra, actualiza y gestiona los docentes que participan como evaluadores en el proceso RAP.</div></div>
+<div style="font-size:0.82rem; color:#64748b; line-height:1.4;">Registra, actualiza y gestiona los docentes que participan como evaluadores en el proceso RAP.</div></div>
 </div>
 <div class="card-nav-premium">
-<div class="card-nav-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-regular fa-user"></i></div>
+<div class="card-nav-icon" style="background:#e6f4ea; color:#00875a;"><i class="fa-regular fa-user"></i></div>
 <div><div style="font-weight:700; color:#0f172a; font-size:1.05rem; margin-bottom:4px;">Estudiantes</div>
-<div style="font-size:0.82rem; color:#64748b; line-height:1.4; margin-bottom:12px;">Registra, actualiza y gestiona los estudiantes del proceso RAP y consulta su estado de aplicación.</div></div>
+<div style="font-size:0.82rem; color:#64748b; line-height:1.4;">Registra, actualiza y gestiona los estudiantes del proceso RAP y consulta su estado de aplicación.</div></div>
 </div>
 <div class="card-nav-premium">
-<div class="card-nav-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-eye"></i></div>
+<div class="card-nav-icon" style="background:#f3e8ff; color:#6b21a8;"><i class="fa-regular fa-eye"></i></div>
 <div><div style="font-weight:700; color:#0f172a; font-size:1.05rem; margin-bottom:4px;">Vista maestra</div>
-<div style="font-size:0.82rem; color:#64748b; line-height:1.4; margin-bottom:12px;">Consulta el estado de aplicación por estudiante, asignaturas y resultados del proceso RAP.</div></div>
+<div style="font-size:0.82rem; color:#64748b; line-height:1.4;">Consulta el estado de aplicación por estudiante, asignaturas y resultados del proceso RAP.</div></div>
 </div>
 </div>""", unsafe_allow_html=True)
 
@@ -164,10 +163,10 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
         st.markdown("<br>", unsafe_allow_html=True)
 
         st.markdown(f"""<div class="metrics-box-grid">
-<div class="metric-premium-card"><div class="metric-premium-lbl">Total estudiantes</div><div class="metric-premium-val">{count_est}</div><div class="metric-premium-pct" style="color:#137333;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. base</span></div><div class="metric-premium-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-solid fa-users"></i></div></div>
-<div class="metric-premium-card"><div class="metric-premium-lbl">Docentes evaluadores</div><div class="metric-premium-val">{count_prof}</div><div class="metric-premium-pct" style="color:#137333;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. base</span></div><div class="metric-premium-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-id-badge"></i></div></div>
+<div class="metric-premium-card"><div class="metric-premium-lbl">Total estudiantes</div><div class="metric-premium-val">{count_est}</div><div class="metric-premium-pct" style="color:#00875a;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. base</span></div><div class="metric-premium-icon" style="background:#e6f4ea; color:#00875a;"><i class="fa-solid fa-users"></i></div></div>
+<div class="metric-premium-card"><div class="metric-premium-lbl">Docentes evaluadores</div><div class="metric-premium-val">{count_prof}</div><div class="metric-premium-pct" style="color:#0047ff;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. base</span></div><div class="metric-premium-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-id-badge"></i></div></div>
 <div class="metric-premium-card"><div class="metric-premium-lbl">Pendientes de gestión</div><div class="metric-premium-val">86</div><div class="metric-premium-pct" style="color:#b06000;"><i class="fa-solid fa-arrow-up"></i> 5% <span style="color:#94a3b8; font-weight:400;">vs. corte</span></div><div class="metric-premium-icon" style="background:#fef7e0; color:#b06000;"><i class="fa-regular fa-clock"></i></div></div>
-<div class="metric-premium-card"><div class="metric-premium-lbl">Asignaturas activas</div><div class="metric-premium-val">{count_asig}</div><div class="metric-premium-pct" style="color:#137333;"><i class="fa-solid fa-arrow-up"></i> 10% <span style="color:#94a3b8; font-weight:400;">vs. periodo</span></div><div class="metric-premium-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-solid fa-book-open"></i></div></div>
+<div class="metric-premium-card"><div class="metric-premium-lbl">Asignaturas activas</div><div class="metric-premium-val">{count_asig}</div><div class="metric-premium-pct" style="color:#6b21a8;"><i class="fa-solid fa-arrow-up"></i> 10% <span style="color:#94a3b8; font-weight:400;">vs. periodo</span></div><div class="metric-premium-icon" style="background:#f3e8ff; color:#6b21a8;"><i class="fa-solid fa-book-open"></i></div></div>
 </div>""", unsafe_allow_html=True)
 
         c_spl_l, c_spl_r = st.columns([1.15, 1])
@@ -175,7 +174,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
             st.markdown("""<div class="panel-card-workspace">
 <div class="panel-card-title">Actividad reciente</div>
 <div class="timeline-wrapper">
-<div class="timeline-item-box"><div class="timeline-icon-circle" style="background:#e6f4ea; color:#137333;"><i class="fa-solid fa-user-plus"></i></div><div class="timeline-text-content"><b>Nuevo estudiante registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 10:24 a. m.</span><br>Juan David Duque Aguirre</div></div>
+<div class="timeline-item-box"><div class="timeline-icon-circle" style="background:#e6f4ea; color:#00875a;"><i class="fa-solid fa-user-plus"></i></div><div class="timeline-text-content"><b>Nuevo estudiante registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 10:24 a. m.</span><br>Juan David Duque Aguirre</div></div>
 <div class="timeline-item-box"><div class="timeline-icon-circle" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-user-tie"></i></div><div class="timeline-text-content"><b>Docente evaluador actualizado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 09:46 a. m.</span><br>Richard Manuel Acosta Reyes</div></div>
 </div></div>""", unsafe_allow_html=True)
         with c_spl_r:
@@ -184,7 +183,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
             st.button("Programar prueba por asignatura", key="b_qa_2", icon=":material/calendar_month:", use_container_width=True)
 
     # =========================================================================
-    # IMAGEN 2: `image_47b6c2.jpg` (LISTADO DE DOCENTES)
+    # IMAGEN 2: `image_4890f2.jpg` (LISTADO DE DOCENTES)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "docentes_lista":
         c_dlst_l, c_dlst_m, c_dlst_r = st.columns([2.2, 0.9, 0.9])
@@ -212,7 +211,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
         st.markdown(f"""
 <div class="metrics-box-grid" style="margin-top:15px; margin-bottom:20px;">
 <div class="metric-premium-card"><div class="metric-premium-lbl">Total docentes</div><div class="metric-premium-val">{count_p}</div><div class="metric-premium-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-id-badge"></i></div></div>
-<div class="metric-premium-card"><div class="metric-premium-lbl">Activos</div><div class="metric-premium-val" style="color:#137333;">{count_p}</div><div class="metric-premium-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-regular fa-circle-check"></i></div></div>
+<div class="metric-premium-card"><div class="metric-premium-lbl">Activos</div><div class="metric-premium-val" style="color:#00875a;">{count_p}</div><div class="metric-premium-icon" style="background:#e6f4ea; color:#00875a;"><i class="fa-regular fa-circle-check"></i></div></div>
 </div>""", unsafe_allow_html=True)
 
         html_filas_p = ""
@@ -238,7 +237,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
 </table></div>""", unsafe_allow_html=True)
 
     # =========================================================================
-    # ESCENARIO 3: PANTALLA TOTALMENTE LIMPIA PARA ELIMINAR DOCENTES (PANTALLA AISLADA)
+    # ESCENARIO 3: PANTALLA AISLADA DE ELIMINACIÓN DE DOCENTES
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "docentes_eliminar":
         st.markdown("### 🗑️ Panel de Administración - Eliminar Docente")
@@ -267,7 +266,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
                     st.rerun()
 
     # =========================================================================
-    # IMAGEN 3: `image_47b6e2.jpg` (FORMULARIO REGISTRO NUEVO DOCENTE)
+    # IMAGEN 3: `image_4890f6.jpg` (FORMULARIO NUEVO DOCENTE EVALUADOR)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "docentes_nuevo":
         if st.button("← Volver al Listado", key="btn_cancel_doc_form"):
@@ -317,7 +316,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
 </div>""", unsafe_allow_html=True)
 
     # =========================================================================
-    # IMAGEN 4: `image_47b703.jpg` (FORMULARIO ESTUDIANTES EN REJILLA 2X2 CALCADA)
+    # IMAGEN 4: `image_4890fb.jpg` (FORMULARIO ESTUDIANTES EN REJILLA REAL SIMÉTRICA 2X2)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "estudiantes":
         st.markdown("### Nuevo estudiante")
@@ -337,7 +336,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
             with st.form("form_estudiante_maquetado", clear_on_submit=True):
                 st.markdown('<div class="form-section-title-bar">1. Datos generales</div>', unsafe_allow_html=True)
                 
-                # REJILLA DE FILAS SIMÉTRICAS DE DOBLE COLUMNA PARA CAJAS DE TEXTO
+                # REJILLA DE FILAS SIMÉTRICAS DE DOBLE COLUMNA PARA CAJAS DE TEXTO (CALCO MOCKUP)
                 st.markdown('<div class="grid-two-columns">', unsafe_allow_html=True)
                 col_row1_l, col_row1_r = st.columns(2)
                 with col_row1_l:
@@ -399,28 +398,12 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
 <div class="checklist-item-row validated"><i class="fa-solid fa-circle-check"></i> estado_matricula</div>
 </div>""", unsafe_allow_html=True)
 
-        if rol == "admin" and estudiantes_carga:
-            st.divider()
-            st.subheader("🗑️ Eliminar Estudiante")
-            opts_est = {f"{e[1]} (Banner: {e[0]})": e[0] for e in estudiantes_carga}
-            est_sel = st.selectbox("Seleccione el estudiante a eliminar:", list(opts_est.keys()), key="del_est_box_real")
-            if st.button("❌ Eliminar Estudiante Seleccionado", key="btn_del_est_submit_real"):
-                id_banner_del = opts_est[est_sel]
-                try:
-                    ejecutar_query("DELETE FROM notas WHERE id_programacion IN (SELECT id FROM programacion_pruebas WHERE id_banner = %s)", (id_banner_del,))
-                    ejecutar_query("DELETE FROM programacion_pruebas WHERE id_banner = %s", (id_banner_del,))
-                    ejecutar_query("DELETE FROM estudiantes WHERE id_banner = %s", (id_banner_del,))
-                    st.error("Registro de estudiante purgado con éxito.")
-                    st.rerun()
-                except Exception:
-                    st.error("Error relacional al intentar remover.")
-
     # =========================================================================
-    # IMAGEN 5: `image_47b73a.jpg` (VISTA MAESTRA COMPLETA SCROLLABLE CON GLOBO)
+    # IMAGEN 5: `image_4893a0.jpg` (VISTA MAESTRA COMPLETA SCROLLABLE CON GLOBOS SUPERIORES)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "maestra":
         st.markdown("### Vista maestra de asignaturas por estudiante")
-        st.caption("Filtra y consulta en tiempo real los semáforos de avance homologados por estudiante.")
+        st.caption("Filtra y consulta los semáforos de avance homologados por estudiante en un layout extendido scrollable.")
 
         c_mflt_1, c_mflt_2, c_mflt_3 = st.columns(3)
         with c_mflt_1: st.text_input("Buscar estudiante...", label_visibility="collapsed", key="mx_search_field")
@@ -430,7 +413,7 @@ div.stButton > button[key*="cancel"], div.stButton > button[key*="back"] { backg
         ests = traer_datos("SELECT id_banner, nombre_completo, alfa_asignatura FROM estudiantes")
         
         if ests:
-            # Precarga en caché en memoria única para velocidad extrema
+            # Precarga en caché en memoria única para velocidad extrema de renderizado
             pruebas_db = traer_datos("SELECT alfa_asignatura, estado FROM maestro_pruebas")
             mapa_estados_pruebas = {str(p[0]).strip(): str(p[1]) for p in pruebas_db} if pruebas_db else {}
             
