@@ -3,69 +3,134 @@ import pandas as pd
 from database import ejecutar_query, traer_datos
 
 def render():
-    # --- ENRUTADOR INTERNO BASADO STRICTAMENTE EN TU FLUJO DE MOCKUPS ---
+    # --- ENRUTADOR MAESTRO DE VISTAS (CALCO DE LOS FLUJOS DE LAS IMÁGENES 1 A 5) ---
     if 'reg_vista_actual' not in st.session_state:
-        st.session_state['reg_vista_actual'] = "resumen"  # resumen, docentes_lista, docentes_nuevo, estudiantes, maestra
+        st.session_state['reg_vista_actual'] = "resumen"  # resumen, docentes_lista, docentes_nuevo, docentes_eliminar, estudiantes, maestra
 
     rol = st.session_state.get("rol", "visitante")
 
-    # --- SISTEMA DE ESTILOS DE ALTA FIDELIDAD (COLORES Y ESTRUCTURAS DE LAS IMÁGENES) ---
+    # --- INYECCIÓN MAESTRA DE CSS CORPORATIVO (AZUL REY, VERDE ESMERALDA Y NEUTROS) ---
     st.markdown("""
 <style>
-/* Reset de fondo para calcar el lienzo gris claro de los mockups */
+/* Forzar fondo gris claro unificado del sistema */
 html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { background-color: #f8fafc !important; }
 
-/* Contenedores de Tarjetas Blancas con Bordes Suaves */
-.mockup-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 25px !important; margin-bottom: 20px !important; box-shadow: 0 4px 12px rgba(15,23,42,0.01) !important; }
-.mockup-section-title { font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+/* Contenedores Blancos de Alta Fidelidad */
+.mockup-container-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 28px !important; margin-bottom: 25px !important; box-shadow: 0 4px 12px rgba(15,23,42,0.01) !important; }
+.form-section-title-bar { font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
 
-/* Inyección para homogeneizar st.form con las tarjetas del diseño */
-div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 25px !important; box-shadow: none !important; }
+/* Sobrescritura estricta para anular botones rojos nativos de Streamlit */
+div.stButton > button {
+    background-color: #0047ff !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 10px 22px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 4px 10px rgba(0, 71, 255, 0.15) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+div.stButton > button:hover { background-color: #0036d9 !important; transform: translateY(-1px); }
 
-/* Barra de Sub-Navegación Horizontal Estilo Pestañas (Imágenes 2 a 5) */
-.subnav-tab-wrapper { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 25px; gap: 30px; }
-.subnav-btn-flat button { background: transparent !important; border: none !important; border-bottom: 2px solid transparent !important; border-radius: 0px !important; color: #64748b !important; font-weight: 600 !important; font-size: 0.95rem !important; padding: 8px 6px !important; box-shadow: none !important; }
-.subnav-btn-flat-active button { background: transparent !important; border: none !important; border-bottom: 2px solid #0047ff !important; border-radius: 0px !important; color: #0047ff !important; font-weight: 700 !important; font-size: 0.95rem !important; padding: 8px 6px !important; box-shadow: none !important; }
+/* Botones secundarios (Cancelar / Volver) */
+div.stButton > button[key*="cancel"], div.stButton > button[key*="back"], div.stButton > button[key*="eliminar_nav"] {
+    background-color: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+}
 
-/* Tarjetas de Selección Superior (Imagen 1) */
-.nav-box-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-.nav-box-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; display: flex; gap: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.01); }
-.nav-box-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+/* Barra de Pestañas Flats (Sub-navegación limpia de los mockups) */
+.subnav-tabs-container { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 25px; gap: 35px; }
+.subnav-tab-item { font-size: 0.95rem; font-weight: 600; color: #64748b; padding: 10px 4px; cursor: pointer; position: relative; }
+.subnav-tab-item.active { color: #0047ff; font-weight: 700; border-bottom: 2px solid #0047ff; margin-bottom: -2px; }
 
-/* Bloque de Métricas Analíticas del Tablero */
-.metric-box-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
-.metric-premium-box { background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; position: relative; }
-.metric-premium-lbl { font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
-.metric-premium-val { font-size: 1.85rem; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+/* Fila de Tarjetas de Navegación de Bloques (Imagen 1) */
+.card-nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+.card-nav-premium { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; display: flex; gap: 16px; }
+.card-nav-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+
+/* Grid Simétrico de Métricas Cuadradas */
+.metrics-box-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
+.metric-premium-card { background: white; border-radius: 12px; padding: 22px; border: 1px solid #e2e8f0; position: relative; }
+.metric-premium-lbl { font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 6px; }
+.metric-premium-val { font-size: 1.9rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
 .metric-premium-pct { font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-.metric-premium-icon { position: absolute; top: 20px; right: 20px; font-size: 1.15rem; width: 34px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.metric-premium-icon { position: absolute; top: 22px; right: 22px; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
 
-/* Tablas y Semáforos Corporativos de la Matriz (Imágenes 2 y 5) */
-.premium-data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
-.premium-data-table th { background: #f8fafc; color: #475569; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
-.premium-data-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-.avatar-badge-circle { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #0047ff; background: #edf5ff; }
+/* Bloque Inferior Bifurcado */
+.split-workspace-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; margin-bottom: 25px; }
+.panel-card-workspace { background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; min-height: 260px; }
+.panel-card-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
 
-.master-matrix-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: center; }
-.master-matrix-table th { background: #f8fafc; color: #475569; padding: 12px 8px; font-weight: 600; border-bottom: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; text-align: center; }
-.master-matrix-table td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; text-align: center; }
+/* Línea de Tiempo e Historial con Iconos Estilizados */
+.timeline-item-box { display: flex; gap: 14px; margin-bottom: 15px; align-items: flex-start; }
+.timeline-icon-wrapper { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+.timeline-content-text { font-size: 0.85rem; color: #334155; line-height: 1.4; }
 
-/* Mapeo Exacto de Píldoras de Estado Semáforo */
-.pill-matrix-built { background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
-.pill-matrix-pending { background: #fef7e0; color: #b06000; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
-.pill-matrix-process { background: #e8f0fe; color: #1a73e8; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
-.pill-matrix-none { background: #f1f3f4; color: #5f6368; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
-
-/* Checklist de Datos Requeridos en Barra Lateral (Imágenes 3 y 4) */
-.summary-sticky-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; position: sticky; top: 15px; box-shadow: 0 4px 12px rgba(15,23,42,0.01); }
+/* Estructura de Formularios e Inputs en Rejilla de Dos Columnas */
+.grid-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+.summary-sticky-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; position: sticky; top: 15px; }
 .checklist-item-row { font-size: 0.85rem; color: #475569; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 .checklist-item-row i { color: #94a3b8; }
 .checklist-item-row.validated i { color: #16a34a; }
+
+/* Tablas Corporativas, Matriz y Globos Flotantes de Asignaturas */
+.premium-data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+.premium-data-table th { background: #f8fafc; color: #475569; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+.premium-data-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+.avatar-text-bubble { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #0047ff; background: #edf5ff; }
+
+/* SCROLL HORIZONTAL FORZADO PARA LA MATRIZ MAESTRA */
+.scrollable-matrix-wrapper { width: 100%; overflow-x: auto; display: block; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; margin-top: 15px; }
+.master-matrix-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px; }
+.master-matrix-table th { background: #f8fafc; color: #475569; padding: 16px 10px; font-weight: 600; border-bottom: 1px solid #e2e8f0; position: relative; }
+.master-matrix-table td { padding: 14px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; text-align: center; }
+
+/* GLOBOS INFORMATIVOS FLOTANTES (HEADER CARDS DEL MOCKUP 5) */
+.subject-floating-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; font-size: 0.7rem; font-weight: 500; color: #334155; line-height: 1.2; text-align: left; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: block; }
+
+.status-pill-built { background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
+.status-pill-pending { background: #fef7e0; color: #b06000; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
+.status-pill-process { background: #e8f0fe; color: #1a73e8; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
+.status-pill-none { background: #f1f3f4; color: #5f6368; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-align: center; display: block; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 """, unsafe_allow_html=True)
 
-    # --- CONSULTA MAESTRA DE DATOS RELACIONALES PARA LA PARTE SUPERIOR ---
+    # --- ENCABEZADO DE SECCIÓN INTEGRADO (Vea la parte de arriba común) ---
+    st.markdown("""<div class="main-dashboard-header">
+<div>
+<div class="breadcrumb-text">Inicio &gt; Gestión de Registros</div>
+<h1 class="title-main-text">Gestión de Registros</h1>
+<p class="subtitle-text">Administra docentes evaluadores, estudiantes y consulta la vista maestra del proceso RAP.</p>
+</div>
+<div style="text-align: right;"><div style="font-size: 0.9rem; color: #64748b; font-weight: 600;"><i class="fa-regular fa-calendar"></i> 21 de mayo de 2025</div></div>
+</div>""", unsafe_allow_html=True)
+
+    # --- BARRA DE SUB-NAVEGACIÓN INTERACTIVA ESTILO FLAT TABS ---
+    st.markdown('<div class="subnav-tabs-container">', unsafe_allow_html=True)
+    c_tab_1, c_tab_2, c_tab_3, _ = st.columns([1.6, 1.1, 1.2, 4.5])
+    with c_tab_1:
+        is_active = "active" if "docentes" in st.session_state['reg_vista_actual'] else ""
+        if st.button("Docentes evaluadores", key="nav_tab_doc_real", help="Listado y control de profesores"):
+            st.session_state['reg_vista_actual'] = "docentes_lista"
+            st.session_state['reg_modo_docentes'] = "lista"
+            st.rerun()
+    with c_tab_2:
+        is_active = "active" if st.session_state['reg_vista_actual'] == "estudiantes" else ""
+        if st.button("Estudiantes", key="nav_tab_est_real"):
+            st.session_state['reg_vista_actual'] = "estudiantes"
+            st.rerun()
+    with c_tab_3:
+        is_active = "active" if st.session_state['reg_vista_actual'] == "maestra" else ""
+        if st.button("Vista maestra", key="nav_tab_mae_real"):
+            st.session_state['reg_vista_actual'] = "maestra"
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- CONSULTA PREVIA DE CAPACIDADES REALES DE TU NEON DB ---
     total_estudiantes_db = traer_datos("SELECT COUNT(*) FROM estudiantes")
     total_profesores_db = traer_datos("SELECT COUNT(*) FROM profesores")
     total_asignaturas_db = traer_datos("SELECT COUNT(*) FROM asignaturas")
@@ -74,110 +139,91 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
     count_prof = total_profesores_db[0][0] if total_profesores_db else 86
     count_asig = total_asignaturas_db[0][0] if total_asignaturas_db else 64
 
-    # --- IMPLEMENTACIÓN DE LA BARRA DE SUB-NAVEGACIÓN (Excepto en la Pantalla de Entrada) ---
-    if st.session_state['reg_vista_actual'] != "resumen":
-        c_t1, c_t2, c_t3, _ = st.columns([1.5, 1.1, 1.2, 4.5])
-        with c_t1:
-            st.markdown(f'<div class="{"subnav-btn-flat-active" if "docentes" in st.session_state["reg_vista_actual"] else "subnav-btn-flat"}">', unsafe_allow_html=True)
-            if st.button("Docentes evaluadores", key="subnav_doc_trigger"):
-                st.session_state['reg_vista_actual'] = "docentes_lista"
-                st.session_state['reg_modo_docentes'] = "lista"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        with c_t2:
-            st.markdown(f'<div class="{"subnav-btn-flat-active" if st.session_state["reg_vista_actual"] == "estudiantes" else "subnav-btn-flat"}">', unsafe_allow_html=True)
-            if st.button("Estudiantes", key="subnav_est_trigger"):
-                st.session_state['reg_vista_actual'] = "estudiantes"
-                st.rerun()
-        with c_t3:
-            st.markdown(f'<div class="{"subnav-btn-flat-active" if st.session_state["reg_vista_actual"] == "maestra" else "subnav-btn-flat"}">', unsafe_allow_html=True)
-            if st.button("Vista maestra", key="subnav_mae_trigger"):
-                st.session_state['reg_vista_actual'] = "maestra"
-                st.rerun()
-        st.markdown("<hr style='margin-top:-15px; margin-bottom:25px; border-color:#e2e8f0;'>", unsafe_allow_html=True)
-
     # =========================================================================
-    # 📑 INTERFAZ 1: PANTALLA PRINCIPAL DE ENTRADA (`image_4733db.jpg`)
+    # ESCENARIO 1: RESUMEN GENERAL (PÁGINA DE ENTRADA DEL MÓDULO `image_47b6a0.jpg`)
     # =========================================================================
     if st.session_state['reg_vista_actual'] == "resumen":
-        st.markdown("""<div class="nav-box-grid">
-<div class="nav-box-card">
-<div class="nav-box-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-user-graduate"></i></div>
+        st.markdown("""<div class="card-nav-grid">
+<div class="card-nav-premium">
+<div class="card-nav-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-user-graduate"></i></div>
 <div><div style="font-weight:700; color:#0f172a; font-size:1.05rem; margin-bottom:4px;">Docentes evaluadores</div>
-<div style="font-size:0.82rem; color:#64748b; line-height:1.4;">Registra, actualiza y gestiona los docentes que participan como evaluadores en el proceso RAP.</div></div>
+<div style="font-size:0.82rem; color:#64748b; line-height:1.4; margin-bottom:12px;">Registra, actualiza y gestiona los docentes que participan como evaluadores en el proceso RAP.</div></div>
 </div>
-<div class="nav-box-card">
-<div class="nav-box-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-regular fa-user"></i></div>
+<div class="card-nav-premium">
+<div class="card-nav-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-regular fa-user"></i></div>
 <div><div style="font-weight:700; color:#0f172a; font-size:1.05rem; margin-bottom:4px;">Estudiantes</div>
-<div style="font-size:0.82rem; color:#64748b; line-height:1.4;">Registra, actualiza y gestiona los estudiantes del proceso RAP y consulta su estado de aplicación.</div></div>
+<div style="font-size:0.82rem; color:#64748b; line-height:1.4; margin-bottom:12px;">Registra, actualiza y gestiona los estudiantes del proceso RAP y consulta su estado de aplicación.</div></div>
 </div>
-<div class="nav-box-card">
-<div class="nav-box-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-eye"></i></div>
+<div class="card-nav-premium">
+<div class="card-nav-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-regular fa-eye"></i></div>
 <div><div style="font-weight:700; color:#0f172a; font-size:1.05rem; margin-bottom:4px;">Vista maestra</div>
-<div style="font-size:0.82rem; color:#64748b; line-height:1.4;">Consulta el estado de aplicación por estudiante, asignaturas y resultados del proceso RAP.</div></div>
+<div style="font-size:0.82rem; color:#64748b; line-height:1.4; margin-bottom:12px;">Consulta el estado de aplicación por estudiante, asignaturas y resultados del proceso RAP.</div></div>
 </div>
 </div>""", unsafe_allow_html=True)
 
         c_pnl1, c_pnl2, c_pnl3 = st.columns(3)
         with c_pnl1:
-            if st.button("Gestionar docentes", key="btn_panel_doc_real", use_container_width=True, type="primary"):
+            if st.button("Gestionar docentes", key="btn_g_doc", use_container_width=True):
                 st.session_state['reg_vista_actual'] = "docentes_lista"
-                st.session_state['reg_modo_docentes'] = "lista"
                 st.rerun()
         with c_pnl2:
-            if st.button("Gestionar estudiantes", key="btn_panel_est_real", use_container_width=True, type="primary"):
+            if st.button("Gestionar estudiantes", key="btn_g_est", use_container_width=True):
                 st.session_state['reg_vista_actual'] = "estudiantes"
                 st.rerun()
         with c_pnl3:
-            if st.button("Abrir vista maestra", key="btn_panel_mae_real", use_container_width=True, type="primary"):
+            if st.button("Abrir vista maestra", key="btn_g_mae", use_container_width=True):
                 st.session_state['reg_vista_actual'] = "maestra"
                 st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown(f"""<div class="metric-box-grid">
+        st.markdown(f"""<div class="metrics-box-grid">
 <div class="metric-premium-box"><div class="metric-premium-lbl">Total estudiantes</div><div class="metric-premium-val">{count_est}</div><div class="metric-premium-pct" style="color:#137333;"><i class="fa-solid fa-arrow-up"></i> 12% <span style="color:#94a3b8; font-weight:400;">vs. base</span></div><div class="metric-premium-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-solid fa-users"></i></div></div>
 <div class="metric-premium-box"><div class="metric-premium-lbl">Docentes evaluadores</div><div class="metric-premium-val">{count_prof}</div><div class="metric-premium-pct" style="color:#137333;"><i class="fa-solid fa-arrow-up"></i> 8% <span style="color:#94a3b8; font-weight:400;">vs. base</span></div><div class="metric-premium-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-id-badge"></i></div></div>
 <div class="metric-premium-box"><div class="metric-premium-lbl">Pendientes de gestión</div><div class="metric-premium-val">86</div><div class="metric-premium-pct" style="color:#b06000;"><i class="fa-solid fa-arrow-up"></i> 5% <span style="color:#94a3b8; font-weight:400;">vs. corte</span></div><div class="metric-premium-icon" style="background:#fef7e0; color:#b06000;"><i class="fa-regular fa-clock"></i></div></div>
 <div class="metric-premium-box"><div class="metric-premium-lbl">Asignaturas activas</div><div class="metric-premium-val">{count_asig}</div><div class="metric-premium-pct" style="color:#137333;"><i class="fa-solid fa-arrow-up"></i> 10% <span style="color:#94a3b8; font-weight:400;">vs. periodo</span></div><div class="metric-premium-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-solid fa-book-open"></i></div></div>
 </div>""", unsafe_allow_html=True)
 
-        c_spl_l, c_spl_r = st.columns([1.15, 1])
-        with c_spl_l:
-            st.markdown("""<div class="panel-card-workspace" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:22px;">
+        c_split_l, c_split_r = st.columns([1.15, 1])
+        with c_split_l:
+            st.markdown("""<div class="panel-card-workspace">
 <div class="panel-card-title">Actividad reciente</div>
-<div class="timeline-item-box"><div class="timeline-marker-dot" style="background:#137333;"></div><div class="timeline-content-text"><b>Nuevo estudiante registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 10:24 a. m.</span><br>Juan David Duque Aguirre</div></div>
-<div class="timeline-item-box"><div class="timeline-marker-dot" style="background:#0047ff;"></div><div class="timeline-content-text"><b>Docente evaluador actualizado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 09:46 a. m.</span><br>Richard Manuel Acosta Reyes</div></div>
+<div class="timeline-item-box"><div class="timeline-icon-wrapper" style="background:#e6f4ea; color:#137333;"><i class="fa-solid fa-user-plus"></i></div><div class="timeline-content-text"><b>Nuevo estudiante registrado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 10:24 a. m.</span><br>Juan David Duque Aguirre</div></div>
+<div class="timeline-item-box"><div class="timeline-marker-dot" style="background:#0047ff; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:white; border-radius:50%;"><i class="fa-solid fa-user-tie" style="font-size:0.85rem;"></i></div><div class="timeline-content-text"><b>Docente evaluador actualizado</b><br><span style="color:#64748b; font-size:0.75rem;">Hoy, 09:46 a. m.</span><br>Richard Manuel Acosta Reyes</div></div>
 </div>""", unsafe_allow_html=True)
-        with c_spl_r:
+        with c_split_r:
             st.markdown('<div class="panel-card-title" style="margin-left:5px; margin-bottom:10px;">Accesos rápidos</div>', unsafe_allow_html=True)
-            st.button("Validar documentos de estudiantes", key="b_qa_p1", icon=":material/verified_user:", use_container_width=True)
-            st.button("Programar prueba por asignatura", key="b_qa_p2", icon=":material/calendar_month:", use_container_width=True)
+            st.button("Validar documentos de estudiantes", key="b_qa_1", icon=":material/verified_user:", use_container_width=True)
+            st.button("Programar prueba por asignatura", key="b_qa_2", icon=":material/calendar_month:", use_container_width=True)
 
     # =========================================================================
-    # 👨‍🏫 INTERFAZ 2: LISTADO DE DOCENTES EVALUADORES (`image_4736fe.jpg`)
+    # ESCENARIO 2: LISTADO DE DOCENTES (`image_47b6c2.jpg`)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "docentes_lista":
-        c_dlst_l, c_dlst_r = st.columns([3, 1])
-        with c_dlst_l:
+        c_dl_hdr_l, c_dl_hdr_m, c_dl_hdr_r = st.columns([2, 1, 1])
+        with c_dl_hdr_l:
             st.markdown("### Gestión de docentes evaluadores")
             st.caption("Registra, actualiza y administra los docentes que participan en el proceso RAP.")
-        with c_dlst_r:
-            if st.button("➕ Nuevo docente", key="btn_trigger_form_doc_real", use_container_width=True, type="primary"):
+        with c_dl_hdr_m:
+            if st.button("➕ Nuevo docente", key="btn_go_doc_new_real", use_container_width=True, type="primary"):
                 st.session_state['reg_vista_actual'] = "docentes_nuevo"
                 st.rerun()
+        with c_dl_hdr_r:
+            if rol == "admin":
+                if st.button("🗑️ Eliminar Docente", key="btn_go_doc_del_nav", use_container_width=True):
+                    st.session_state['reg_vista_actual'] = "docentes_eliminar"
+                    st.rerun()
 
-        c_flt_1, c_flt_2, c_flt_3 = st.columns([1.5, 1, 1])
-        with c_flt_1: st.text_input("Buscar por nombre del docente...", label_visibility="collapsed", key="search_d_name_exact")
-        with c_flt_2: st.selectbox("Programa", ["Todos los programas"], label_visibility="collapsed")
-        with c_flt_3: st.selectbox("Estado", ["Todos los estados"], label_visibility="collapsed")
+        c_f1, c_f2, c_f3 = st.columns([1.5, 1, 1])
+        with c_f1: st.text_input("Buscar por nombre del docente...", label_visibility="collapsed", key="search_d_name_real")
+        with c_f2: st.selectbox("Programa", ["Todos los programas"], label_visibility="collapsed")
+        with c_f3: st.selectbox("Estado", ["Todos los estados"], label_visibility="collapsed")
 
-        # Inyección de tu función nativa de lectura
         profesores_db = traer_datos("SELECT id_profesor, nombre_completo, horas_dedicacion FROM profesores ORDER BY nombre_completo")
         count_p = len(profesores_db) if profesores_db else 0
 
         st.markdown(f"""
-<div class="metric-box-grid" style="margin-top:15px; margin-bottom:20px;">
+<div class="metrics-box-grid" style="margin-top:15px; margin-bottom:20px;">
 <div class="metric-premium-box"><div class="metric-premium-lbl">Total docentes</div><div class="metric-premium-val">{count_p}</div><div class="metric-premium-icon" style="background:#edf5ff; color:#0047ff;"><i class="fa-solid fa-id-badge"></i></div></div>
 <div class="metric-premium-box"><div class="metric-premium-lbl">Activos</div><div class="metric-premium-val" style="color:#137333;">{count_p}</div><div class="metric-premium-icon" style="background:#e6f4ea; color:#137333;"><i class="fa-regular fa-circle-check"></i></div></div>
 </div>""", unsafe_allow_html=True)
@@ -185,59 +231,39 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
         html_filas_p = ""
         if profesores_db:
             for p in profesores_db:
-                id_prof, name_prof, hrs_prof = str(p[0]), str(p[1]), str(p[2])
-                initials = "".join([w[0] for w in name_prof.split()[:2]]).upper() if name_prof else "P"
+                id_p, name_p, hrs_p = str(p[0]), str(p[1]), str(p[2])
+                initials = "".join([w[0] for w in name_p.split()[:2]]).upper() if name_p else "P"
                 html_filas_p += f"""<tr>
-<td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar-badge-circle">{initials}</div><div><b>{name_prof}</b><br><span style="color:#64748b; font-size:0.75rem;">ID Profesor: {id_prof}</span></div></div></td>
+<td><div style="display:flex; align-items:center; gap:10px;"><div class="avatar-text-bubble">{initials}</div><div><b>{name_p}</b><br><span style="color:#64748b; font-size:0.75rem;">ID Profesor: {id_p}</span></div></div></td>
 <td>Educación Virtual / Docencia</td>
-<td>Módulos de Competencias RAP</td>
-<td>{hrs_prof} horas</td>
+<td>Módulos RAP Asignados</td>
+<td>{hrs_p} horas</td>
 <td><span class="pill-matrix-built">Activo</span></td>
 <td>21/05/2025</td>
 <td><div style="color:#1a73e8; display:flex; gap:12px; font-size:1rem;"><i class="fa-regular fa-eye"></i> <i class="fa-regular fa-pen-to-square"></i></div></td>
 </tr>"""
-        else:
-            html_filas_p = "<tr><td colspan='7' style='text-align:center; color:#64748b;'>No hay docentes registrados en la base de datos actualmente.</td></tr>"
 
-        st.markdown(f"""<div class="form-card-wrapper" style="padding:20px; overflow-x:auto;">
-<div class="block-title" style="font-weight:700; color:#0f172a; margin-bottom:15px; font-size:1rem;">Listado de docentes</div>
+        st.markdown(f"""<div class="mockup-card" style="padding:20px; overflow-x:auto;">
 <table class="premium-data-table">
 <thead><tr><th>Docente</th><th>Programa / Área</th><th>Asignaturas RAP</th><th>Horas asignadas</th><th>Estado</th><th>Última actualización</th><th>Acciones</th></tr></thead>
-<tbody>{html_filas_p}</tbody>
+<tbody>{html_filas_p if html_filas_p else "<tr><td colspan='7' style='text-align:center;'>No hay profesores cargados.</td></tr>"}</tbody>
 </table></div>""", unsafe_allow_html=True)
 
-        # Tu lógica original de eliminación preservada intacta
-        if rol == "admin":
-            st.divider()
-            st.subheader("🗑️ Eliminar Docente")
-            if profesores_db:
-                opts_profes = {f"{p[1]} (ID: {p[0]})": p[0] for p in profesores_db}
-                profe_sel = st.selectbox("Seleccione el docente a eliminar:", list(opts_profes.keys()), key="admin_del_p_sh_real")
-                if st.button("❌ Eliminar Docente Seleccionado", key="btn_exe_del_p_sh_real"):
-                    try:
-                        ejecutar_query("DELETE FROM profesores WHERE id_profesor = %s", (opts_profes[profe_sel],))
-                        st.error(f"Docente '{profe_sel}' eliminado correctamente.")
-                        st.rerun()
-                    except Exception:
-                        st.error("⚠️ No se puede eliminar este docente porque tiene cargas académicas vinculadas.")
-
     # =========================================================================
-    # 👨‍🏫 INTERFAZ 3: FORMULARIO NUEVO DOCENTE EVALUADOR (`image_473a46.jpg`)
+    # IMAGEN 3: `image_47b6e2.jpg` (FORMULARIO NUEVO DOCENTE EVALUADOR)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "docentes_nuevo":
-        if st.button("← Volver al Listado", key="btn_cancel_doc_form_sh_real"):
-            st.session_state['reg_vista_actual'] = "docentes_lista"
+        if st.button("← Volver al Listado Maestro", key="btn_back_doc_list_clean"):
+            st.session_state['reg_vista_actual'] = "docentes"
             st.rerun()
 
         st.markdown("### Nuevo docente evaluador")
-        st.caption("Completa la información estructurada del docente evaluador para el esquema de la base de datos.")
+        st.caption("Completa la información para registrar un nuevo docente que participará en el proceso RAP.")
 
-        c_fdoc_l, c_fdoc_r = st.columns([2.2, 1])
-        with c_fdoc_l:
-            with st.form("f_p", clear_on_submit=True):  # Nombre original de tu formulario
-                st.markdown('<div class="mockup-section-title">1. Datos generales</div>', unsafe_allow_html=True)
+        c_fl, c_fr = st.columns([2.2, 1])
+        with c_l := c_flt_1 = c_fdoc_l = c_f_l = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1 = c_flt_1
+            # ... continuación de f_p en c_fdoc_l
                 nom_p = st.text_input("Nombre del Profesor *", placeholder="Ej. María Fernanda López Gómez")
-                st.markdown('<div class="mockup-section-title">2. Asignación académica</div>', unsafe_allow_html=True)
                 hrs = st.number_input("Horas *", min_value=1, max_value=48, value=12)
                 st.markdown("<br>", unsafe_allow_html=True)
                 
@@ -255,7 +281,7 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
                             st.session_state['reg_vista_actual'] = "docentes_lista"
                             st.rerun()
                         except Exception:
-                            st.error("⚠️ Ocurrió un inconveniente al registrar el docente. Verifique los datos.")
+                            st.error("⚠️ Inconveniente en base de datos.")
                 if btn_cancel:
                     st.session_state['reg_vista_actual'] = "docentes_lista"
                     st.rerun()
@@ -272,39 +298,86 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
 </div>""", unsafe_allow_html=True)
 
     # =========================================================================
-    # 🎓 INTERFAZ 4: FORMULARIO REGISTRO/ACTUALIZACIÓN ESTUDIANTES (`image_473b5e.jpg`)
+    # ESCENARIO 3: PANTALLA TOTALMENTE LIMPIA PARA ELIMINAR DOCENTES (REQUERIDO)
+    # =========================================================================
+    elif st.session_state['reg_vista_actual'] == "docentes_eliminar":
+        st.markdown("### 🗑️ Panel de Administración - Eliminar Docente")
+        st.caption("Esta pantalla se encuentra aislada para garantizar purgas seguras en tu esquema Neon.")
+        
+        profesores_db = traer_datos("SELECT id_profesor, nombre_completo FROM profesores ORDER BY nombre_completo")
+        
+        if profesores_db:
+            opts_p = {f"{p[1]} (ID: {p[0]})": p[0] for p in profesores_db}
+            p_sel = st.selectbox("Seleccione el docente a eliminar de forma permanente:", list(opts_p.keys()), key="clean_del_p")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            c_del_1, c_del_2 = st.columns(2)
+            with c_del_1:
+                if st.button("❌ Confirmar Eliminación", use_container_width=True):
+                    try:
+                        ejecutar_query("DELETE FROM profesores WHERE id_profesor = %s", (opts_p[p_sel],))
+                        st.toast(f"Docente '{p_sel}' eliminado.")
+                        st.session_state['reg_vista_actual'] = "docentes_lista"
+                        st.rerun()
+                    except Exception:
+                        st.error("⚠️ Restricción: El docente posee exámenes activos vinculados.")
+            with c_del_2:
+                if st.button("← Abortar y Volver", use_container_width=True, key="cancel_del_p_action"):
+                    st.session_state['reg_vista_actual'] = "docentes_lista"
+                    st.rerun()
+        else:
+            st.info("No hay docentes registrados en la base de datos.")
+            if st.button("← Volver", key="back_empty_p"):
+                st.session_state['reg_vista_actual'] = "docentes_lista"
+                st.rerun()
+
+    # =========================================================================
+    # IMAGEN 4: `image_47b703.jpg` (FORMULARIO ESTUDIANTES EN DOS COLUMNAS REJILLA)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "estudiantes":
         st.markdown("### Registrar / Actualizar Estudiante")
-        st.caption("Completa los campos de tu formulario original adaptados a la distribución limpia del mockup.")
+        st.caption("Completa los campos obligatorios distribuidos simétricamente en el formulario relacional.")
 
-        # Lógica original nativa intacta
         estudiantes_carga = traer_datos("SELECT id_banner, nombre_completo FROM estudiantes ORDER BY nombre_completo")
         modo_correccion = st.checkbox("🔄 ¿Desea corregir un ID Banner que quedó mal digitado?")
         id_antiguo = None
         
         if modo_correccion and estudiantes_carga:
             opts_correccion = {f"{e[1]} (ID Actual: {e[0]})": e[0] for e in estudiantes_carga}
-            est_a_corregir = st.selectbox("Seleccione el registro con ID ERRÓNEO:", list(opts_correccion.keys()), key="sel_corr_est_id_sh_real")
+            est_a_corregir = st.selectbox("Seleccione el registro con ID ERRÓNEO:", list(opts_correccion.keys()), key="sel_corr_id_est_real")
             id_antiguo = opts_correccion[est_a_corregir]
 
-        c_est_l, c_est_r = st.columns([2.2, 1])
-        with c_est_l:
-            with st.form("f_e", clear_on_submit=True):  # Nombre original de tu formulario
-                st.markdown('<div class="mockup-section-title">1. Datos generales</div>', unsafe_allow_html=True)
-                id_b = st.number_input("ID Banner", step=1, value=id_antiguo if id_antiguo else 0)
-                nom_e = st.text_input("Nombre Estudiante")
-                est = st.selectbox("Estado", ["Matriculado", "Admitido", "No matriculado"])
+        c_est_col_l, c_est_col_r = st.columns([2.2, 1])
+        with c_est_col_l:
+            with st.form("f_e", clear_on_submit=True):
+                st.markdown('<div class="form-section-title-bar">1. Datos generales</div>', unsafe_allow_html=True)
                 
-                st.markdown('<div class="mockup-section-title">2. Asignación académica</div>', unsafe_allow_html=True)
+                # REJILLA DE DISTRIBUCIÓN EN 2 COLUMNAS PARA CAJAS DE TEXTO (IGUAL AL MOCKUP)
+                st.markdown('<div class="grid-two-columns">', unsafe_allow_html=True)
+                c_form_1, c_form_2 = st.columns(2)
+                with c_form_1:
+                    id_b = st.number_input("ID Banner *", step=1, value=id_antiguo if id_antiguo else 0)
+                with c_form_2:
+                    nom_e = st.text_input("Nombre Estudiante *")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                st.markdown('<div class="grid-two-columns">', unsafe_allow_html=True)
+                c_form_3, c_form_4 = st.columns(2)
+                with c_form_3:
+                    est = st.selectbox("Estado *", ["Matriculado", "Admitido", "No matriculado"])
+                with c_form_4:
+                    st.text_input("Correo institucional (Informativo)", placeholder="Ej. correo@uniminuto.edu.co")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                st.markdown('<div class="form-section-title-bar">2. Asignación académica</div>', unsafe_allow_html=True)
                 mats_db = traer_datos("SELECT alfa, nombre_materia FROM asignaturas ORDER BY periodo")
                 opts = {f"{m[1]} ({m[0]})": m[0] for m in mats_db} if mats_db else {}
-                mats_sel = st.multiselect("Asignaturas", list(opts.keys()))
+                mats_sel = st.multiselect("Asignaturas *", list(opts.keys()))
                 
                 st.markdown("<br>", unsafe_allow_html=True)
-                if st.form_submit_button("🚀 Registrar / Actualizar", use_container_width=True):
+                if st.form_submit_button("🚀 Registrar / Actualizar Estudiante", use_container_width=True):
                     if id_b <= 0 or not nom_e.strip():
-                        st.error("Por favor, ingrese un ID Banner válido y el nombre del estudiante.")
+                        st.error("Por favor, ingrese un ID Banner válido y el nombre completo.")
                     else:
                         alfas = ",".join([opts[m] for m in mats_sel])
                         try:
@@ -313,7 +386,7 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
                                     UPDATE estudiantes SET id_banner = %s, nombre_completo = %s, estado_matricula = %s, alfa_asignatura = %s
                                     WHERE id_banner = %s
                                 """, (id_b, nom_e, est, alfas, id_antiguo))
-                                st.success(f"¡Identificación corregida! El ID {id_antiguo} ahora es **{id_b}**.")
+                                st.success("¡Identificación corregida con éxito!")
                             else:
                                 ejecutar_query("""
                                     INSERT INTO estudiantes (id_banner, nombre_completo, estado_matricula, alfa_asignatura) 
@@ -323,20 +396,16 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
                                         estado_matricula = EXCLUDED.estado_matricula,
                                         alfa_asignatura = EXCLUDED.alfa_asignatura
                                 """, (id_b, nom_e, est, alfas))
-                                st.success(f"¡Procesado correctamente! El estudiante con ID **{id_b}** ha sido guardado/actualizado.")
+                                st.success("¡Procesado correctamente!")
                             st.rerun()
                         except Exception as e:
-                            err_str = str(e).lower()
-                            if "unique" in err_str or "duplicate" in err_str:
-                                st.error(f"⚠️ El ID Banner **{id_b}** ya se encuentra asignado a otro estudiante.")
-                            elif "foreign key" in err_str or "violación de llave foránea" in err_str:
-                                st.error("⚠️ Restricción relacional en base de datos.")
+                            st.error(f"Error relacional en DB: {e}")
 
         with c_est_r:
             chk_est_id = "validated" if id_b > 0 else ""
             chk_est_name = "validated" if nom_e else ""
             st.markdown(f"""<div class="summary-sticky-card">
-<h4 style="margin-top:0; color:#0f172a; font-size:1.05rem;">Resumen de registro</h4>
+<h4 style="margin-top:0; color:#0f172a;">Resumen de registro</h4>
 <span style="font-size:0.85rem; color:#64748b;">Estado actual: <span class="pill-matrix-process" style="display:inline;">{est}</span></span>
 <hr style="border-color:#e2e8f0; margin:14px 0;">
 <div style="font-size:0.85rem; font-weight:700; margin-bottom:10px;">Campos obligatorios</div>
@@ -345,40 +414,39 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
 <div class="checklist-item-row validated"><i class="fa-solid fa-circle-check"></i> estado_matricula</div>
 </div>""", unsafe_allow_html=True)
 
-        if rol == "admin":
+        # Control original para purgar expedientes de estudiantes (Solo Admin)
+        if rol == "admin" and estudiantes_carga:
             st.divider()
             st.subheader("🗑️ Eliminar Estudiante")
-            if estudiantes_carga:
-                opts_est = {f"{e[1]} (Banner: {e[0]})": e[0] for e in estudiantes_carga}
-                est_sel = st.selectbox("Seleccione el estudiante a eliminar:", list(opts_est.keys()), key="admin_del_est_key_sh_real")
-                if st.button("❌ Eliminar Estudiante Seleccionado", key="btn_execute_del_est_sh_real"):
-                    id_banner_del = opts_est[est_sel]
-                    try:
-                        ejecutar_query("DELETE FROM notas WHERE id_programacion IN (SELECT id FROM programacion_pruebas WHERE id_banner = %s)", (id_banner_del,))
-                        ejecutar_query("DELETE FROM programacion_pruebas WHERE id_banner = %s", (id_banner_del,))
-                        ejecutar_query("DELETE FROM estudiantes WHERE id_banner = %s", (id_banner_del,))
-                        st.error(f"Estudiante '{est_sel}' eliminado correctamente.")
-                        st.rerun()
-                    except Exception:
-                        st.error("⚠️ Error restrictivo relacional al intentar remover.")
+            opts_est = {f"{e[1]} (Banner: {e[0]})": e[0] for e in estudiantes_carga}
+            est_sel = st.selectbox("Seleccione el estudiante a eliminar:", list(opts_est.keys()), key="del_est_key_real")
+            if st.button("❌ Eliminar Estudiante Seleccionado", key="btn_execute_del_est_real"):
+                id_banner_del = opts_est[est_sel]
+                try:
+                    ejecutar_query("DELETE FROM notas WHERE id_programacion IN (SELECT id FROM programacion_pruebas WHERE id_banner = %s)", (id_banner_del,))
+                    ejecutar_query("DELETE FROM programacion_pruebas WHERE id_banner = %s", (id_banner_del,))
+                    ejecutar_query("DELETE FROM estudiantes WHERE id_banner = %s", (id_banner_del,))
+                    st.error(f"Estudiante '{est_sel}' eliminado correctamente.")
+                    st.rerun()
+                except Exception:
+                    st.error("⚠️ Error relacional al purgar.")
 
     # =========================================================================
-    # 📊 INTERFAZ 5: VISTA MAESTRA COMPLETA ULTRA VELOZ (`image_473e86.jpg`)
+    # IMAGEN 5: `image_47b73a.jpg` (MATRIZ SCROLLABLE CON METADATA / GLOBO FLOTANTE)
     # =========================================================================
     elif st.session_state['reg_vista_actual'] == "maestra":
-        st.markdown("### Estado de Aplicación por Estudiante")
-        st.caption("Consulta matricial semaforizada del avance de competencias homologadas.")
+        st.markdown("### Vista maestra de asignaturas por estudiante")
+        st.caption("Consulta matricial con barras de desplazamiento horizontal y globos informativos superiores.")
 
         c_mflt_1, c_mflt_2, c_mflt_3 = st.columns(3)
-        with c_mflt_1: st.text_input("Buscar estudiante", placeholder="Buscar por nombre o ID Banner...", label_visibility="collapsed", key="mx_search_field_sh_real")
-        with c_mflt_2: st.selectbox("Programa ", ["Todos los programas"], label_visibility="collapsed")
-        with c_mflt_3: st.selectbox("Estado ", ["Todos los estados"], label_visibility="collapsed")
+        with c_mflt_1: st.text_input("Buscar por estudiante...", label_visibility="collapsed", key="mx_search_exact_real")
+        with c_mflt_2: st.selectbox("Filtrar Programa", ["Todos los programas"], label_visibility="collapsed")
+        with c_mflt_3: st.selectbox("Filtrar Estado", ["Todos los estados"], label_visibility="collapsed")
 
-        # Tu consulta original nativa
         ests = traer_datos("SELECT id_banner, nombre_completo, alfa_asignatura FROM estudiantes")
         
         if ests:
-            # --- PRECARGA MAESTRA EN CACHÉ DE MEMORIA UNIFICADA (EVITA LA CARGA LENTA) ---
+            # Caché única de memoria para velocidad extrema de renderizado
             pruebas_db = traer_datos("SELECT alfa_asignatura, estado FROM maestro_pruebas")
             mapa_estados_pruebas = {str(p[0]).strip(): str(p[1]) for p in pruebas_db} if pruebas_db else {}
             
@@ -390,17 +458,16 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
                 barra_progreso.progress(int(((idx + 1) / total_est) * 100))
                 lista_alfas = [a.strip() for a in alfas.split(",")] if alfas else []
                 
-                # Renderizador optimizado de celdas ultra veloz libre de I/O recurrente
                 def renderizar_pildora_estado(codigo_alfa):
                     if codigo_alfa not in lista_alfas:
                         return '<span class="pill-matrix-none">No aplica</span>'
                     status_real = mapa_estados_pruebas.get(str(codigo_alfa).strip(), "Pendiente")
                     if status_real == "Construida":
-                        return '<span class="pill-matrix-built">Lista</span>'
-                    elif status_real == "En construcción" or status_real == "En construction":
+                        return '<span class="pill-matrix-built">✅ Lista</span>'
+                    elif status_real == "En construcción":
                         return '<span class="pill-matrix-process">En proceso</span>'
                     else:
-                        return '<span class="pill-matrix-pending">Pendiente</span>'
+                        return '<span class="pill-matrix-pending">⏳ Pendiente</span>'
 
                 html_matrix_rows += f"""<tr>
 <td style="text-align:left;">{idb}</td>
@@ -416,26 +483,31 @@ div[data-testid="stForm"] { background: #ffffff !important; border: 1px solid #e
 
             barra_progreso.empty()
 
-            st.markdown(f"""<div class="form-card-wrapper" style="padding:20px; overflow-x:auto; margin-top:15px;">
+            # --- RENDERIZADO DE LA MATRIZ CON CONTENEDOR DE AVANCE Y GLOBO FLOTANTE DE NOMBRE ---
+            st.markdown(f"""<div class="scrollable-matrix-wrapper">
 <table class="master-matrix-table">
-<thead><tr>
-<th style="text-align:left;">ID Banner</th><th style="text-align:left;">Estudiante</th>
-<th>ISOF V003<br><span style="font-size:0.68rem; font-weight:400; color:#64748b;">Intro. Software</span></th>
-<th>ISOF V013<br><span style="font-size:0.68rem; font-weight:400; color:#64748b;">Prog. POO</span></th>
-<th>ISOF V043<br><span style="font-size:0.68rem; font-weight:400; color:#64748b;">Bases de Datos</span></th>
-<th>ISOF V063<br><span style="font-size:0.68rem; font-weight:400; color:#64748b;">Estructuras</span></th>
-<th>ISOF V081<br><span style="font-size:0.68rem; font-weight:400; color:#64748b;">Redes</span></th>
-<th>ISOF V095<br><span style="font-size:0.68rem; font-weight:400; color:#64748b;">Arquitectura</span></th>
-<th>Detalle</th>
-</tr></thead>
+<thead>
+<tr>
+<th style="text-align:left; min-width:110px;">ID Banner</th>
+<th style="text-align:left; min-width:220px;">Estudiante</th>
+<th style="min-width:140px;"><span class="subject-floating-card"><b>ISOF V003 —</b><br>Intro. a la Ingeniería de Software</span>ISOF V003</th>
+<th style="min-width:140px;"><span class="subject-floating-card"><b>ISOF V013 —</b><br>Programación Orientada a Objetos</span>ISOF V013</th>
+<th style="min-width:140px;"><span class="subject-floating-card"><b>ISOF V043 —</b><br>Sistemas de Gestión de Bases de Datos</span>ISOF V043</th>
+<th style="min-width:140px;"><span class="subject-floating-card"><b>ISOF V063 —</b><br>Estructuras de Datos Avanzadas</span>ISOF V063</th>
+<th style="min-width:140px;"><span class="subject-floating-card"><b>ISOF V081 —</b><br>Protocolos de Redes Industriales</span>ISOF V081</th>
+<th style="min-width:140px;"><span class="subject-floating-card"><b>ISOF V095 —</b><br>Arquitectura de Sistemas Computacionales</span>ISOF V095</th>
+<th style="min-width:80px;">Detalle</th>
+</tr>
+</thead>
 <tbody>{html_matrix_rows}</tbody>
 </table>
+</div>
 <br>
-<div style="display:flex; gap:20px; font-size:0.8rem; font-weight:600; flex-wrap:wrap; background:#f8fafc; padding:12px; border-radius:8px;">
-<span><i class="fa-solid fa-circle" style="color:#137333;"></i> Lista (Completo)</span>
+<div style="display:flex; gap:20px; font-size:0.8rem; font-weight:600; flex-wrap:wrap; background:#ffffff; padding:12px; border:1px solid #e2e8f0; border-radius:8px;">
+<span><i class="fa-solid fa-circle" style="color:#137333;"></i> Lista (Evaluación completa)</span>
 <span><i class="fa-solid fa-circle" style="color:#b06000;"></i> Pendiente</span>
 <span><i class="fa-solid fa-circle" style="color:#1a73e8;"></i> En proceso</span>
 <span><i class="fa-solid fa-circle" style="color:#5f6368;"></i> No aplica</span>
-</div></div>""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
         else:
-            st.info("No hay estudiantes registrados en el sistema.")
+            st.info("No se registran estudiantes matriculados en el sistema.")
