@@ -1,18 +1,11 @@
 import streamlit as st
 from database import traer_datos
-import sys
-import os
 
 def render():
-    # --- INYECTOR DE RUTAS ABSOLUTAS PARA EVITAR FALLOS EN STREAMLIT CLOUD ---
-    dir_actual = os.path.dirname(os.path.abspath(__file__))
-    if dir_actual not in sys.path:
-        sys.path.append(dir_actual)
-    
-    # Importación directa asegurada por el entorno de ejecución
-    import gestion_docentes
-    import gestion_estudiantes
-    import vista_maestra
+    # --- IMPORTACIONES ABSOLUTAS CON ALIAS (BLINDAJE TOTAL PARA STREAMLIT CLOUD) ---
+    import modules.gestion_docentes as gestion_docentes
+    import modules.gestion_estudiantes as gestion_estudiantes
+    import modules.vista_maestra as vista_maestra
 
     # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
@@ -129,7 +122,7 @@ def render():
             </div>
         </div></div>""", unsafe_allow_html=True)
 
-    # Redirecciones nativas a los módulos independientes
+    # Redirecciones utilizando los alias asignados
     elif st.session_state['reg_vista'] == "docentes":
         gestion_docentes.render()
     elif st.session_state['reg_vista'] == "estudiantes":
