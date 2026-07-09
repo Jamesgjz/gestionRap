@@ -22,7 +22,7 @@ def render():
     gestion_estudiantes = cargar_modulo_por_archivo("gestion_estudiantes", "gestion_estudiantes.py")
     vista_maestra = cargar_modulo_por_archivo("vista_maestra", "vista_maestra.py")
 
-    # --- CSS DE ALTA FIDELIDAD: COLORES Y BOTONES GRANDES ---
+    # --- CSS DE ALTA FIDELIDAD: COLORES VIVOS Y BOTONES AMPLIADOS ---
     st.markdown("""
 <style>
 /* Reset de fondo */
@@ -31,61 +31,83 @@ def render():
 /* Contenedor principal */
 .dashboard-container { max-width: 1400px; margin: auto; padding: 20px; font-family: 'Inter', sans-serif; }
 
-/* Grid de tarjetas de acción */
-.action-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 15px; }
-.action-card { background: white; border: 1px solid #e2e8f0; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 30px 30px 15px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.01); }
+/* Tarjetas de acción superiores */
+.action-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.action-card { 
+    background: white; 
+    border: 1px solid #e2e8f0; 
+    border-top-left-radius: 16px; 
+    border-top-right-radius: 16px; 
+    padding: 30px 30px 20px 30px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center; 
+    border-bottom: none !important; /* Se une visualmente al botón de abajo */
+}
 .card-icon { font-size: 3.5rem; margin-bottom: 20px; }
 .card-title { font-weight: 800; font-size: 1.3rem; color: #0f172a; margin-bottom: 12px; }
-.card-desc { font-size: 0.95rem; color: #64748b; margin-bottom: 10px; line-height: 1.6; min-height: 75px; }
+.card-desc { font-size: 0.95rem; color: #64748b; line-height: 1.6; min-height: 70px; }
 
-/* INYECCIÓN DE ESTILOS EN BOTONES NATIVOS DE STREAMLIT */
-.btn-docentes-container div.stButton > button {
+/* --- SELECCIÓN CRUCIAL: ESTILIZADO DE BOTONES NATIVOS POR COLUMNA --- */
+/* Columna 1: Gestión Docentes (Azul) */
+[data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton button {
     background-color: #0047ff !important;
     color: white !important;
     font-size: 1.15rem !important; /* Letra más grande */
     font-weight: 700 !important;
-    padding: 14px !important;
-    border-top-left-radius: 0px !important;
-    border-top-right-radius: 0px !important;
-    border-bottom-left-radius: 16px !important;
-    border-bottom-right-radius: 16px !important;
-    border: none !important;
-    margin-top: -26px;
-    box-shadow: 0 4px 6px rgba(0,47,255,0.15);
+    padding: 16px !important; /* Botón más grande */
+    border-radius: 0px 0px 16px 16px !important; /* Redondeado inferior */
+    border: 1px solid #0047ff !important;
+    border-top: none !important;
+    width: 100% !important;
+    transition: background 0.2s ease;
+}
+[data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton button:hover {
+    background-color: #0036d6 !important;
 }
 
-.btn-estudiantes-container div.stButton > button {
+/* Columna 2: Gestión Estudiantes (Verde) */
+[data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton button {
     background-color: #00875a !important;
     color: white !important;
     font-size: 1.15rem !important; /* Letra más grande */
     font-weight: 700 !important;
-    padding: 14px !important;
-    border-top-left-radius: 0px !important;
-    border-top-right-radius: 0px !important;
-    border-bottom-left-radius: 16px !important;
-    border-bottom-right-radius: 16px !important;
-    border: none !important;
-    margin-top: -26px;
-    box-shadow: 0 4px 6px rgba(0,135,90,0.15);
+    padding: 16px !important; /* Botón más grande */
+    border-radius: 0px 0px 16px 16px !important; /* Redondeado inferior */
+    border: 1px solid #00875a !important;
+    border-top: none !important;
+    width: 100% !important;
+    transition: background 0.2s ease;
+}
+[data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton button:hover {
+    background-color: #006c48 !important;
 }
 
-.btn-maestra-container div.stButton > button {
+/* Columna 3: Vista Maestra (Morado) */
+[data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton button {
     background-color: #6b21a8 !important;
     color: white !important;
     font-size: 1.15rem !important; /* Letra más grande */
     font-weight: 700 !important;
-    padding: 14px !important;
-    border-top-left-radius: 0px !important;
-    border-top-right-radius: 0px !important;
-    border-bottom-left-radius: 16px !important;
-    border-bottom-right-radius: 16px !important;
-    border: none !important;
-    margin-top: -26px;
-    box-shadow: 0 4px 6px rgba(107,33,168,0.15);
+    padding: 16px !important; /* Botón más grande */
+    border-radius: 0px 0px 16px 16px !important; /* Redondeado inferior */
+    border: 1px solid #6b21a8 !important;
+    border-top: none !important;
+    width: 100% !important;
+    transition: background 0.2s ease;
+}
+[data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton button:hover {
+    background-color: #551a87 !important;
+}
+
+/* Ajustes de espacio de los botones nativos */
+[data-testid="stHorizontalBlock"] .stButton {
+    margin-top: -1px;
 }
 
 /* Métricas */
-.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; margin-top: 25px; }
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; margin-top: 35px; }
 .metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 25px; }
 .metric-val { font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-top: 5px; }
 .metric-lbl { font-size: 1rem; font-weight: 600; color: #64748b; }
@@ -133,13 +155,12 @@ def render():
                 
             actividades = traer_datos("SELECT tipo, fecha, descripcion FROM historial_actividad ORDER BY fecha DESC LIMIT 3")
         except Exception as db_error:
-            # Si hay un fallo estructural, te avisará en la barra lateral sin romper el diseño visual
             st.sidebar.error(f"Aviso de Base de Datos: {db_error}")
 
         st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 25px;">Gestión de Registros</h1>', unsafe_allow_html=True)
 
-        # --- TARJETAS DE ACCIÓN CON CONTENEDORES DE BOTÓN PERFECTOS ---
+        # --- GRID DE TARJETAS DE ACCIÓN COMPACTADAS CON SUS BOTONES ---
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown("""<div class="action-card">
@@ -147,11 +168,9 @@ def render():
                 <div class="card-title">Docentes evaluadores</div>
                 <div class="card-desc">Registra, actualiza y gestiona los docentes que participan en el proceso RAP.</div>
             </div>""", unsafe_allow_html=True)
-            st.markdown('<div class="btn-docentes-container">', unsafe_allow_html=True)
             if st.button("Gestionar docentes", use_container_width=True, key="nav_doc_btn"):
                 st.session_state['reg_vista'] = "docentes"
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
         with col2:
             st.markdown("""<div class="action-card">
@@ -159,11 +178,9 @@ def render():
                 <div class="card-title">Estudiantes</div>
                 <div class="card-desc">Registra, actualiza y gestiona los estudiantes del proceso RAP y consulta su estado de aplicación.</div>
             </div>""", unsafe_allow_html=True)
-            st.markdown('<div class="btn-estudiantes-container">', unsafe_allow_html=True)
             if st.button("Gestionar estudiantes", use_container_width=True, key="nav_est_btn"):
                 st.session_state['reg_vista'] = "estudiantes"
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
         with col3:
             st.markdown("""<div class="action-card">
@@ -171,13 +188,11 @@ def render():
                 <div class="card-title">Vista maestra</div>
                 <div class="card-desc">Consulta el estado de aplicación por estudiante, asignaturas y resultados del proceso RAP.</div>
             </div>""", unsafe_allow_html=True)
-            st.markdown('<div class="btn-maestra-container">', unsafe_allow_html=True)
             if st.button("Abrir vista maestra", use_container_width=True, key="nav_mae_btn"):
                 st.session_state['reg_vista'] = "maestra"
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- SECCIÓN DE MÉTRICAS ACTUALIZADAS DESDE LA BD ---
+        # --- SECCIÓN DE MÉTRICAS DINÁMICAS ---
         st.markdown(f"""<div class="metrics-grid">
             <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div></div>
             <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div></div>
@@ -185,7 +200,7 @@ def render():
             <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div></div>
         </div>""", unsafe_allow_html=True)
 
-        # --- SECCIÓN DE TIMELINE REAL ---
+        # --- SECCIÓN DE LÍNEA DE TIEMPO REAL ---
         html_timeline = ""
         if actividades:
             for tipo, fecha, desc in actividades:
@@ -213,7 +228,7 @@ def render():
             </div>
         </div></div>""", unsafe_allow_html=True)
 
-    # Redirecciones nativas ejecutando los archivos modulares
+    # Redirecciones nativas a los módulos independientes
     elif st.session_state['reg_vista'] == "docentes":
         gestion_docentes.render()
     elif st.session_state['reg_vista'] == "estudiantes":
