@@ -39,17 +39,21 @@ def render():
 .timeline-line { position: absolute; left: 16px; top: 10px; bottom: 10px; width: 2px; background: #e2e8f0; z-index: 0; }
 .timeline-item { position: relative; margin-bottom: 20px; display: flex; align-items: start; z-index: 1; }
 .timeline-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; margin-right: 18px; flex-shrink: 0; }
-.timeline-content { font-size: 1rem; color: #334155; }
 </style>
 """, unsafe_allow_html=True)
 
-    # --- LÓGICA DE DATOS ---
-    # He eliminado el try-except genérico para que, si falla, veamos el error real
-    # y no simplemente un '0' engañoso.
+    # --- LÓGICA DE DATOS DINÁMICA ---
+    # Obtenemos métricas
     tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
     tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
     tot_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")[0][0]
     tot_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")[0][0]
+    
+    # Obtenemos actividad real (Si la tabla 'historial_actividad' no existe, capturamos el error)
+    try:
+        actividades = traer_datos("SELECT tipo, fecha, descripcion FROM historial_actividad ORDER BY fecha DESC LIMIT 3")
+    except:
+        actividades = []
 
     st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
     
@@ -86,20 +90,25 @@ def render():
         <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div></div>
     </div>""", unsafe_allow_html=True)
 
-    # Actividad Reciente
-    st.markdown("""<div class="bottom-split">
+    # Actividad Reciente Dinámica
+    timeline_html = ""
+    if actividades:
+        for tipo, fecha, desc in actividades:
+            color = "#00875a" if "estudiante" in tipo.lower() else "#0047ff"
+            timeline_html += f"""
+            <div class="timeline-item">
+                <div class="timeline-dot" style="background:{color};"></div>
+                <div class="timeline-content"><b>{tipo}</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
+            </div>"""
+    else:
+        timeline_html = "<p style='color:#64748b;'>No hay actividad reciente para mostrar.</p>"
+
+    st.markdown(f"""<div class="bottom-split">
         <div class="card-box">
             <div class="panel-card-title">Actividad reciente</div>
             <div class="timeline-wrapper">
                 <div class="timeline-line"></div>
-                <div class="timeline-item">
-                    <div class="timeline-dot" style="background:#00875a;"></div>
-                    <div class="timeline-content"><b>Nuevo estudiante registrado</b><br><small style="color:#64748b;">Hoy, 10:24 a. m.</small><br>Juan David Duque Aguirre</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot" style="background:#0047ff;"></div>
-                    <div class="timeline-content"><b>Docente evaluador actualizado</b><br><small style="color:#64748b;">Hoy, 09:46 a. m.</small><br>Richard Manuel Acosta Reyes</div>
-                </div>
+                {timeline_html}
             </div>
         </div>
         <div class="card-box">
