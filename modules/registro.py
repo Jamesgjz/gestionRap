@@ -1,9 +1,18 @@
 import streamlit as st
 from database import traer_datos
+import sys
+import os
 
 def render():
-    # LAZY IMPORTS: Esto rompe el ciclo de importación al retrasar la carga hasta la ejecución real
-    from modules import gestion_docentes, gestion_estudiantes, vista_maestra
+    # --- INYECTOR DE RUTAS ABSOLUTAS PARA EVITAR FALLOS EN STREAMLIT CLOUD ---
+    dir_actual = os.path.dirname(os.path.abspath(__file__))
+    if dir_actual not in sys.path:
+        sys.path.append(dir_actual)
+    
+    # Importación directa asegurada por el entorno de ejecución
+    import gestion_docentes
+    import gestion_estudiantes
+    import vista_maestra
 
     # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
@@ -45,9 +54,9 @@ def render():
     if 'reg_vista' not in st.session_state:
         st.session_state['reg_vista'] = "dashboard"
 
-    # --- RUTAS DEL ENRUTADOR INTERNO ---
+    # --- ENRUTADOR INTERNO RAP ---
     if st.session_state['reg_vista'] == "dashboard":
-        # --- LÓGICA DE DATOS DINÁMICA ---
+        # Lógica de datos dinámica desde la base de datos
         try:
             tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
             tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
@@ -61,7 +70,7 @@ def render():
         st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 25px;">Gestión de Registros</h1>', unsafe_allow_html=True)
 
-        # --- GRID DE TARJETAS ACCIÓN CON COMPONENTES DE CONTROL SEGUROS ---
+        # Contenedores nativos seguros para los clics
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown('<div class="action-card"><div class="card-icon">🎓</div><div class="card-title">Docentes evaluadores</div><div class="card-desc">Registra, actualiza y gestiona los docentes que participan en el proceso RAP.</div>', unsafe_allow_html=True)
@@ -84,7 +93,7 @@ def render():
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- SECCIÓN DE MÉTRICAS REALES ---
+        # Mostrar métricas reales
         st.markdown(f"""<div class="metrics-grid">
             <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div></div>
             <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div></div>
@@ -92,7 +101,7 @@ def render():
             <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div></div>
         </div>""", unsafe_allow_html=True)
 
-        # --- SECCIÓN DE TIMELINE REAL Y ACCESOS ---
+        # Renderizar línea de tiempo dinámica
         html_timeline = ""
         if actividades:
             for tipo, fecha, desc in actividades:
@@ -120,7 +129,7 @@ def render():
             </div>
         </div></div>""", unsafe_allow_html=True)
 
-    # Redirecciones directas a las funciones render() independientes
+    # Redirecciones nativas a los módulos independientes
     elif st.session_state['reg_vista'] == "docentes":
         gestion_docentes.render()
     elif st.session_state['reg_vista'] == "estudiantes":
