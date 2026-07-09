@@ -2,7 +2,7 @@ import streamlit as st
 from database import traer_datos
 
 def render():
-    # --- CSS DE ALTA FIDELIDAD CON LÍNEA DE TIEMPO ---
+    # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
 <style>
 /* Reset de fondo */
@@ -42,14 +42,18 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # --- LÓGICA DE DATOS ---
+    # --- LÓGICA DE DATOS DINÁMICA ---
     try:
         tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
         tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
         tot_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")[0][0]
         tot_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")[0][0]
+        
+        # Consulta de actividad reciente (Asegúrate de que la tabla 'historial_actividad' exista)
+        actividades = traer_datos("SELECT tipo, fecha, descripcion FROM historial_actividad ORDER BY fecha DESC LIMIT 3")
     except:
         tot_est, tot_prof, tot_pend, tot_asig = 0, 0, 0, 0
+        actividades = []
 
     st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
     
@@ -86,38 +90,28 @@ def render():
         <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div></div>
     </div>""", unsafe_allow_html=True)
 
-    # Actividad Reciente (Timeline)
-   # Asegúrate de que la tabla 'historial_actividad' tenga columnas: tipo, fecha, descripcion
-    actividades = traer_datos("""
-            SELECT tipo, fecha, descripcion 
-            FROM historial_actividad 
-            ORDER BY fecha DESC LIMIT 3
-        """)
+    # Actividad Reciente (Timeline Dinámico)
+    html_timeline = ""
+    for act in actividades:
+        tipo, fecha, desc = act
+        color = "#00875a" if tipo == "estudiante" else "#0047ff"
+        html_timeline += f"""
+        <div class="timeline-item">
+            <div class="timeline-dot" style="background:{color};"></div>
+            <div class="timeline-content"><b>{tipo.capitalize()}</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
+        </div>"""
 
-        html_actividades = ""
-        for act in actividades:
-            tipo, fecha, desc = act[0], act[1], act[2]
-            # Mapeo de colores y logos por tipo
-            color = "#00875a" if tipo == "estudiante" else "#0047ff"
-            html_actividades += f"""
-                <div class="timeline-item">
-                    <div class="timeline-dot" style="background:{color};"></div>
-                    <div class="timeline-content"><b>{tipo.capitalize()} actualizado</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
-                </div>
-            """
-
-        # Renderizado del Split inferior
-        st.markdown(f"""<div class="bottom-split">
-            <div class="card-box">
-                <div class="panel-card-title">Actividad reciente</div>
-                <div class="timeline-wrapper">
-                    <div class="timeline-line"></div>
-                    {html_actividades if html_actividades else "No hay actividad reciente registrada."}
-                </div>
+    st.markdown(f"""<div class="bottom-split">
+        <div class="card-box">
+            <div class="panel-card-title">Actividad reciente</div>
+            <div class="timeline-wrapper">
+                <div class="timeline-line"></div>
+                {html_timeline if html_timeline else "No hay actividad reciente."}
             </div>
-            <div class="card-box">
-                <div class="panel-card-title">Accesos rápidos</div>
-                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">✅ Validar documentos de estudiantes</div>
-                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">📅 Programar prueba por asignatura</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        </div>
+        <div class="card-box">
+            <div class="panel-card-title">Accesos rápidos</div>
+            <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">✅ Validar documentos de estudiantes</div>
+            <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">📅 Programar prueba por asignatura</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
