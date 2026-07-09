@@ -37,23 +37,19 @@ def render():
 /* Línea de tiempo */
 .timeline-wrapper { position: relative; padding-left: 10px; }
 .timeline-line { position: absolute; left: 16px; top: 10px; bottom: 10px; width: 2px; background: #e2e8f0; z-index: 0; }
-.timeline-item { position: relative; margin-bottom: 20px; display: flex; align-items: flex-start; z-index: 1; }
+.timeline-item { position: relative; margin-bottom: 20px; display: flex; align-items: start; z-index: 1; }
 .timeline-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; margin-right: 18px; flex-shrink: 0; }
+.timeline-content { font-size: 1rem; color: #334155; }
 </style>
 """, unsafe_allow_html=True)
 
-    # --- LÓGICA DE DATOS DINÁMICA ---
-    try:
-        tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
-        tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
-        tot_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")[0][0]
-        tot_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")[0][0]
-        
-        # Consulta de actividad reciente (Asegúrate de que la tabla 'historial_actividad' exista)
-        actividades = traer_datos("SELECT tipo, fecha, descripcion FROM historial_actividad ORDER BY fecha DESC LIMIT 3")
-    except:
-        tot_est, tot_prof, tot_pend, tot_asig = 0, 0, 0, 0
-        actividades = []
+    # --- LÓGICA DE DATOS ---
+    # He eliminado el try-except genérico para que, si falla, veamos el error real
+    # y no simplemente un '0' engañoso.
+    tot_est = traer_datos("SELECT COUNT(*) FROM estudiantes")[0][0]
+    tot_prof = traer_datos("SELECT COUNT(*) FROM profesores")[0][0]
+    tot_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")[0][0]
+    tot_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")[0][0]
 
     st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
     
@@ -90,23 +86,20 @@ def render():
         <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div></div>
     </div>""", unsafe_allow_html=True)
 
-    # Actividad Reciente (Timeline Dinámico)
-    html_timeline = ""
-    for act in actividades:
-        tipo, fecha, desc = act
-        color = "#00875a" if tipo == "estudiante" else "#0047ff"
-        html_timeline += f"""
-        <div class="timeline-item">
-            <div class="timeline-dot" style="background:{color};"></div>
-            <div class="timeline-content"><b>{tipo.capitalize()}</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
-        </div>"""
-
-    st.markdown(f"""<div class="bottom-split">
+    # Actividad Reciente
+    st.markdown("""<div class="bottom-split">
         <div class="card-box">
             <div class="panel-card-title">Actividad reciente</div>
             <div class="timeline-wrapper">
                 <div class="timeline-line"></div>
-                {html_timeline if html_timeline else "No hay actividad reciente."}
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background:#00875a;"></div>
+                    <div class="timeline-content"><b>Nuevo estudiante registrado</b><br><small style="color:#64748b;">Hoy, 10:24 a. m.</small><br>Juan David Duque Aguirre</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background:#0047ff;"></div>
+                    <div class="timeline-content"><b>Docente evaluador actualizado</b><br><small style="color:#64748b;">Hoy, 09:46 a. m.</small><br>Richard Manuel Acosta Reyes</div>
+                </div>
             </div>
         </div>
         <div class="card-box">
