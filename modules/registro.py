@@ -1,11 +1,26 @@
 import streamlit as st
 from database import traer_datos
+import os
+import importlib.util
 
 def render():
-    # --- IMPORTACIONES ABSOLUTAS CON ALIAS (BLINDAJE TOTAL PARA STREAMLIT CLOUD) ---
-    import modules.gestion_docentes as gestion_docentes
-    import modules.gestion_estudiantes as gestion_estudiantes
-    import modules.vista_maestra as vista_maestra
+    # --- CARGA ULTRA-SEGURA POR RUTA FISICA (BLINDAJE TOTAL PARA STREAMLIT CLOUD) ---
+    dir_actual = os.path.dirname(os.path.abspath(__file__))
+    
+    def cargar_modulo_por_archivo(nombre_modulo, nombre_archivo):
+        ruta_completa = os.path.join(dir_actual, nombre_archivo)
+        if not os.path.exists(ruta_completa):
+            st.error(f"❌ No se encontró el archivo '{nombre_archivo}' en la ruta: {dir_actual}. Verifica que el archivo exista en tu repositorio con ese nombre exacto.")
+            st.stop()
+        spec = importlib.util.spec_from_file_location(nombre_modulo, ruta_completa)
+        modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modulo)
+        return modulo
+
+    # Cargamos los módulos hermanos directamente desde sus archivos físicos
+    gestion_docentes = cargar_modulo_por_archivo("gestion_docentes", "gestion_docentes.py")
+    gestion_estudiantes = cargar_modulo_por_archivo("gestion_estudiantes", "gestion_estudiantes.py")
+    vista_maestra = cargar_modulo_por_archivo("vista_maestra", "vista_maestra.py")
 
     # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
@@ -63,7 +78,7 @@ def render():
         st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 25px;">Gestión de Registros</h1>', unsafe_allow_html=True)
 
-        # Contenedores nativos seguros para los clics
+        # Columnas nativas de Streamlit para controlar los eventos de clic de forma segura
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown('<div class="action-card"><div class="card-icon">🎓</div><div class="card-title">Docentes evaluadores</div><div class="card-desc">Registra, actualiza y gestiona los docentes que participan en el proceso RAP.</div>', unsafe_allow_html=True)
@@ -86,7 +101,7 @@ def render():
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Mostrar métricas reales
+        # Mostrar bloques de métricas reales
         st.markdown(f"""<div class="metrics-grid">
             <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div></div>
             <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div></div>
@@ -94,14 +109,14 @@ def render():
             <div class="metric-card"><div class="metric-lbl">Asignaturas activas</div><div class="metric-val">{tot_asig}</div></div>
         </div>""", unsafe_allow_html=True)
 
-        # Renderizar línea de tiempo dinámica
+        # Renderizar la línea de tiempo con datos dinámicos
         html_timeline = ""
         if actividades:
             for tipo, fecha, desc in actividades:
                 color = "#00875a" if "estudiante" in tipo.lower() else "#0047ff"
                 html_timeline += f"""
                 <div class="timeline-item">
-                    <div class="timeline-dot" style="background:{color};"></div>
+                    <div class="timeline-dot" style="background:{color};">< /div>
                     <div class="timeline-content"><b>{tipo}</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
                 </div>"""
         else:
@@ -122,7 +137,7 @@ def render():
             </div>
         </div></div>""", unsafe_allow_html=True)
 
-    # Redirecciones utilizando los alias asignados
+    # Redirecciones seguras ejecutando el contenido de los archivos cargados
     elif st.session_state['reg_vista'] == "docentes":
         gestion_docentes.render()
     elif st.session_state['reg_vista'] == "estudiantes":
