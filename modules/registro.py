@@ -22,7 +22,7 @@ def render():
     gestion_estudiantes = cargar_modulo_por_archivo("gestion_estudiantes", "gestion_estudiantes.py")
     vista_maestra = cargar_modulo_por_archivo("vista_maestra", "vista_maestra.py")
 
-    # --- CSS DE ALTA FIDELIDAD: FUENTES INCREMENTADAS ---
+    # --- CSS DE ALTA FIDELIDAD: BOTONES MAXIMIZADOS ---
     st.markdown("""
 <style>
 /* Reset de fondo */
@@ -45,17 +45,17 @@ def render():
     border-bottom: none !important;
 }
 .card-icon { font-size: 3.8rem; margin-bottom: 20px; }
-.card-title { font-weight: 800; font-size: 1.55rem !important; color: #0f172a; margin-bottom: 14px; }
-.card-desc { font-size: 1.1rem !important; color: #64748b; line-height: 1.6; min-height: 85px; }
+.card-title { font-weight: 800; font-size: 1.55rem; color: #0f172a; margin-bottom: 14px; }
+.card-desc { font-size: 1.1rem; color: #64748b; line-height: 1.6; min-height: 85px; }
 
-/* --- ESTILIZADO DE BOTONES NATIVOS CON FUENTE MÁS GRANDE (1.35rem) --- */
+/* --- BOTONES MAXIMIZADOS (TEXTO 1.65rem Y PADDING 24px) --- */
 /* Columna 1: Gestión Docentes (Azul) */
 [data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton button {
     background-color: #0047ff !important;
     color: white !important;
-    font-size: 1.35rem !important; /* Letra significativamente más grande */
+    font-size: 1.65rem !important; /* Texto maximizado */
     font-weight: 700 !important;
-    padding: 18px !important; /* Botón con mayor altura */
+    padding: 24px !important; /* Mayor altura de botón */
     border-radius: 0px 0px 16px 16px !important;
     border: 1px solid #0047ff !important;
     border-top: none !important;
@@ -69,9 +69,9 @@ def render():
 [data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton button {
     background-color: #00875a !important;
     color: white !important;
-    font-size: 1.35rem !important; /* Letra significativamente más grande */
+    font-size: 1.65rem !important; /* Texto maximizado */
     font-weight: 700 !important;
-    padding: 18px !important; /* Botón con mayor altura */
+    padding: 24px !important; /* Mayor altura de botón */
     border-radius: 0px 0px 16px 16px !important;
     border: 1px solid #00875a !important;
     border-top: none !important;
@@ -85,9 +85,9 @@ def render():
 [data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton button {
     background-color: #6b21a8 !important;
     color: white !important;
-    font-size: 1.35rem !important; /* Letra significativamente más grande */
+    font-size: 1.65rem !important; /* Texto maximizado */
     font-weight: 700 !important;
-    padding: 18px !important; /* Botón con mayor altura */
+    padding: 24px !important; /* Mayor altura de botón */
     border-radius: 0px 0px 16px 16px !important;
     border: 1px solid #6b21a8 !important;
     border-top: none !important;
@@ -156,7 +156,7 @@ def render():
         st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 30px;">Gestión de Registros</h1>', unsafe_allow_html=True)
 
-        # --- GRID DE TARJETAS CON BOTONES AMPLIADOS ---
+        # --- GRID DE TARJETAS CON BOTONES ENFOCADOS ---
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown("""<div class="action-card">
