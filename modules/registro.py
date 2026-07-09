@@ -22,7 +22,7 @@ def render():
     gestion_estudiantes = cargar_modulo_por_archivo("gestion_estudiantes", "gestion_estudiantes.py")
     vista_maestra = cargar_modulo_por_archivo("vista_maestra", "vista_maestra.py")
 
-    # --- CSS DE ALTA FIDELIDAD: COLORES VIVOS Y BOTONES AMPLIADOS ---
+    # --- CSS DE ALTA FIDELIDAD: FUENTES INCREMENTADAS ---
     st.markdown("""
 <style>
 /* Reset de fondo */
@@ -32,36 +32,34 @@ def render():
 .dashboard-container { max-width: 1400px; margin: auto; padding: 20px; font-family: 'Inter', sans-serif; }
 
 /* Tarjetas de acción superiores */
-.action-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .action-card { 
     background: white; 
     border: 1px solid #e2e8f0; 
     border-top-left-radius: 16px; 
     border-top-right-radius: 16px; 
-    padding: 30px 30px 20px 30px; 
+    padding: 35px 30px 25px 30px; 
     display: flex; 
     flex-direction: column; 
     align-items: center; 
     text-align: center; 
-    border-bottom: none !important; /* Se une visualmente al botón de abajo */
+    border-bottom: none !important;
 }
-.card-icon { font-size: 3.5rem; margin-bottom: 20px; }
-.card-title { font-weight: 800; font-size: 1.3rem; color: #0f172a; margin-bottom: 12px; }
-.card-desc { font-size: 0.95rem; color: #64748b; line-height: 1.6; min-height: 70px; }
+.card-icon { font-size: 3.8rem; margin-bottom: 20px; }
+.card-title { font-weight: 800; font-size: 1.55rem !important; color: #0f172a; margin-bottom: 14px; }
+.card-desc { font-size: 1.1rem !important; color: #64748b; line-height: 1.6; min-height: 85px; }
 
-/* --- SELECCIÓN CRUCIAL: ESTILIZADO DE BOTONES NATIVOS POR COLUMNA --- */
+/* --- ESTILIZADO DE BOTONES NATIVOS CON FUENTE MÁS GRANDE (1.35rem) --- */
 /* Columna 1: Gestión Docentes (Azul) */
 [data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton button {
     background-color: #0047ff !important;
     color: white !important;
-    font-size: 1.15rem !important; /* Letra más grande */
+    font-size: 1.35rem !important; /* Letra significativamente más grande */
     font-weight: 700 !important;
-    padding: 16px !important; /* Botón más grande */
-    border-radius: 0px 0px 16px 16px !important; /* Redondeado inferior */
+    padding: 18px !important; /* Botón con mayor altura */
+    border-radius: 0px 0px 16px 16px !important;
     border: 1px solid #0047ff !important;
     border-top: none !important;
     width: 100% !important;
-    transition: background 0.2s ease;
 }
 [data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton button:hover {
     background-color: #0036d6 !important;
@@ -71,14 +69,13 @@ def render():
 [data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton button {
     background-color: #00875a !important;
     color: white !important;
-    font-size: 1.15rem !important; /* Letra más grande */
+    font-size: 1.35rem !important; /* Letra significativamente más grande */
     font-weight: 700 !important;
-    padding: 16px !important; /* Botón más grande */
-    border-radius: 0px 0px 16px 16px !important; /* Redondeado inferior */
+    padding: 18px !important; /* Botón con mayor altura */
+    border-radius: 0px 0px 16px 16px !important;
     border: 1px solid #00875a !important;
     border-top: none !important;
     width: 100% !important;
-    transition: background 0.2s ease;
 }
 [data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton button:hover {
     background-color: #006c48 !important;
@@ -88,41 +85,40 @@ def render():
 [data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton button {
     background-color: #6b21a8 !important;
     color: white !important;
-    font-size: 1.15rem !important; /* Letra más grande */
+    font-size: 1.35rem !important; /* Letra significativamente más grande */
     font-weight: 700 !important;
-    padding: 16px !important; /* Botón más grande */
-    border-radius: 0px 0px 16px 16px !important; /* Redondeado inferior */
+    padding: 18px !important; /* Botón con mayor altura */
+    border-radius: 0px 0px 16px 16px !important;
     border: 1px solid #6b21a8 !important;
     border-top: none !important;
     width: 100% !important;
-    transition: background 0.2s ease;
 }
 [data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton button:hover {
     background-color: #551a87 !important;
 }
 
-/* Ajustes de espacio de los botones nativos */
 [data-testid="stHorizontalBlock"] .stButton {
     margin-top: -1px;
 }
 
-/* Métricas */
-.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; margin-top: 35px; }
+/* Métricas Ampliadas */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 35px; margin-top: 40px; }
 .metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 25px; }
-.metric-val { font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-top: 5px; }
-.metric-lbl { font-size: 1rem; font-weight: 600; color: #64748b; }
+.metric-val { font-size: 3rem; font-weight: 800; color: #0f172a; margin-top: 5px; }
+.metric-lbl { font-size: 1.1rem; font-weight: 600; color: #64748b; }
 
 /* Split inferior */
 .bottom-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.card-box { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 25px; }
-.panel-card-title { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+.card-box { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 28px; }
+.panel-card-title { font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 22px; }
 
-/* Línea de tiempo */
+/* Línea de tiempo y accesos rápidos */
 .timeline-wrapper { position: relative; padding-left: 10px; }
 .timeline-line { position: absolute; left: 16px; top: 10px; bottom: 10px; width: 2px; background: #e2e8f0; z-index: 0; }
 .timeline-item { position: relative; margin-bottom: 20px; display: flex; align-items: start; z-index: 1; }
 .timeline-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; margin-right: 18px; flex-shrink: 0; }
-.timeline-content { font-size: 1rem; color: #334155; }
+.timeline-content { font-size: 1.1rem; color: #334155; }
+.acceso-rapido-item { border: 1px solid #e2e8f0; padding: 18px; border-radius: 10px; margin-bottom: 15px; font-weight: 500; font-size: 1.1rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -133,7 +129,7 @@ def render():
     # --- ENRUTADOR INTERNO RAP ---
     if st.session_state['reg_vista'] == "dashboard":
         
-        # --- LÓGICA DE DATOS OPTIMIZADA DESDE TU BASE DE DATOS ---
+        # --- LÓGICA DE DATOS OPTIMIZADA ---
         tot_est = 0
         tot_prof = 0
         tot_pend = 0
@@ -158,9 +154,9 @@ def render():
             st.sidebar.error(f"Aviso de Base de Datos: {db_error}")
 
         st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
-        st.markdown('<h1 style="font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 25px;">Gestión de Registros</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 style="font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 30px;">Gestión de Registros</h1>', unsafe_allow_html=True)
 
-        # --- GRID DE TARJETAS DE ACCIÓN COMPACTADAS CON SUS BOTONES ---
+        # --- GRID DE TARJETAS CON BOTONES AMPLIADOS ---
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown("""<div class="action-card">
@@ -192,7 +188,7 @@ def render():
                 st.session_state['reg_vista'] = "maestra"
                 st.rerun()
 
-        # --- SECCIÓN DE MÉTRICAS DINÁMICAS ---
+        # --- SECCIÓN DE MÉTRICAS ---
         st.markdown(f"""<div class="metrics-grid">
             <div class="metric-card"><div class="metric-lbl">Total estudiantes</div><div class="metric-val">{tot_est}</div></div>
             <div class="metric-card"><div class="metric-lbl">Docentes evaluadores</div><div class="metric-val">{tot_prof}</div></div>
@@ -211,7 +207,7 @@ def render():
                     <div class="timeline-content"><b>{tipo}</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div>
                 </div>"""
         else:
-            html_timeline = "<p style='color:#64748b;'>No hay actividad reciente registrada en la base de datos.</p>"
+            html_timeline = "<p style='color:#64748b; font-size:1.1rem;'>No hay actividad reciente registrada en la base de datos.</p>"
 
         st.markdown(f"""<div class="bottom-split">
             <div class="card-box">
@@ -223,12 +219,12 @@ def render():
             </div>
             <div class="card-box">
                 <div class="panel-card-title">Accesos rápidos</div>
-                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">✅ Validar documentos de estudiantes</div>
-                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight:500;">📅 Programar prueba por asignatura</div>
+                <div class="acceso-rapido-item">✅ Validar documentos de estudiantes</div>
+                <div class="acceso-rapido-item">📅 Programar prueba por asignatura</div>
             </div>
         </div></div>""", unsafe_allow_html=True)
 
-    # Redirecciones nativas a los módulos independientes
+    # Redirecciones modulares nativas
     elif st.session_state['reg_vista'] == "docentes":
         gestion_docentes.render()
     elif st.session_state['reg_vista'] == "estudiantes":
