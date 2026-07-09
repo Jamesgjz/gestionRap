@@ -61,53 +61,58 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # --- EXTRACCIÓN Y PROCESAMIENTO INTELIGENTE DE DATOS ---
+    # --- EXTRACCIÓN DINÁMICA DE LA BASE DE DATOS ---
     docentes_filtrados = []
     try:
         raw_data = traer_datos("SELECT * FROM profesores")
         if raw_data:
             for row in raw_data:
-                # Mapeo posicional defensivo
                 nombre = row[1] if len(row) > 1 else "Docente Evaluador"
                 programa = row[3] if len(row) > 3 else "Educación Virtual"
                 asignaturas = "Construcción de pruebas"
-                horas = row[5] if len(row) > 5 else 16
                 estado = row[6] if len(row) > 6 else "Activo"
                 fecha = row[7] if len(row) > 7 else "Hoy"
                 
-                # Buscador dinámico de emails reales en la tupla para evitar números (como el 2 o 4)
-                email = "contacto@uniminuto.edu.co"
-                for campo in row:
-                    if isinstance(campo, str) and "@" in campo:
-                        email = campo
-                        break
-                else:
-                    # Fallback de autogeneración limpia de email basado en el nombre
+                # Extracción inteligente de Correo y Horas Reales
+                email = ""
+                horas = 16 # Fallback por seguridad
+                
+                for idx, campo in enumerate(row):
+                    if campo is None:
+                        continue
+                    campo_str = str(campo).strip()
+                    
+                    if "@" in campo_str:
+                        email = campo_str
+                    elif idx != 0 and (isinstance(campo, (int, float)) or campo_str.isdigit()):
+                        horas = int(campo) # Captura el 2 o el 4 real de la base de datos
+                
+                if not email:
                     partes_name = nombre.lower().split()
-                    if len(partes_name) >= 2:
-                        email = f"{partes_name[0]}.{partes_name[1]}@uniminuto.edu.co"
+                    p_nombre = partes_name[0] if partes_name else "docente"
+                    p_apellido = partes_name[1] if len(partes_name) > 1 else "evaluador"
+                    email = f"{p_nombre}.{p_apellido}@uniminuto.edu.co"
                 
                 docentes_filtrados.append((nombre, email, programa, asignaturas, horas, estado, fecha))
     except Exception as e:
         st.sidebar.error(f"Nota de sincronización: {e}")
 
-    # Fallback estático en caso de que la tabla de la BD no contenga registros
+    # Fallback estático adaptado
     if not docentes_filtrados:
         docentes_filtrados = [
-            ("María Fernanda López", "maria.lopez@uniminuto.edu.co", "Administración de Empresas", "Construcción de pruebas", 12, "Activo", "19/05/2025 10:15"),
-            ("James Gabriel Jaramillo Zambrano", "james.jaramillo@uniminuto.edu.co", "Ingeniería de Sistemas", "Construcción de pruebas", 16, "Activo", "19/05/2025 09:40"),
-            ("Ricardo Morales", "ricardo.morales@uniminuto.edu.co", "Contaduría Pública", "Construcción de pruebas", 8, "Activo", "16/05/2025 14:22")
+            ("James Gabriel Jaramillo Zambrano", "james.jaramillo@uniminuto.edu.co", "Ingeniería de Sistemas", "Construcción de pruebas", 4, "Activo", "Hoy"),
+            ("Libardo Gómez Díaz", "libardo.gomez@uniminuto.edu.co", "Educación Virtual", "Construcción de pruebas", 2, "Activo", "Hoy"),
+            ("Sergio Andrés Torres Martínez", "sergio.torres@uniminuto.edu.co", "Educación Virtual", "Construcción de pruebas", 16, "Activo", "Hoy")
         ]
 
-    # Contadores calculados en Python
+    # Contadores en tiempo real
     tot_doc = len(docentes_filtrados)
     tot_act = sum(1 for d in docentes_filtrados if "activo" in str(d[5]).lower())
-    tot_asig = len(docentes_filtrados) 
+    tot_asig = sum(1 for d in docentes_filtrados if int(d[4]) > 0)
     tot_pend = 0
 
     st.markdown('<div class="docentes-container">', unsafe_allow_html=True)
 
-    # --- ENCABEZADO ---
     st.markdown("""
     <div class="section-header">
         <div class="section-title">Gestión de docentes evaluadores</div>
@@ -115,7 +120,6 @@ def render():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- FILTROS ---
     f_col1, f_col2, f_col3, f_col4 = st.columns([2, 1, 1, 1])
     with f_col1:
         search_query = st.text_input("Buscar por nombre...", key="doc_search_input", label_visibility="collapsed", placeholder="Buscar por nombre del docente...")
@@ -128,7 +132,6 @@ def render():
         st.button("+ Nuevo docente", use_container_width=True, key="new_doc_modal_btn")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- CARD MÉTRICAS ---
     st.markdown(f"""
     <div class="doc-metrics-grid">
         <div class="doc-metric-card">
@@ -150,7 +153,6 @@ def render():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- CONSTRUCCIÓN DE FILAS LIGADAS AL MARGEN (EVITA ARREGLOS EXTRAÑOS EN MARKDOWN) ---
     html_table_rows = ""
     for doc in docentes_filtrados:
         nombre, email, programa, asignaturas, horas, estado, ultima_act = doc
@@ -163,10 +165,9 @@ def render():
         avatar_bg = "#e8f0fe"
         avatar_txt = "#1a73e8"
 
-        # Concatenación en una sola línea continua para blindar el HTML
+        # Formateo plano sin sangrías al inicio de la línea para blindar contra errores de Markdown
         html_table_rows += f"<tr><td><div class='doc-profile-cell'><div class='doc-avatar' style='background:{avatar_bg}; color:{avatar_txt};'>{iniciales}</div><div class='doc-info-text'><span class='doc-name'>{nombre}</span><span class='doc-email'>{email}</span></div></div></td><td>{programa}</td><td><b style='color:#6b21a8;'>{asignaturas}</b></td><td><b>{horas}</b> hrs</td><td><span class='badge-doc badge-activo'>{estado}</span></td><td>{ultima_act}</td><td class='action-icons'>👁️📝⋮</td></tr>"
 
-    # --- RENDER DE LA TABLA ---
     st.markdown(f"""
     <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 10px;">Listado de docentes</h3>
     <div class="table-wrapper">
@@ -181,12 +182,11 @@ def render():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- BANNER ---
     st.markdown("""
     <div class="info-banner">
         <div class="info-banner-icon">ℹ️</div>
         <div class="info-banner-text">
-            Este módulo permite la parametrización y soporte académico del proceso RAP. Asegúrate de mantener actualizada la información de los docentes y sus asignaciones para garantizar la correcta operación del proceso.
+            Este módulo permite la parametrización y soporte académico del proceso RAP. Asegúrate de mantener actualizada la información de los docentes y sus asignaciones para garantizar la correcta operation del proceso.
         </div>
     </div>
     </div>
