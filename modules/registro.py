@@ -1,6 +1,7 @@
 import streamlit as st
-from modules import gestion_docentes, gestion_estudiantes, vista_maestra
 from database import traer_datos
+# CAMBIO CLAVE: Usamos el punto (.) para importar desde la misma carpeta
+from . import gestion_docentes, gestion_estudiantes, vista_maestra
 
 def render():
     # Inicializar estado de navegación
