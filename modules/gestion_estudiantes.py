@@ -7,7 +7,7 @@ def render():
         st.session_state['reg_vista'] = "dashboard"
         st.rerun()
 
-    # --- CSS DE ALTA INTENSIDAD GRÁFICA EN AZULES CORPORATIVOS (Bloqueo absoluto de Rojo) ---
+    # --- CSS DE ALTA INTENSIDAD GRÁFICA EN AZULES CORPORATIVOS ---
     st.markdown("""
 <style>
 .form-container { max-width: 1400px; margin: auto; padding: 10px 20px; font-family: 'Inter', sans-serif; }
@@ -46,33 +46,31 @@ def render():
 .btn-cancelar button:hover { background-color: #f1f5f9 !important; }
 
 /* =========================================================================
-   BLINDAJE ANTI-ROJO INTERACTIVO (Anula el Primary Color por defecto de la nube)
+   BLINDAJE DE ALTA ESPECIFICIDAD ANTI-ROJO PARA MULTISELECT
    ========================================================================= */
-/* 1. Forzar color azul en las etiquetas (pills) seleccionadas del Multiselect */
+/* Intercepta y cambia de forma agresiva cualquier pastilla seleccionada dentro del multiselect */
+.stMultiSelect div[data-baseweb="tag"],
+.stMultiSelect span[data-baseweb="tag"],
+div[data-testid="stMultiSelect"] span,
 div[data-baseweb="tag"] {
-    background-color: #3b82f6 !important;
-    border-radius: 6px !important;
-}
-div[data-baseweb="tag"] span {
+    background-color: #3b82f6 !important; /* Fuerza el azul digital de registro */
+    background: #3b82f6 !important;
     color: white !important;
 }
+
+/* Fuerza el color del texto y del icono de cerrar dentro de las pastillas */
+div[data-baseweb="tag"] span,
 div[data-baseweb="tag"] svg {
+    color: white !important;
     fill: white !important;
 }
 
-/* 2. Forzar borde azul cuando el multiselect o inputs están activos/enfocados */
-div[data-baseweb="select"] > div:focus-within, 
+/* Fuerza el color azul del borde interactivo del input al hacer foco */
+div[data-baseweb="select"] > div:focus-within,
 div[data-baseweb="select"]:focus-within,
 .stTextInput input:focus {
     border-color: #3b82f6 !important;
     box-shadow: 0 0 0 1px #3b82f6 !important;
-}
-
-/* 3. Corrección de color de alerta nativa de Streamlit */
-div[class*="stAlert"] {
-    border-left-color: #3b82f6 !important;
-    background-color: #f0f4ff !important;
-    color: #1e3a8a !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -101,24 +99,21 @@ div[class*="stAlert"] {
     col_form, col_sum = st.columns([2.2, 1])
 
     with col_form:
-        # --- 1. DATOS GENERALES (Campos reales de la tabla estudiantes) ---
+        # --- 1. DATOS GENERALES ---
         st.markdown('<div class="form-section-title">1. Datos generales de matrícula</div>', unsafe_allow_html=True)
         
         g_col1, g_col2 = st.columns(2)
         with g_col1:
-            # CORRECCIÓN: Campo id_banner ahora es un INPUT DE TEXTO ultra limpio y profesional (sin botones de incremento)
             id_banner = st.text_input("ID Banner (*id_banner) *", placeholder="Ej. 90012345")
-            # Campo Real BD: estado_matriz
             estado_matriz = st.selectbox("Estado de matrícula (*estado_matriz) *", ["Matriculado", "No matriculado"])
         with g_col2:
-            # Campo Real BD: nombre_completo
             nombre_completo = st.text_input("Nombre completo del estudiante *", placeholder="Ej. Alba Lucía Pinzón Gallego")
 
-        # --- 2. VINCULACIÓN CURRICULAR (Campo real: alfa_asignatura) ---
+        # --- 2. VINCULACIÓN CURRICULAR ---
         st.markdown('<div class="form-section-title">2. Vinculación curricular</div>', unsafe_allow_html=True)
         asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=lista_asignaturas, placeholder="Selecciona los códigos alfanuméricos")
 
-        # --- 3. OBSERVACIONES (Campo real: observaciones) ---
+        # --- 3. OBSERVACIONES ---
         st.markdown('<div class="form-section-title">3. Observaciones del estudiante</div>', unsafe_allow_html=True)
         observaciones = st.text_area("Notas adicionales (*observaciones)", max_chars=500, placeholder="Escribe apoyos requeridos o novedades académicas...")
 
@@ -146,7 +141,7 @@ div[class*="stAlert"] {
             else:
                 st.warning("⚠️ Por favor completa los campos obligatorios antes de guardar (*)")
 
-    # --- BARRA LATERAL EN VIVO (CERO SANGRIAS PARA EL MOTOR MARKDOWN) ---
+    # --- BARRA LATERAL EN VIVO (CERO SANGRIAS) ---
     with col_sum:
         badge_style = "background-color: #10b981; color: white;" if estado_matriz == "Matriculado" else "background-color: #475569; color: white;"
         
@@ -158,7 +153,6 @@ div[class*="stAlert"] {
         html_sum_box += '<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:20px 0;">'
         html_sum_box += '<div class="req-title">Validación de Campos Reales</div>'
         
-        # Círculo blanco para completado, círculo translúcido para pendiente (Cero tonos rojos)
         c_ban = '#ffffff' if id_banner else 'rgba(255,255,255,0.4)'
         html_sum_box += f'<div class="checklist-item"><span class="check-icon" style="color:{c_ban};">{"●" if id_banner else "○"}</span> id_banner</div>'
         
