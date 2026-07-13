@@ -5,7 +5,7 @@ import math
 # =========================================================================
 # CONTROL DE ALTO RENDIMIENTO: CACHÉ DE BASE DE DATOS OPTIMIZADO
 # =========================================================================
-@st.cache_data(ttl=30)  # Conserva los datos en memoria por 30 segundos para velocidad instantánea
+@st.cache_data(ttl=30)
 def cargar_datos_monitoreo():
     asignaturas = []
     docentes = []
@@ -47,10 +47,10 @@ def render():
 .matrix-card-box { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.01); }
 .matrix-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 15px; }
 
-/* Estructura de Tabla */
-.mon-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
-.mon-table th { background: #f8fafc; padding: 12px 10px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; }
-.mon-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
+/* Estructura de Tabla HTML Real */
+.mon-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; margin-top: 10px; }
+.mon-table th { background: #f8fafc; padding: 12px 10px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; text-align: left; }
+.mon-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; text-align: left; }
 .code-link { color: #0047ff; font-weight: 700; text-decoration: none; cursor: pointer; }
 
 /* Estados de Pruebas */
@@ -80,10 +80,9 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # Llama a la función optimizada con caché
+    # Carga de base de datos optimizada
     asignaturas_bd, docentes_bd = cargar_datos_monitoreo()
 
-    # Fallbacks si no conecta
     if not asignaturas_bd:
         asignaturas_bd = [
             ("ISOF V003", "Introducción a la Ingeniería de Software", "Construida"),
@@ -108,7 +107,7 @@ def render():
 
     st.markdown('<div class="monitoreo-container">', unsafe_allow_html=True)
 
-    # --- KPI CARD FILA ---
+    # --- INDICADORES ---
     st.markdown(f"""
     <div class="mon-metrics-grid">
         <div class="mon-metric-card">
@@ -121,20 +120,20 @@ def render():
         </div>
         <div class="mon-metric-card">
             <div class="mon-metric-icon-box" style="background:#eff6ff; color:#3b82f6;">✏️</div>
-            <div class="mon-metric-info"><div class="mon-metric-lbl">En construcción</div><div class="metric-val" style="color:#3b82f6;">{tot_dev}</div></div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">En construcción</div><div class="mon-metric-val" style="color:#3b82f6;">{tot_dev}</div></div>
         </div>
         <div class="mon-metric-card">
             <div class="mon-metric-icon-box" style="background:#f1f5f9; color:#475569;">📄</div>
-            <div class="mon-metric-info"><div class="mon-metric-lbl">Sin construir</div><div class="metric-val" style="color:#475569;">{tot_unbuilt}</div></div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">Sin construir</div><div class="mon-metric-val" style="color:#475569;">{tot_unbuilt}</div></div>
         </div>
         <div class="mon-metric-card">
             <div class="mon-metric-icon-box" style="background:#f8fafc; color:#64748b;">👤</div>
-            <div class="mon-metric-info"><div class="mon-metric-lbl">Sin docente</div><div class="metric-val" style="color:#64748b;">6</div></div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">Sin docente</div><div class="mon-metric-val" style="color:#64748b;">6</div></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- FILTROS MOCKUP ---
+    # --- FILTROS ---
     f_col1, f_col2, f_col3, f_col4 = st.columns([2, 1, 1, 1])
     with f_col1:
         search_query = st.text_input("Buscar asignaturas...", placeholder="Buscar por asignatura, código...", label_visibility="collapsed")
@@ -160,6 +159,7 @@ def render():
         start_idx = (st.session_state['mon_page'] - 1) * rows_per_page
         asig_visibles = asig_filtradas[start_idx:start_idx + rows_per_page]
 
+        # REPARACIÓN AQUÍ: Líneas unificadas sin espacios de sangría a la izquierda para blindar el HTML
         html_table_rows = ""
         for item in asig_visibles:
             alfa, nombre, estado = item
@@ -176,26 +176,10 @@ def render():
             doc_idx = len(alfa) % len(docentes_bd)
             docente_name = docentes_bd[doc_idx] if "81" not in alfa else "Sin asignar"
             
-            html_table_rows += f"""
-            <tr>
-                <td><span class="code-link">{alfa}</span></td>
-                <td><b>{nombre}</b></td>
-                <td>Ingeniería de Software</td>
-                <td>{badge}</td>
-                <td>👤 {docente_name}</td>
-                <td>{disp}</td>
-                <td style="color:#64748b; font-size:0.78rem;">19 may, 2025<br>10:15 a.m.</td>
-            </tr>
-            """
+            html_table_rows += f"<tr><td><span class='code-link'>{alfa}</span></td><td><b>{nombre}</b></td><td>Ingeniería de Software</td><td>{badge}</td><td>👤 {docente_name}</td><td>{disp}</td><td style='color:#64748b; font-size:0.78rem;'>19 may, 2025<br>10:15 a.m.</td></tr>"
 
-        st.markdown(f"""
-        <table class="mon-table">
-            <thead>
-                <tr><th>Código</th><th>Asignatura</th><th>Programa</th><th>Estado de prueba</th><th>Docente asignado</th><th>Disponibilidad</th><th>Última actualización</th></tr>
-            </thead>
-            <tbody>{html_table_rows}</tbody>
-        </table>
-        """, unsafe_allow_html=True)
+        # Renderizado directo inline
+        st.markdown(f'<table class="mon-table"><thead><tr><th>Código</th><th>Asignatura</th><th>Programa</th><th>Estado de prueba</th><th>Docente asignado</th><th>Disponibilidad</th><th>Última actualización</th></tr></thead><tbody>{html_table_rows}</tbody></table>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # PAGINACIÓN
@@ -237,3 +221,33 @@ def render():
         if st.button("📥 Guardar Cambios en Neon", use_container_width=True):
             st.success("🎉 Base de datos actualizada.")
         st.markdown('</div>', unsafe_allow_html=True)
+
+        # --- ALERTAS Y ACTIVIDADES RECIENTES ---
+        st.markdown('<div class="side-panel-card">', unsafe_allow_html=True)
+        st.markdown('<div class="side-panel-title">Alertas y actividades</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="alert-item-box">
+            <div class="alert-item-icon">⚠️</div>
+            <div>
+                <div class="alert-item-text">6 asignaturas sin docente asignado</div>
+                <div class="alert-item-sub">Requieren asignación para iniciar diseño</div>
+            </div>
+        </div>
+        <div class="alert-item-box">
+            <div class="alert-item-icon">🕒</div>
+            <div>
+                <div class="alert-item-text">3 pruebas en construcción vencen esta semana</div>
+                <div class="alert-item-sub">Revisar y actualizar cronograma RAP</div>
+            </div>
+        </div>
+        <div class="alert-item-box">
+            <div class="alert-item-icon">ℹ️</div>
+            <div>
+                <div class="alert-item-text">2 actualizaciones pendientes de revisión</div>
+                <div class="alert-item-sub">Soporte académico requiere validación</div>
+            </div>
+        </div>
+        <p style="margin-top:12px; font-weight:700; font-size:0.85rem;"><a href="#" style="color:#0047ff; text-decoration:none;">Ver todas las alertas activas →</a></p>
+        """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
