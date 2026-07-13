@@ -1,5 +1,31 @@
 import streamlit as st
 from modules import inicio, registro, estado_pruebas, programacion, evaluacion, dashboard
+import os
+import sys
+import importlib.util
+
+# =========================================================================
+# FUNCIÓN DE CARGA DINÁMICA DE MÓDULOS (Solución al NameError y lentitud)
+# =========================================================================
+def cargar_modulo_por_archivo(nombre_modulo, nombre_archivo):
+    dir_modules = os.path.join(os.path.dirname(os.path.abspath(__file__)), "modules")
+    ruta_completa = os.path.join(dir_modules, nombre_archivo)
+    
+    if not os.path.exists(ruta_completa):
+        st.error(f"❌ No se encontró el archivo '{nombre_archivo}' en la ruta: {dir_modules}.")
+        st.stop()
+        
+    if nombre_modulo in sys.modules:
+        spec = importlib.util.spec_from_file_location(nombre_modulo, ruta_completa)
+        modulo_existente = sys.modules[nombre_modulo]
+        spec.loader.exec_module(modulo_existente)
+        return modulo_existente
+        
+    spec = importlib.util.spec_from_file_location(nombre_modulo, ruta_completa)
+    modulo = importlib.util.module_from_spec(spec)
+    sys.modules[nombre_modulo] = modulo
+    spec.loader.exec_module(modulo)
+    return modulo
 
 # Configuración de la página en modo ancho total e impecable
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
@@ -131,7 +157,7 @@ if not st.session_state['autenticado']:
 <input type="password" name="p_auth" placeholder="Ingresa tu contraseña" required>
 </div>
 </div>
-<button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar al sistema</button>
+<button type="submit" class="btn-submit-action"><i class="fa-solid fa-arrow-right-to-bracket"></i> Angresar al sistema</button>
 </form>
 <div class="box-support-footer">
 <span><i class="fa-regular fa-circle-question" style="color:#7c3aed; margin-right:8px;"></i> Soporte académico RAP</span>
@@ -253,7 +279,7 @@ else:
     if opcion == "Inicio": inicio.render()
     elif opcion == "Registro Estudiantes": registro.render()
     elif opcion == "Estado de Pruebas":
-    # Forzamos la carga dinámica del nuevo archivo limpiando la caché vieja del servidor
+        # Ahora main.py sí reconocerá la función de forma impecable
         estado_pruebas = cargar_modulo_por_archivo("estado_pruebas", "estado_pruebas.py")
         estado_pruebas.render()
     elif opcion == "Programación": programacion.render()
