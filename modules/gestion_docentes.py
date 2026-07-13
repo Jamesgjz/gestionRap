@@ -129,7 +129,10 @@ def render():
         st.selectbox("Estado", ["Todos los estados"], label_visibility="collapsed")
     with f_col4:
         st.markdown('<div class="btn-nuevo-doc-container">', unsafe_allow_html=True)
-        st.button("+ Nuevo docente", use_container_width=True, key="new_doc_modal_btn")
+        # AL HACER CLIC: Redirige al nuevo archivo modular de registro
+        if st.button("+ Nuevo docente", use_container_width=True, key="new_doc_modal_btn"):
+            st.session_state['reg_vista'] = "nuevo_docente"
+            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(f"""

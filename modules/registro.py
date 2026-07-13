@@ -24,10 +24,11 @@ def render():
         spec.loader.exec_module(modulo)
         return modulo
 
-    # Carga dinámica optimizada
+    # Carga dinámica optimizada 
     gestion_docentes = cargar_modulo_por_archivo("gestion_docentes", "gestion_docentes.py")
     gestion_estudiantes = cargar_modulo_por_archivo("gestion_estudiantes", "gestion_estudiantes.py")
     vista_maestra = cargar_modulo_por_archivo("vista_maestra", "vista_maestra.py")
+    nuevo_docente = cargar_modulo_por_archivo("nuevo_docente", "nuevo_docente.py") # ← LÍNEA NUEVA
 
     # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
@@ -147,9 +148,12 @@ def render():
             </div>
         </div></div>""", unsafe_allow_html=True)
 
+  # Redirecciones modulares nativas
     elif st.session_state['reg_vista'] == "docentes":
         gestion_docentes.render()
     elif st.session_state['reg_vista'] == "estudiantes":
         gestion_estudiantes.render()
     elif st.session_state['reg_vista'] == "maestra":
         vista_maestra.render()
+    elif st.session_state['reg_vista'] == "nuevo_docente": # ← LÍNEA NUEVA
+        nuevo_docente.render()                             # ← LÍNEA NUEVA
