@@ -252,7 +252,10 @@ else:
     opcion = st.session_state['opcion_menu']
     if opcion == "Inicio": inicio.render()
     elif opcion == "Registro Estudiantes": registro.render()
-    elif opcion == "Estado de Pruebas": estado_pruebas.render()
+    elif opcion == "Estado de Pruebas":
+    # Forzamos la carga dinámica del nuevo archivo limpiando la caché vieja del servidor
+        estado_pruebas = cargar_modulo_por_archivo("estado_pruebas", "estado_pruebas.py")
+        estado_pruebas.render()
     elif opcion == "Programación": programacion.render()
     elif opcion == "Evaluación": evaluacion.render()
     elif opcion == "Dashboard / KPIs": dashboard.render()

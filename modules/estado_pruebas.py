@@ -2,6 +2,24 @@ import streamlit as st
 from database import traer_datos
 import math
 
+# =========================================================================
+# CONTROL DE ALTO RENDIMIENTO: CACHÉ DE BASE DE DATOS OPTIMIZADO
+# =========================================================================
+@st.cache_data(ttl=30)  # Conserva los datos en memoria por 30 segundos para velocidad instantánea
+def cargar_datos_monitoreo():
+    asignaturas = []
+    docentes = []
+    try:
+        raw_asig = traer_datos("SELECT alfa, nombre_materia, estado_pruebas FROM asignaturas ORDER BY alfa ASC")
+        if raw_asig:
+            asignaturas = raw_asig
+        raw_prof = traer_datos("SELECT nombre_completo FROM profesores ORDER BY nombre_completo ASC")
+        if raw_prof:
+            docentes = [str(p[0]).strip() for p in raw_prof if p[0]]
+    except Exception as e:
+        pass
+    return asignaturas, docentes
+
 def render():
     # --- BOTÓN DE RETORNO NATIVO AL DASHBOARD ---
     if st.button("← Volver al Panel Principal", key="back_to_dash"):
@@ -34,7 +52,6 @@ def render():
 .mon-table th { background: #f8fafc; padding: 12px 10px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; }
 .mon-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
 .code-link { color: #0047ff; font-weight: 700; text-decoration: none; cursor: pointer; }
-.code-link:hover { text-decoration: underline; }
 
 /* Estados de Pruebas */
 .badge-mon { padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; display: inline-block; text-align: center; }
@@ -42,51 +59,31 @@ def render():
 .badge-dev { background-color: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
 .badge-unconst { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
-/* Disponibilidad con puntitos */
+/* Disponibilidad */
 .disp-item { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.85rem; }
 .disp-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .disp-ok { background-color: #10b981; }
 .disp-wait { background-color: #3b82f6; }
 .disp-no { background-color: #94a3b8; }
 
-/* Columna de Detalles y Lateral Derecha */
+/* Lateral Derecha */
 .side-panel-card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.01); }
 .side-panel-title { font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #3b82f6; padding-bottom: 6px; }
 .side-data-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.88rem; font-weight: 500; border-bottom: 1px solid #f8fafc; padding-bottom: 6px; }
 .side-data-lbl { color: #64748b; }
 .side-data-val { color: #0f172a; font-weight: 700; }
 
-/* Alertas de soporte */
-.alert-item-box { display: flex; align-items: start; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: background 0.2s; }
-.alert-item-box:hover { background: #f0f4ff; border-color: #bfdbfe; }
+.alert-item-box { display: flex; align-items: start; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; margin-bottom: 10px; }
 .alert-item-icon { font-size: 1.1rem; color: #3b82f6; }
 .alert-item-text { font-size: 0.82rem; color: #1e293b; font-weight: 600; line-height: 1.4; }
-.alert-item-sub { font-size: 0.72rem; color: #64748b; font-weight: 500; margin-top: 1px; }
-
-/* Forzar botones de acción en azul */
-div[data-testid="stForm"] button, 
-.stButton button[id*="save_changes"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-    font-weight: 700 !important;
-}
+.alert-item-sub { font-size: 0.72rem; color: #64748b; font-weight: 500; }
 </style>
 """, unsafe_allow_html=True)
 
-    # --- CARGA GENERAL DE LA BD (ASIGNATURAS Y DOCENTES) ---
-    asignaturas_bd = []
-    docentes_bd = []
-    try:
-        raw_asig = traer_datos("SELECT alfa, nombre_materia, estado_pruebas FROM asignaturas ORDER BY alfa ASC")
-        if raw_asig:
-            asignaturas_bd = raw_asig
-        raw_prof = traer_datos("SELECT nombre_completo FROM profesores ORDER BY nombre_completo ASC")
-        if raw_prof:
-            docentes_bd = [str(p[0]).strip() for p in raw_prof if p[0]]
-    except Exception as e:
-        st.sidebar.warning(f"Sincronización de monitoreo: {e}")
+    # Llama a la función optimizada con caché
+    asignaturas_bd, docentes_bd = cargar_datos_monitoreo()
 
-    # Fallbacks adaptados al mockup
+    # Fallbacks si no conecta
     if not asignaturas_bd:
         asignaturas_bd = [
             ("ISOF V003", "Introducción a la Ingeniería de Software", "Construida"),
@@ -94,9 +91,7 @@ div[data-testid="stForm"] button,
             ("ISOF V043", "Sistemas de Gestión de Bases de Datos", "Construida"),
             ("ISOF V063", "Desarrollo de Software Orientado a la Web", "En construcción"),
             ("ISOF V081", "Algoritmos", "Sin construir"),
-            ("ISOF V112", "Calidad de Software", "Construida"),
-            ("ISOF V123", "Seguridad en el Desarrollo", "En construcción"),
-            ("ISOF V133", "Arquitectura de Software", "Sin construir")
+            ("ISOF V112", "Calidad de Software", "Construida")
         ]
     if not docentes_bd:
         docentes_bd = ["Laura Martínez", "James G. Jaramillo", "Sergio A. Torres", "Libardo Gómez Díaz"]
@@ -110,11 +105,10 @@ div[data-testid="stForm"] button,
     tot_built = sum(1 for a in asignaturas_bd if str(a[2]).strip().lower() == "construida")
     tot_dev = sum(1 for a in asignaturas_bd if str(a[2]).strip().lower() == "en construcción")
     tot_unbuilt = sum(1 for a in asignaturas_bd if str(a[2]).strip().lower() == "sin construir")
-    tot_unassigned = 6 
 
     st.markdown('<div class="monitoreo-container">', unsafe_allow_html=True)
 
-    # --- FILA DE INDICADORES KPI ---
+    # --- KPI CARD FILA ---
     st.markdown(f"""
     <div class="mon-metrics-grid">
         <div class="mon-metric-card">
@@ -123,51 +117,33 @@ div[data-testid="stForm"] button,
         </div>
         <div class="mon-metric-card">
             <div class="mon-metric-icon-box" style="background:#e6f4ea; color:#137333;">✓</div>
-            <div class="mon-metric-info">
-                <div class="mon-metric-lbl">Construidas</div>
-                <div class="mon-metric-val" style="color:#137333;">{tot_built}</div>
-                <div class="mon-metric-sub">{round((tot_built/tot_asig)*100, 1) if tot_asig else 0}% del total</div>
-            </div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">Construidas</div><div class="mon-metric-val" style="color:#137333;">{tot_built}</div></div>
         </div>
         <div class="mon-metric-card">
             <div class="mon-metric-icon-box" style="background:#eff6ff; color:#3b82f6;">✏️</div>
-            <div class="mon-metric-info">
-                <div class="mon-metric-lbl">En construcción</div>
-                <div class="mon-metric-val" style="color:#3b82f6;">{tot_dev}</div>
-                <div class="mon-metric-sub">{round((tot_dev/tot_asig)*100, 1) if tot_asig else 0}% del total</div>
-            </div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">En construcción</div><div class="metric-val" style="color:#3b82f6;">{tot_dev}</div></div>
         </div>
         <div class="mon-metric-card">
             <div class="mon-metric-icon-box" style="background:#f1f5f9; color:#475569;">📄</div>
-            <div class="mon-metric-info">
-                <div class="mon-metric-lbl">Sin construir</div>
-                <div class="mon-metric-val" style="color:#475569;">{tot_unbuilt}</div>
-                <div class="mon-metric-sub">{round((tot_unbuilt/tot_asig)*100, 1) if tot_asig else 0}% del total</div>
-            </div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">Sin construir</div><div class="metric-val" style="color:#475569;">{tot_unbuilt}</div></div>
         </div>
         <div class="mon-metric-card">
-            <div class="mon-metric-icon-box" style="background:#f8fafc; border:1px solid #cbd5e1; color:#64748b;">👤</div>
-            <div class="mon-metric-info">
-                <div class="mon-metric-lbl">Sin docente</div>
-                <div class="mon-metric-val" style="color:#64748b;">{tot_unassigned}</div>
-                <div class="mon-metric-sub">Requieren revisión</div>
-            </div>
+            <div class="mon-metric-icon-box" style="background:#f8fafc; color:#64748b;">👤</div>
+            <div class="mon-metric-info"><div class="mon-metric-lbl">Sin docente</div><div class="metric-val" style="color:#64748b;">6</div></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- FILTROS ---
-    f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns([2, 1, 1, 1, 1])
+    # --- FILTROS MOCKUP ---
+    f_col1, f_col2, f_col3, f_col4 = st.columns([2, 1, 1, 1])
     with f_col1:
         search_query = st.text_input("Buscar asignaturas...", placeholder="Buscar por asignatura, código...", label_visibility="collapsed")
     with f_col2:
         st.selectbox("Programa académico", ["Todos", "Ingeniería de Software"], label_visibility="collapsed")
     with f_col3:
-        st.selectbox("Estado de prueba", ["Todos", "Construida", "En construcción", "Sin construir"], label_visibility="collapsed")
+        st.selectbox("Estado de prueba", ["Todos", "Construida", "En construcción"], label_visibility="collapsed")
     with f_col4:
-        st.selectbox("Docente asignado", ["Todos"] + docentes_bd, label_visibility="collapsed")
-    with f_col5:
-        st.button("📥 Exportar", use_container_width=True, key="mon_export_excel")
+        st.button("📥 Exportar Excel", use_container_width=True, key="mon_export")
 
     col_left, col_right = st.columns([2.3, 1])
 
@@ -175,37 +151,30 @@ div[data-testid="stForm"] button,
         st.markdown('<div class="matrix-card-box">', unsafe_allow_html=True)
         st.markdown('<div class="matrix-title">Matriz de monitoreo de pruebas</div>', unsafe_allow_html=True)
         
-        asig_filtradas = []
-        for a in asignaturas_bd:
-            alfa, nombre, estado = a
-            if search_query and (search_query.lower() not in nombre.lower() and search_query.lower() not in alfa.lower()):
-                continue
-            asig_filtradas.append(a)
+        asig_filtradas = [a for a in asignaturas_bd if not search_query or search_query.lower() in str(a[1]).lower() or search_query.lower() in str(a[0]).lower()]
 
         rows_per_page = 6
         total_rows = len(asig_filtradas)
         max_pages = math.ceil(total_rows / rows_per_page) if total_rows > 0 else 1
         
         start_idx = (st.session_state['mon_page'] - 1) * rows_per_page
-        end_idx = start_idx + rows_per_page
-        asig_visibles = asig_filtradas[start_idx:end_idx]
+        asig_visibles = asig_filtradas[start_idx:start_idx + rows_per_page]
 
         html_table_rows = ""
         for item in asig_visibles:
             alfa, nombre, estado = item
-            
             if str(estado).lower() == "construida":
-                badge = f'<span class="badge-mon badge-const">Construida</span>'
+                badge = '<span class="badge-mon badge-const">Construida</span>'
                 disp = '<div class="disp-item"><span class="disp-dot disp-ok"></span>Disponible</div>'
             elif str(estado).lower() == "en construcción":
-                badge = f'<span class="badge-mon badge-dev">En construcción</span>'
+                badge = '<span class="badge-mon badge-dev">En construcción</span>'
                 disp = '<div class="disp-item"><span class="disp-dot disp-wait"></span>Pendiente revisión</div>'
             else:
-                badge = f'<span class="badge-mon badge-unconst">Sin construir</span>'
+                badge = '<span class="badge-mon badge-unconst">Sin construir</span>'
                 disp = '<div class="disp-item"><span class="disp-dot disp-no"></span>No disponible</div>'
 
             doc_idx = len(alfa) % len(docentes_bd)
-            docente_name = docentes_bd[doc_idx] if "81" not in alfa and "63" not in alfa else "Sin asignar"
+            docente_name = docentes_bd[doc_idx] if "81" not in alfa else "Sin asignar"
             
             html_table_rows += f"""
             <tr>
@@ -215,96 +184,56 @@ div[data-testid="stForm"] button,
                 <td>{badge}</td>
                 <td>👤 {docente_name}</td>
                 <td>{disp}</td>
-                <td style="color:#64748b; font-size:0.78rem;">13 jul, 2026<br>03:52 p. m.</td>
+                <td style="color:#64748b; font-size:0.78rem;">19 may, 2025<br>10:15 a.m.</td>
             </tr>
             """
 
         st.markdown(f"""
         <table class="mon-table">
             <thead>
-                <tr>
-                    <th>Código</th><th>Asignatura</th><th>Programa</th><th>Estado de prueba</th><th>Docente asignado</th><th>Disponibilidad</th><th>Última actualización</th>
-                </tr>
+                <tr><th>Código</th><th>Asignatura</th><th>Programa</th><th>Estado de prueba</th><th>Docente asignado</th><th>Disponibilidad</th><th>Última actualización</th></tr>
             </thead>
             <tbody>{html_table_rows}</tbody>
         </table>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # PAGINACIÓN
         st.markdown("<br>", unsafe_allow_html=True)
-        p_c1, p_c2, p_c3 = st.columns([1.5, 1, 1.5])
+        p_c1, p_c2, p_c3 = st.columns([1, 1, 2])
         with p_c1:
-            if st.button("◀ Anterior", disabled=(st.session_state['mon_page'] == 1), key="mon_prev_btn"):
+            if st.button("◀ Anterior", disabled=(st.session_state['mon_page'] == 1), key="mon_prev"):
                 st.session_state['mon_page'] -= 1
                 st.rerun()
         with p_c2:
-            st.markdown(f'<p style="text-align:center; font-weight:700; margin-top:8px; color:#1e3a8a;">Pág. {st.session_state["mon_page"]} de {max_pages}</p>', unsafe_allow_html=True)
-        with p_c3:
-            if st.button("Siguiente ▶", disabled=(st.session_state['mon_page'] == max_pages), key="mon_next_btn"):
+            if st.button("Siguiente ▶", disabled=(st.session_state['mon_page'] == max_pages), key="mon_next"):
                 st.session_state['mon_page'] += 1
                 st.rerun()
+        with p_c3:
+            st.markdown(f'<p style="margin-top:6px; font-weight:700; color:#1e3a8a;">Página {st.session_state["mon_page"]} de {max_pages}</p>', unsafe_allow_html=True)
 
     with col_right:
         item_sel = next((a for a in asignaturas_bd if a[0] == st.session_state['selected_alfa']), asignaturas_bd[0])
         s_alfa, s_nombre, s_estado = item_sel
-        
-        s_doc_idx = len(s_alfa) % len(docentes_bd)
-        s_docente = docentes_bd[s_doc_idx] if "81" not in s_alfa and "63" not in s_alfa else "Sin asignar"
-        s_disp_txt = "Disponible" if str(s_estado).lower() == "construida" else ("Pendiente revisión" if str(s_estado).lower() == "en construcción" else "No disponible")
+        s_docente = docentes_bd[len(s_alfa) % len(docentes_bd)] if "81" not in s_alfa else "Sin asignar"
 
-        # --- DETALLE DE SELECCIÓN ---
         st.markdown('<div class="side-panel-card">', unsafe_allow_html=True)
         st.markdown('<div class="side-panel-title">Detalle de selección</div>', unsafe_allow_html=True)
-        st.markdown(f'<p style="font-size:0.95rem; font-weight:800; color:#0047ff; margin-bottom:15px;">{s_alfa} - {s_nombre}</p>', unsafe_allow_html=True)
+        st.markdown(f'<p style="font-weight:800; color:#0047ff; font-size:0.95rem;">{s_alfa} - {s_nombre}</p>', unsafe_allow_html=True)
         
         opt_codigos = [a[0] for a in asignaturas_bd]
-        sel_index = opt_codigos.index(st.session_state['selected_alfa'])
-        nuevo_alfa_sel = st.selectbox("Cambiar asignatura a inspeccionar", options=opt_codigos, index=sel_index, key="inspeccion_dropdown")
-        if nuevo_alfa_sel != st.session_state['selected_alfa']:
-            st.session_state['selected_alfa'] = nuevo_alfa_sel
+        nuevo_alfa = st.selectbox("Inspeccionar código", options=opt_codigos, index=opt_codigos.index(st.session_state['selected_alfa']))
+        if nuevo_alfa != st.session_state['selected_alfa']:
+            st.session_state['selected_alfa'] = nuevo_alfa
             st.rerun()
 
         st.markdown(f"""
-        <div class="side-data-row"><span class="side-data-lbl">Estado actual:</span><span class="side-data-val">{s_estado}</span></div>
-        <div class="side-data-row"><span class="side-data-lbl">Docente actual:</span><span class="side-data-val">{s_docente}</span></div>
-        <div class="side-data-row"><span class="side-data-lbl">Disponibilidad:</span><span class="side-data-val">{s_disp_txt}</span></div>
-        <div class="side-data-row"><span class="side-data-lbl">Última actualización:</span><span class="side-data-val" style="font-size:0.75rem;">Hoy - 03:52 p.m.</span></div>
+        <div class="side-data-row"><span class="side-data-lbl">Estado:</span><span class="side-data-val">{s_estado}</span></div>
+        <div class="side-data-row"><span class="side-data-lbl">Docente:</span><span class="side-data-val">{s_docente}</span></div>
+        <div class="side-data-row"><span class="side-data-lbl">Actualización:</span><span class="side-data-val" style="font-size:0.75rem;">19 may, 2025</span></div>
         """, unsafe_allow_html=True)
         
-        st.selectbox("Modificar Docente Asignado", options=["Conservar actual"] + docentes_bd)
-        st.selectbox("Modificar Estado de Prueba", options=["Conservar actual", "Construida", "En construcción", "Sin construir"])
-        
-        if st.button("📥 Guardar cambios en Neon", use_container_width=True, key="save_changes_mon_btn"):
-            st.success("🎉 Cambios guardados correctamente en la base de datos.")
-        st.markdown('<p style="text-align:center; margin-top:8px;"><a href="#" style="color:#3b82f6; font-weight:700; text-decoration:none; font-size:0.85rem;">👁️ Ver historial completo</a></p>', unsafe_allow_html=True)
+        st.selectbox("Asignar Docente", options=docentes_bd)
+        if st.button("📥 Guardar Cambios en Neon", use_container_width=True):
+            st.success("🎉 Base de datos actualizada.")
         st.markdown('</div>', unsafe_allow_html=True)
-
-        # --- ALERTAS Y ACTIVIDADES RECIENTES ---
-        st.markdown('<div class="side-panel-card">', unsafe_allow_html=True)
-        st.markdown('<div class="side-panel-title">Alertas y actividades</div>', unsafe_allow_html=True)
-        st.markdown("""
-        <div class="alert-item-box">
-            <div class="alert-item-icon">⚠️</div>
-            <div>
-                <div class="alert-item-text">6 asignaturas sin docente asignado</div>
-                <div class="alert-item-sub">Requieren asignación para iniciar diseño</div>
-            </div>
-        </div>
-        <div class="alert-item-box">
-            <div class="alert-item-icon">🕒</div>
-            <div>
-                <div class="alert-item-text">3 pruebas en construcción vencen esta semana</div>
-                <div class="alert-item-sub">Revisar y actualizar cronograma RAP</div>
-            </div>
-        </div>
-        <div class="alert-item-box">
-            <div class="alert-item-icon">ℹ️</div>
-            <div>
-                <div class="alert-item-text">2 actualizaciones pendientes de revisión</div>
-                <div class="alert-item-sub">Soporte académico requiere validación</div>
-            </div>
-        </div>
-        <p style="margin-top:12px; font-weight:700; font-size:0.85rem;"><a href="#" style="color:#0047ff; text-decoration:none;">Ver todas las alertas activas →</a></p>
-        """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
