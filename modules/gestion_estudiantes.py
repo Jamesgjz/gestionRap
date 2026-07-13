@@ -7,7 +7,7 @@ def render():
         st.session_state['reg_vista'] = "dashboard"
         st.rerun()
 
-    # --- CSS DE ALTA INTENSIDAD GRÁFICA EN AZULES CORPORATIVOS (Cero Rojo) ---
+    # --- CSS DE ALTA INTENSIDAD GRÁFICA EN AZULES CORPORATIVOS (Bloqueo absoluto de Rojo) ---
     st.markdown("""
 <style>
 .form-container { max-width: 1400px; margin: auto; padding: 10px 20px; font-family: 'Inter', sans-serif; }
@@ -15,7 +15,7 @@ def render():
 .form-subtitle { font-size: 0.95rem; color: #64748b; margin-bottom: 25px; }
 .form-section-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
 
-/* Caja de Resumen: Azul Eléctrico e Institucional Vibrante */
+/* Caja de Resumen: Azul Eléctrico Institucional */
 .summary-box { 
     background: linear-gradient(135deg, #1e40af 0%, #0047ff 100%) !important; 
     border: 2px solid #0036d6; 
@@ -44,6 +44,36 @@ def render():
 .btn-guardar button:hover { background-color: #2563eb !important; }
 .btn-cancelar button { background-color: white !important; color: #475569 !important; font-weight: 600 !important; padding: 12px 24px !important; border-radius: 8px !important; border: 1px solid #cbd5e1 !important; }
 .btn-cancelar button:hover { background-color: #f1f5f9 !important; }
+
+/* =========================================================================
+   BLINDAJE ANTI-ROJO INTERACTIVO (Anula el Primary Color por defecto de la nube)
+   ========================================================================= */
+/* 1. Forzar color azul en las etiquetas (pills) seleccionadas del Multiselect */
+div[data-baseweb="tag"] {
+    background-color: #3b82f6 !important;
+    border-radius: 6px !important;
+}
+div[data-baseweb="tag"] span {
+    color: white !important;
+}
+div[data-baseweb="tag"] svg {
+    fill: white !important;
+}
+
+/* 2. Forzar borde azul cuando el multiselect o inputs están activos/enfocados */
+div[data-baseweb="select"] > div:focus-within, 
+div[data-baseweb="select"]:focus-within,
+.stTextInput input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+/* 3. Corrección de color de alerta nativa de Streamlit */
+div[class*="stAlert"] {
+    border-left-color: #3b82f6 !important;
+    background-color: #f0f4ff !important;
+    color: #1e3a8a !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,15 +106,15 @@ def render():
         
         g_col1, g_col2 = st.columns(2)
         with g_col1:
-            # Campo Real BD: id_banner
-            id_banner = st.number_input("ID Banner (*id_banner) *", min_value=0, max_value=99999999, value=0, step=1)
+            # CORRECCIÓN: Campo id_banner ahora es un INPUT DE TEXTO ultra limpio y profesional (sin botones de incremento)
+            id_banner = st.text_input("ID Banner (*id_banner) *", placeholder="Ej. 90012345")
             # Campo Real BD: estado_matriz
             estado_matriz = st.selectbox("Estado de matrícula (*estado_matriz) *", ["Matriculado", "No matriculado"])
         with g_col2:
             # Campo Real BD: nombre_completo
             nombre_completo = st.text_input("Nombre completo del estudiante *", placeholder="Ej. Alba Lucía Pinzón Gallego")
 
-        # --- 2. ASIGNACIÓN ACADÉMICA (Campo real: alfa_asignatura) ---
+        # --- 2. VINCULACIÓN CURRICULAR (Campo real: alfa_asignatura) ---
         st.markdown('<div class="form-section-title">2. Vinculación curricular</div>', unsafe_allow_html=True)
         asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=lista_asignaturas, placeholder="Selecciona los códigos alfanuméricos")
 
@@ -109,29 +139,28 @@ def render():
             st.markdown('<p style="margin-top:12px;"><a href="#" style="color:#3b82f6; font-weight:700; text-decoration:none;">Guardar y crear otro</a></p>', unsafe_allow_html=True)
 
         if btn_save:
-            if nombre_completo and id_banner > 0 and asig_seleccionadas:
+            if nombre_completo and id_banner and asig_seleccionadas:
                 codigos_alfa = [string.split(" - ")[0] for string in asig_seleccionadas]
                 alfa_cadena = ", ".join(codigos_alfa)
                 st.info(f"📘 Estudiante estructurado para inserción en Neon. Cursos: {alfa_cadena}")
             else:
                 st.warning("⚠️ Por favor completa los campos obligatorios antes de guardar (*)")
 
-    # --- BARRA LATERAL EN VIVO (CERO SANGRIAS DE EXTREMO IZQUIERDO PARA CONSERVAR EL DISEÑO) ---
+    # --- BARRA LATERAL EN VIVO (CERO SANGRIAS PARA EL MOTOR MARKDOWN) ---
     with col_sum:
-        # Estilos adaptados en Azul Claro / Muted para cuando falten datos o esté no matriculado (Adiós Rojo)
         badge_style = "background-color: #10b981; color: white;" if estado_matriz == "Matriculado" else "background-color: #475569; color: white;"
         
         html_sum_box = '<div class="summary-box">'
         html_sum_box += '<div class="summary-title">Resumen de registro</div>'
-        html_sum_box += f'<div class="summary-item"><div class="summary-icon">🆔</div><div class="summary-details"><span class="summary-lbl">ID Banner asignado</span><span class="summary-val">{id_banner if id_banner > 0 else "—"}</span></div></div>'
+        html_sum_box += f'<div class="summary-item"><div class="summary-icon">🆔</div><div class="summary-details"><span class="summary-lbl">ID Banner asignado</span><span class="summary-val">{id_banner if id_banner else "—"}</span></div></div>'
         html_sum_box += f'<div class="summary-item"><div class="summary-icon">✓</div><div class="summary-details"><span class="summary-lbl">Estado en matriz</span><span><b class="badge-est" style="{badge_style}">{estado_matriz}</b></span></div></div>'
         html_sum_box += f'<div class="summary-item"><div class="summary-icon">📚</div><div class="summary-details"><span class="summary-lbl">Asignaturas de la BD</span><span class="summary-val">{len(asig_seleccionadas)} seleccionadas</span></div></div>'
         html_sum_box += '<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:20px 0;">'
         html_sum_box += '<div class="req-title">Validación de Campos Reales</div>'
         
-        # Círculo blanco para completado, círculo translúcido para pendiente
-        c_ban = '#ffffff' if id_banner > 0 else 'rgba(255,255,255,0.4)'
-        html_sum_box += f'<div class="checklist-item"><span class="check-icon" style="color:{c_ban};">{"●" if id_banner > 0 else "○"}</span> id_banner</div>'
+        # Círculo blanco para completado, círculo translúcido para pendiente (Cero tonos rojos)
+        c_ban = '#ffffff' if id_banner else 'rgba(255,255,255,0.4)'
+        html_sum_box += f'<div class="checklist-item"><span class="check-icon" style="color:{c_ban};">{"●" if id_banner else "○"}</span> id_banner</div>'
         
         c_nom = '#ffffff' if nombre_completo else 'rgba(255,255,255,0.4)'
         html_sum_box += f'<div class="checklist-item"><span class="check-icon" style="color:{c_nom};">{"●" if nombre_completo else "○"}</span> nombre_completo</div>'
