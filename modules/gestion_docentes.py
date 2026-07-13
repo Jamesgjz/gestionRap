@@ -2,12 +2,17 @@ import streamlit as st
 from database import traer_datos
 
 def render():
-    # --- BOTÓN DE RETORNO NATIVO AL PANEL PRINCIPAL ---
-    if st.button("← Volver al Panel Principal", key="back_to_dash"):
+    # --- FUNCIONES DE NAVEGACIÓN SEGURA (CALLBACKS DE ALTA RESPUESTA) ---
+    def ir_al_panel():
         st.session_state['reg_vista'] = "dashboard"
-        st.rerun()
 
-    # --- CSS DE ALTA FIDELIDAD ---
+    def ir_a_nuevo_docente():
+        st.session_state['reg_vista'] = "nuevo_docente"
+
+    # --- BOTÓN DE RETORNO NATIVO ---
+    st.button("← Volver al Panel Principal", key="back_to_dash", on_click=ir_al_panel)
+
+    # --- CSS DE ALTA FIDELIDAD CON AZUL CLARO CORPORATIVO ---
     st.markdown("""
 <style>
 .docentes-container { max-width: 1400px; margin: auto; padding: 10px 20px; font-family: 'Inter', sans-serif; }
@@ -15,20 +20,21 @@ def render():
 .section-title { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
 .section-subtitle { font-size: 0.95rem; color: #64748b; }
 
-/* Forzar azul corporativo #0047ff */
-.btn-nuevo-doc-container button {
-    background-color: #0047ff !important;
+/* INYECCIÓN EXACTA: Target directo al 4to elemento del bloque de filtros (Botón Nuevo Docente) */
+[data-testid="stHorizontalBlock"] > div:nth-child(4) button {
+    background-color: #3b82f6 !important; /* Azul claro / azul digital de registro */
     color: white !important;
     font-size: 1.05rem !important;
     font-weight: 700 !important;
     padding: 12px 24px !important;
     border-radius: 8px !important;
-    border: 1px solid #0047ff !important;
-    box-shadow: 0 4px 6px rgba(0,47,255,0.15) !important;
+    border: 1px solid #3b82f6 !important;
+    box-shadow: 0 4px 6px rgba(59,130,246,0.15) !important;
+    transition: background-color 0.2s ease;
 }
-.btn-nuevo-doc-container button:hover {
-    background-color: #0036d6 !important;
-    border-color: #0036d6 !important;
+[data-testid="stHorizontalBlock"] > div:nth-child(4) button:hover {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
 }
 
 /* Fila de Métricas */
@@ -61,7 +67,7 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # --- EXTRACCIÓN DINÁMICA DE LA BASE DE DATOS ---
+    # --- PROCESAMIENTO SEGURO DE DATOS ---
     docentes_filtrados = []
     try:
         raw_data = traer_datos("SELECT * FROM profesores")
@@ -73,19 +79,15 @@ def render():
                 estado = row[6] if len(row) > 6 else "Activo"
                 fecha = row[7] if len(row) > 7 else "Hoy"
                 
-                # Extracción inteligente de Correo y Horas Reales
                 email = ""
-                horas = 16 # Fallback por seguridad
-                
+                horas = 16
                 for idx, campo in enumerate(row):
-                    if campo is None:
-                        continue
+                    if campo is None: continue
                     campo_str = str(campo).strip()
-                    
                     if "@" in campo_str:
                         email = campo_str
                     elif idx != 0 and (isinstance(campo, (int, float)) or campo_str.isdigit()):
-                        horas = int(campo) # Captura el 2 o el 4 real de la base de datos
+                        horas = int(campo)
                 
                 if not email:
                     partes_name = nombre.lower().split()
@@ -97,22 +99,21 @@ def render():
     except Exception as e:
         st.sidebar.error(f"Nota de sincronización: {e}")
 
-    # Fallback estático adaptado
     if not docentes_filtrados:
         docentes_filtrados = [
             ("James Gabriel Jaramillo Zambrano", "james.jaramillo@uniminuto.edu.co", "Ingeniería de Sistemas", "Construcción de pruebas", 4, "Activo", "Hoy"),
             ("Libardo Gómez Díaz", "libardo.gomez@uniminuto.edu.co", "Educación Virtual", "Construcción de pruebas", 2, "Activo", "Hoy"),
-            ("Sergio Andrés Torres Martínez", "sergio.torres@uniminuto.edu.co", "Educación Virtual", "Construcción de pruebas", 16, "Activo", "Hoy")
+            ("Sergio Andrés Torres Martínez", "sergio.torres@uniminuto.edu.co", "Educación Virtual", "Construcción de pruebas", 2, "Activo", "Hoy")
         ]
 
-    # Contadores en tiempo real
     tot_doc = len(docentes_filtrados)
     tot_act = sum(1 for d in docentes_filtrados if "activo" in str(d[5]).lower())
-    tot_asig = sum(1 for d in docentes_filtrados if int(d[4]) > 0)
+    tot_asig = len(docentes_filtrados)
     tot_pend = 0
 
     st.markdown('<div class="docentes-container">', unsafe_allow_html=True)
 
+    # --- ENCABEZADO ---
     st.markdown("""
     <div class="section-header">
         <div class="section-title">Gestión de docentes evaluadores</div>
@@ -120,6 +121,7 @@ def render():
     </div>
     """, unsafe_allow_html=True)
 
+    # --- FILTROS Y BOTÓN MODIFICADOS (USO DE CALLBACK SEGURO) ---
     f_col1, f_col2, f_col3, f_col4 = st.columns([2, 1, 1, 1])
     with f_col1:
         search_query = st.text_input("Buscar por nombre...", key="doc_search_input", label_visibility="collapsed", placeholder="Buscar por nombre del docente...")
@@ -128,34 +130,32 @@ def render():
     with f_col3:
         st.selectbox("Estado", ["Todos los estados"], label_visibility="collapsed")
     with f_col4:
-        st.markdown('<div class="btn-nuevo-doc-container">', unsafe_allow_html=True)
-        # AL HACER CLIC: Redirige al nuevo archivo modular de registro
-        if st.button("+ Nuevo docente", use_container_width=True, key="new_doc_modal_btn"):
-            st.session_state['reg_vista'] = "nuevo_docente"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        # El callback 'on_click' soluciona de raíz el problema de congelamiento
+        st.button("+ Nuevo docente", use_container_width=True, key="new_doc_nav_btn", on_click=ir_a_nuevo_docente)
 
+    # --- GRID DE MÉTRICAS ---
     st.markdown(f"""
     <div class="doc-metrics-grid">
         <div class="doc-metric-card">
             <div class="doc-metric-icon-box" style="background: #e8f0fe; color: #1a73e8;">👥</div>
-            <div class="doc-metric-info"><div class="doc-metric-lbl">Total docentes</div><div class="doc-metric-val">{tot_doc}</div></div>
+            <div class="doc-metric-info"><div class="doc-metric-lbl">Total docentes</div><div class="metric-val">{tot_doc}</div></div>
         </div>
         <div class="doc-metric-card">
             <div class="doc-metric-icon-box" style="background: #e6f4ea; color: #137333;">✓</div>
-            <div class="doc-metric-info"><div class="doc-metric-lbl">Activos</div><div class="doc-metric-val" style="color:#137333;">{tot_act}</div></div>
+            <div class="doc-metric-info"><div class="doc-metric-lbl">Activos</div><div class="metric-val" style="color:#137333;">{tot_act}</div></div>
         </div>
         <div class="doc-metric-card">
             <div class="doc-metric-icon-box" style="background: #f3e8ff; color: #6b21a8;">📖</div>
-            <div class="doc-metric-info"><div class="doc-metric-lbl">Con asignación</div><div class="doc-metric-val" style="color:#6b21a8;">{tot_asig}</div></div>
+            <div class="doc-metric-info"><div class="doc-metric-lbl">Con asignación</div><div class="metric-val" style="color:#6b21a8;">{tot_asig}</div></div>
         </div>
         <div class="doc-metric-card">
             <div class="doc-metric-icon-box" style="background: #fef7e0; color: #b06000;">🕒</div>
-            <div class="doc-metric-info"><div class="doc-metric-lbl">Pendientes</div><div class="doc-metric-val" style="color:#b06000;">{tot_pend}</div></div>
+            <div class="doc-metric-info"><div class="doc-metric-lbl">Pendientes</div><div class="metric-val" style="color:#b06000;">{tot_pend}</div></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # --- TABLA ---
     html_table_rows = ""
     for doc in docentes_filtrados:
         nombre, email, programa, asignaturas, horas, estado, ultima_act = doc
@@ -168,7 +168,6 @@ def render():
         avatar_bg = "#e8f0fe"
         avatar_txt = "#1a73e8"
 
-        # Formateo plano sin sangrías al inicio de la línea para blindar contra errores de Markdown
         html_table_rows += f"<tr><td><div class='doc-profile-cell'><div class='doc-avatar' style='background:{avatar_bg}; color:{avatar_txt};'>{iniciales}</div><div class='doc-info-text'><span class='doc-name'>{nombre}</span><span class='doc-email'>{email}</span></div></div></td><td>{programa}</td><td><b style='color:#6b21a8;'>{asignaturas}</b></td><td><b>{horas}</b> hrs</td><td><span class='badge-doc badge-activo'>{estado}</span></td><td>{ultima_act}</td><td class='action-icons'>👁️📝⋮</td></tr>"
 
     st.markdown(f"""
@@ -189,7 +188,7 @@ def render():
     <div class="info-banner">
         <div class="info-banner-icon">ℹ️</div>
         <div class="info-banner-text">
-            Este módulo permite la parametrización y soporte académico del proceso RAP. Asegúrate de mantener actualizada la información de los docentes y sus asignaciones para garantizar la correcta operation del proceso.
+            Este módulo permite la parametrización y soporte académico del proceso RAP. Asegúrate de mantener actualizada la información de los docentes y sus asignaciones para garantizar la correcta operación del proceso.
         </div>
     </div>
     </div>
