@@ -275,13 +275,16 @@ else:
             st.session_state['autenticado'] = False
             st.rerun()
 
+  
     opcion = st.session_state['opcion_menu']
     if opcion == "Inicio": inicio.render()
     elif opcion == "Registro Estudiantes": registro.render()
     elif opcion == "Estado de Pruebas":
-        # Ahora main.py sí reconocerá la función de forma impecable
         estado_pruebas = cargar_modulo_por_archivo("estado_pruebas", "estado_pruebas.py")
         estado_pruebas.render()
-    elif opcion == "Programación": programacion.render()
+    elif opcion == "Programación":
+        # CAMBIO AQUÍ: Forzamos la lectura del nuevo archivo limpiando la RAM del servidor
+        programacion = cargar_modulo_por_archivo("programacion", "programacion.py")
+        programacion.render()
     elif opcion == "Evaluación": evaluacion.render()
     elif opcion == "Dashboard / KPIs": dashboard.render()
