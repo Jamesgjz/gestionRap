@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit st
 import pandas as pd
 from database import traer_datos, ejecutar_query
 from datetime import datetime
@@ -52,6 +52,11 @@ def render():
 .prog-subtitle { font-size: 0.95rem; color: #64748b; }
 .prog-date-badge { position: absolute; right: 0; top: 12px; font-size: 0.88rem; color: #64748b; font-weight: 600; }
 
+/* Forzar foco de selección de pestañas y cajas de texto exclusivamente a azul corporativo */
+input:focus, select:focus, textarea:focus, button:focus { border-color: #0047ff !important; box-shadow: 0 0 0 1px #0047ff !important; outline: none !important; }
+div[data-baseweb="input"]:focus-within { border-color: #0047ff !important; box-shadow: 0 0 0 1px #0047ff !important; }
+div[data-baseweb="select"]:focus-within { border-color: #0047ff !important; }
+
 /* Blindex total contra el Rojo/Naranja nativo de Streamlit en las Pestañas */
 button[data-baseweb="tab"] { border-bottom-width: 2px !important; }
 button[data-baseweb="tab"] p { color: #64748b !important; font-weight: 600 !important; font-size: 0.95rem !important; }
@@ -68,6 +73,13 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 .prog-kpi-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
 .prog-kpi-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
 
+/* Grid Secundario de 6 KPIs para la pestaña Registro con Flexbox para evitar desbordes */
+.reg-kpi-grid { display: flex !important; flex-wrap: wrap !important; gap: 14px !important; width: 100% !important; margin-bottom: 25px !important; margin-top: 15px !important; }
+.reg-kpi-card { background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 16px !important; flex: 1 !important; min-width: 180px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; box-shadow: 0 2px 4px rgba(0,0,0,0.01) !important; }
+.reg-kpi-lbl { font-size: 0.78rem !important; font-weight: 600 !important; color: #64748b !important; margin-bottom: 2px !important; }
+.reg-kpi-val { font-size: 1.5rem !important; font-weight: 800 !important; color: #0f172a !important; line-height: 1.1 !important; }
+.reg-kpi-icon-box { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; }
+
 /* Paneles de Trabajo Asimétricos */
 .workspace-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.01); margin-bottom: 20px; }
 .workspace-title { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
@@ -83,7 +95,7 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 .guide-txt-main { font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
 .guide-txt-sub { font-size: 0.8rem; color: #64748b; line-height: 1.3; }
 
-/* Mapeo de Tarjetas del Calendario Derecho - Imagen 1 */
+/* Mapeo de Tarjetas del Calendario Derecho */
 .next-item { display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 14px; margin-bottom: 12px; }
 .next-date-box { background: white; border: 1px solid #cbd5e1; border-radius: 10px; width: 48px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .next-date-day { font-size: 1.1rem; font-weight: 800; color: #0f172a; line-height: 1; }
@@ -101,25 +113,14 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 .status-badge-reg { padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; display: inline-block; min-width: 100px; text-align: center; }
 .badge-reg-completada { background-color: #e6f4ea; color: #137333; border: 1px solid #c2e7c7; }
 .badge-reg-programada { background-color: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
-.badge-reg-cancelada { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; } /* Pasado a gris neutro corporativo - CERO ROJO */
+.badge-reg-cancelada { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
 .action-dots-menu { color: #64748b; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
 
 /* Botones con estilo del Mockup Imagen 1 */
-.stButton button {
-    border-radius: 8px !important;
-    font-weight: 700 !important;
-}
-.stButton button[id*="search_btn_mockup"] {
-    background-color: #ffffff !important;
-    color: #0047ff !important;
-    border: 1px solid #0047ff !important;
-    height: 42px !important;
-    margin-top: 2px !important;
-}
-.stButton button[id*="search_btn_mockup"]:hover {
-    background-color: #f0f4ff !important;
-}
+.stButton button { border-radius: 8px !important; font-weight: 700 !important; }
+.stButton button[id*="search_btn_mockup"] { background-color: #ffffff !important; color: #0047ff !important; border: 1px solid #0047ff !important; height: 42px !important; margin-top: 2px !important; }
+.stButton button[id*="search_btn_mockup"]:hover { background-color: #f0f4ff !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,8 +146,8 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
         <div class="prog-kpi-grid">
             <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Programadas</span><span class="prog-kpi-val">{tot_programadas}</span><span class="prog-kpi-sub">Todas las programaciones</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📅</div></div>
             <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Próximas</span><span class="prog-kpi-val">18</span><span class="prog-kpi-sub">En los próximos 7 days</span></div><div class="prog-kpi-icon-box" style="background:#e6f4ea; color:#137333;">🕒</div></div>
-            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Reprogramadas</span><span class="prog-kpi-val">12</span><span class="prog-kpi-sub">Cambios realizados</span></div><div class="prog-kpi-icon-box" style="background:#fff7ed; color:#c2410c;">%;">🔄</div></div>
-            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Pendientes</span><span class="prog-kpi-val">34</span><span class="prog-kpi-sub">Sin fecha asignada</span></div><div class="prog-kpi-icon-box" style="background:#f3e8ff; color:#6b21a8;">⏳</div></div>
+            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Reprogramadas</span><span class="prog-kpi-val">12</span><span class="prog-kpi-sub">Cambios realizados</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">🔄</div></div>
+            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Pendientes</span><span class="reg-kpi-val">34</span><span class="prog-kpi-sub">Sin fecha asignada</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">⏳</div></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -305,14 +306,15 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
         historico_datos = cargar_datos_historicos_completos()
         tot_reg = len(historico_datos) if historico_datos else 0
         
+        # Sincronización estricta de colores corporativos azules para los 6 bloques superiores
         st.markdown(f"""
         <div class="reg-kpi-grid">
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Total Programadas</span><span class="reg-kpi-val">{tot_reg if tot_reg > 0 else 128}</span></div><div class="reg-kpi-icon-box" style="background:#f4f0ff; color:#7c3aed;">📅</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Programadas hoy</span><span class="reg-kpi-val">7</span></div><div class="reg-kpi-icon-box" style="background:#e8f0fe; color:#1a73e8;">🕒</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Esta semana</span><span class="reg-kpi-val">24</span></div><div class="reg-kpi-icon-box" style="background:#e6f4ea; color:#137333;">📈</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Completadas</span><span class="reg-kpi-val">95</span></div><div class="reg-kpi-icon-box" style="background:#e6f4ea; color:#137333;">✓</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Canceladas</span><span class="reg-kpi-val">8</span></div><div class="reg-kpi-icon-box" style="background:#f1f5f9; color:#475569;">✕</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Pendientes</span><span class="reg-kpi-val">25</span></div><div class="reg-kpi-icon-box" style="background:#fff7ed; color:#c2410c;">⏳</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Total Programadas</span><span class="reg-kpi-val">{tot_reg if tot_reg > 0 else 128}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📅</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Programadas hoy</span><span class="reg-kpi-val">7</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">🕒</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Esta semana</span><span class="reg-kpi-val">24</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📈</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Completadas</span><span class="reg-kpi-val">95</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">✓</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Canceladas</span><span class="reg-kpi-val">8</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">✕</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Pendientes</span><span class="reg-kpi-val">25</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">⏳</div></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -338,6 +340,7 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                     continue
                 datos_filtrados.append(r)
 
+            # Inyección rectilínea unificada compacta sin sangrías a la izquierda (Corrige la Imagen 1)
             html_master_rows = ""
             for idx, row in enumerate(datos_filtrados):
                 id_banner = row[0]
@@ -347,7 +350,6 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                 f_aplicacion = row[4]
                 hora_val = str(row[5])[:5]
                 
-                # Mapeo de estados ovalados limpios sin alertas rojas bruscas
                 if idx % 5 == 4:
                     badge_estado = '<span class="status-badge-reg badge-reg-cancelada">✕ Cancelada</span>'
                 elif idx % 3 == 0:
@@ -362,7 +364,7 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
             st.markdown("<br>", unsafe_allow_html=True)
             pag_col1, pag_col2, pag_col3 = st.columns([1.5, 3, 1.5])
             with pag_col1:
-                st.markdown('<p style="font-size:0.85rem; color:#64748b; margin-top:6px;">Mostrar del 1 al 10 de registros</p>', unsafe_allow_html=True)
+                st.markdown(f'<p style="font-size:0.85rem; color:#64748b; margin-top:6px;">Mostrar del 1 al {len(datos_filtrados)} de registros reales de Neon</p>', unsafe_allow_html=True)
             with pag_col3:
                 st.markdown('<p style="text-align:right; font-weight:700; color:#0047ff; cursor:pointer; font-size:0.88rem;">Páginas: [1] 2 3 ... 13 ❯</p>', unsafe_allow_html=True)
         else:
