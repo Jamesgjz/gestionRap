@@ -24,7 +24,7 @@ def cargar_conteos_kpi():
         total_prog = traer_datos("SELECT COUNT(*) FROM programacion_pruebas")
         prog_val = total_prog[0][0] if total_prog else 0
     except Exception:
-        prog_val = 256  # Fallback de diseño si la tabla está inicializándose
+        prog_val = 256  
     return prog_val
 
 def render():
@@ -80,7 +80,6 @@ def render():
 .hist-table th { background: #f8fafc; padding: 12px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; text-align: left; }
 .hist-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
 
-/* Forzar estilos del botón Buscar del Mockup */
 div[data-testid="stForm"] button,
 .stButton button[id*="search_btn"] {
     background-color: #ffffff !important;
@@ -91,12 +90,9 @@ div[data-testid="stForm"] button,
 </style>
 """, unsafe_allow_html=True)
 
-    # Inicialización de conteos reales
     tot_programadas = cargar_conteos_kpi()
-
     st.markdown('<div class="prog-container">', unsafe_allow_html=True)
     
-    # --- ENCABEZADO CON FECHA DINÁMICA ---
     st.markdown(f"""
     <div class="prog-header">
         <div class="prog-title">Programación de Pruebas</div>
@@ -105,7 +101,6 @@ div[data-testid="stForm"] button,
     </div>
     """, unsafe_allow_html=True)
 
-    # --- FILA DE TARJETAS KPI (ESTILO MOCKUP EXACTO) ---
     st.markdown(f"""
     <div class="prog-kpi-grid">
         <div class="prog-kpi-card">
@@ -127,17 +122,12 @@ div[data-testid="stForm"] button,
     </div>
     """, unsafe_allow_html=True)
 
-    # --- SELECTOR DE PESTAÑAS NATIVAS ---
     tabs = st.tabs(["📝 Agendar y editar", "📋 Registro de pruebas"])
 
-    # =========================================================================
-    # PESTAÑA 1: GESTIÓN DE AGENDAMIENTO (CON ENFOQUE DE MOCKUP)
-    # =========================================================================
     with tabs[0]:
         if rol != "admin":
             st.warning("Acceso restringido al administrador corporativo.")
         else:
-            # Layout Asimétrico [2.3, 1] exigido por el mockup dentro de la pestaña
             col_left, col_right = st.columns([2.3, 1])
             
             with col_left:
@@ -147,7 +137,6 @@ div[data-testid="stForm"] button,
                 st.markdown("<p style='font-size:0.88rem; font-weight:700; color:#334155; margin-bottom:2px;'>1. Buscar estudiante</p>", unsafe_allow_html=True)
                 st.markdown("<p style='font-size:0.8rem; color:#64748b; margin-bottom:10px;'>Ingresa el ID Banner del estudiante para cargar su información de malla.</p>", unsafe_allow_html=True)
                 
-                # Barra de búsqueda unificada alineada horizontalmente
                 search_col1, search_col2 = st.columns([4, 1])
                 with search_col1:
                     id_banner_input = st.number_input("ID Banner Input", step=1, value=0, label_visibility="collapsed", key="id_banner_search_field")
@@ -155,12 +144,10 @@ div[data-testid="stForm"] button,
                     st.markdown("<div style='margin-top:2px;'></div>", unsafe_allow_html=True)
                     buscar_btn = st.button("🔍 Buscar", use_container_width=True, key="search_btn_mockup")
                 
-                # Estado persistente para la búsqueda del alumno
                 if buscar_btn and id_banner_input > 0:
                     st.session_state['active_search_id'] = id_banner_input
                 
                 active_id = st.session_state.get('active_search_id', 0)
-                
                 nombre_estudiante_val = ""
                 materias_aptas_dropdown = []
                 
@@ -170,7 +157,6 @@ div[data-testid="stForm"] button,
                         nombre_estudiante_val = res_est[0][0]
                         materias_estudiante = [m.strip() for m in res_est[0][1].split(",") if m.strip()]
                         
-                        # Validación de disponibilidad relacional real
                         for alfa in materias_estudiante:
                             check = traer_datos("""
                                 SELECT estado FROM maestro_pruebas 
@@ -187,7 +173,6 @@ div[data-testid="stForm"] button,
                         st.session_state['active_search_id'] = 0
                         active_id = 0
 
-                # Despliegue condicional del bloque informativo o campos de formulario
                 if active_id == 0:
                     st.markdown("""
                     <div class="info-box-blue">
@@ -196,7 +181,6 @@ div[data-testid="stForm"] button,
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Campos deshabilitados estéticos para calzar con el mockup visual
                     f_c1, f_c2 = st.columns(2)
                     with f_c1:
                         st.text_input("Estudiante", placeholder="👤 —", disabled=True)
@@ -205,9 +189,7 @@ div[data-testid="stForm"] button,
                         st.text_input("Asignatura disponible", placeholder="📖 Selecciona una asignatura", disabled=True)
                         st.text_input("Hora de la prueba", placeholder="🕒 Selecciona una hora", disabled=True)
                     st.button("💾 Guardar programación", disabled=True, key="disabled_save_action")
-                
                 else:
-                    # El estudiante existe: se libera la edición interactiva de la fila
                     st.success(f"Estudiante activo listo para asignación: **{nombre_estudiante_val}**")
                     
                     if materias_aptas_dropdown:
@@ -221,7 +203,7 @@ div[data-testid="stForm"] button,
                                 hora_app = st.time_input("Hora de la Prueba", value=datetime.now().time())
                             
                             st.markdown("<br>", unsafe_allow_html=True)
-                            if st.form_submit_button("💾 Guardar programación", use_container_width=False):
+                            if st.form_submit_button("💾 Guardar programación"):
                                 alfa_sel = seleccionada.split(" - ")[0].strip()
                                 fecha_hoy = datetime.now().date()
                                 
@@ -236,8 +218,8 @@ div[data-testid="stForm"] button,
                                 """, (active_id, alfa_sel, fecha_hoy, fecha_app, hora_app))
                                 
                                 st.toast(f"¡Éxito! Prueba agendada para {nombre_estudiante_val}.", icon="🔹")
-                                st.session_state['active_search_id'] = 0 # Reset para siguiente agendamiento
-                                st.cache_data.clear() # Limpieza para refrescar paneles
+                                st.session_state['active_search_id'] = 0 
+                                st.cache_data.clear() 
                                 st.rerun()
                     else:
                         st.warning("⚠️ No se encontraron materias en estado 'Lista' o 'Construida' para la malla de este alumno.")
@@ -247,9 +229,7 @@ div[data-testid="stForm"] button,
                             
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- COLUMNA DERECHA: PANALES DE GUÍA Y PRÓXIMAS (MOCKUP EXACTO) ---
             with col_right:
-                # Panel A: Guía rápida
                 st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
                 st.markdown('<div class="workspace-title" style="color:#0047ff;">🚀 Guía rápida</div>', unsafe_allow_html=True)
                 st.markdown('<p style="font-size:0.78rem; color:#64748b; margin-bottom:15px;">Sigue estos pasos para programar una prueba:</p>', unsafe_allow_html=True)
@@ -262,20 +242,17 @@ div[data-testid="stForm"] button,
                 """, unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-                # Panel B: Próximas programaciones
                 st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
                 st.markdown('<div class="workspace-title">📅 Próximas programaciones</div>', unsafe_allow_html=True)
                 
                 proximas_list = obtener_proximas_programaciones_db()
-                
                 if proximas_list:
                     for row in proximas_list:
-                        f_app = row[0] # objeto date o datetime
+                        f_app = row[0] 
                         h_app = str(row[1])[:5]
                         nom_materia = row[2]
                         nom_estudiante = row[3]
                         
-                        # Extraemos día y mes para las insignias cuadradas del mockup
                         day_str = f_app.strftime("%d") if hasattr(f_app, "strftime") else "15"
                         month_str = f_app.strftime("%b") if hasattr(f_app, "strftime") else "JUL"
                         
@@ -298,9 +275,6 @@ div[data-testid="stForm"] button,
                 st.markdown("<br><p style='font-size:0.82rem; font-weight:700;'><a href='#' style='color:#0047ff; text-decoration:none;'>Ver todas las programaciones →</a></p>", unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-    # =========================================================================
-    # PESTAÑA 2: HISTÓRICO / REGISTRO DE PRUEBAS
-    # =========================================================================
     with tabs[1]:
         st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
         st.markdown('<div class="workspace-title">📋 Histórico de Programación</div>', unsafe_allow_html=True)
@@ -315,9 +289,6 @@ div[data-testid="stForm"] button,
         datos = traer_datos(query_vista)
         
         if datos:
-            df = pd.DataFrame(datos, columns=["ID Banner", "Estudiante", "Asignatura", "Fecha Registro", "Fecha Aplicación", "Hora", "cod_alfa"])
-            
-            # Formateo y renderizado de la matriz de datos de forma limpia
             html_rows = ""
             for row in datos:
                 html_rows += f"""
@@ -342,15 +313,15 @@ div[data-testid="stForm"] button,
             </table>
             """, unsafe_allow_html=True)
             
-            # --- SECCIÓN DE ELIMINACIÓN SEGURA (SOLO ADMIN) ---
             if rol == "admin":
                 st.markdown("<br><hr style='border:0; border-top:1px dashed #cbd5e1;'><br>", unsafe_allow_html=True)
-                st.markdown('<div class="workspace-title" style='color:#64748b;'>🗑️ Eliminar Programación</div>', unsafe_allow_html=True)
+                # REPARADO AQUÍ: Corrección de comillas HTML simples a comillas dobles para blindar el compilador
+                st.markdown('<div class="workspace-title" style="color:#64748b;">🗑️ Eliminar Programación</div>', unsafe_allow_html=True)
                 
                 opciones_borrar = [f"{row[0]} | {row[1]} - {row[6]}" for row in datos]
                 seleccion_borrar = st.selectbox("Seleccione la programación a eliminar:", opciones_borrar, label_visibility="collapsed")
                 
-                if st.button("❌ Eliminar Actividad Seleccionada", use_container_width=False):
+                if st.button("❌ Eliminar Actividad Seleccionada"):
                     banner_del = seleccion_borrar.split(" | ")[0]
                     alfa_del = seleccion_borrar.split(" - ")[1]
                     
@@ -359,12 +330,11 @@ div[data-testid="stForm"] button,
                         WHERE id_banner = %s AND alfa_asignatura = %s
                     """, (banner_del, alfa_del))
                     
-                    st.cache_data.clear() # Limpiamos caché para actualizar listas de inmediato
+                    st.cache_data.clear() 
                     st.toast(f"Programación eliminada con éxito para el ID {banner_del}", icon="🗑️")
                     st.rerun()
         else:
             st.info("Aún no hay pruebas programadas en la base de datos de Neon.")
             
         st.markdown('</div>', unsafe_allow_html=True)
-        
     st.markdown('</div>', unsafe_allow_html=True)
