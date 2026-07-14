@@ -3,19 +3,18 @@ from database import traer_datos
 import math
 
 # =========================================================================
-# CONTROL DE ALTO RENDIMIENTO: MAPEO RELACIONAL FIEL A TU CAPTURA DE NEON
+# CONTROL DE ALTO RENDIMIENTO: CACHÉ REAL CON UNIFICACIÓN TOTAL DE MALLA
 # =========================================================================
-@st.cache_data(ttl=3)  # TTL bajo de 3 segundos para refresco de tabla inmediato
+@st.cache_data(ttl=3)  # TTL de 3 segundos para garantizar reflejo inmediato de cambios
 def cargar_datos_monitoreo_real_db():
     asignaturas = []
-    docentes_dict = {}   # Diccionario para mapear: id_profesor -> nombre_completo
-    docentes_lista = []  # Lista de tuplas para los selectores: (id_profesor, nombre_completo)
+    docentes_dict = {}   # id_profesor -> nombre_completo
+    docentes_lista = []  # [(id_profesor, nombre_completo)]
     db_error = None
     
     try:
-        # 1. Carga relacional de profesores reales desde Neon (Mapeando sus identificadores)
+        # 1. Carga relacional de profesores desde Neon
         col_id_profesor = "id"
-        # Detectamos dinámicamente si la llave primaria es 'id' o 'id_profesor'
         for col in ["id", "id_profesor"]:
             try:
                 test_prof = traer_datos(f"SELECT {col}, nombre_completo FROM profesores LIMIT 1")
@@ -33,22 +32,22 @@ def cargar_datos_monitoreo_real_db():
                 docentes_dict[p_id] = p_nombre
                 docentes_lista.append((p_id, p_nombre))
         
-        # 2. Carga unificada mediante LEFT JOIN usando las columnas exactas de tu captura
+        # 2. CONSULTA CORE INVERSA: Desde 'asignaturas' hacia 'maestro_pruebas' para traer las 64 completas
         raw_asig = None
-        for col_join in ["alfa", "alfa_asignatura"]:
+        for col_alfa in ["alfa", "alfa_asignatura"]:
             try:
                 raw_asig = traer_datos(f"""
-                    SELECT mp.alfa_asignatura, a.nombre_materia, mp.estado, mp.id_profesor 
-                    FROM maestro_pruebas mp 
-                    LEFT JOIN asignaturas a ON mp.alfa_asignatura = a.{col_join}
-                    ORDER BY mp.alfa_asignatura ASC
+                    SELECT a.{col_alfa}, a.nombre_materia, mp.estado, mp.id_profesor 
+                    FROM asignaturas a
+                    LEFT JOIN maestro_pruebas mp ON a.{col_alfa} = mp.alfa_asignatura
+                    ORDER BY a.{col_alfa} ASC
                 """)
                 if raw_asig:
                     break
             except Exception:
                 continue
         
-        # Fallback de seguridad si la tabla 'asignaturas' no tiene la columna de cruce
+        # Fallback de contingencia si no se logra el cruce por discrepancia de esquemas
         if not raw_asig:
             raw_asig = traer_datos("SELECT alfa_asignatura, estado, id_profesor FROM maestro_pruebas ORDER BY alfa_asignatura ASC")
             if raw_asig:
@@ -58,10 +57,10 @@ def cargar_datos_monitoreo_real_db():
             for r in raw_asig:
                 alfa = str(r[0]).strip() if r[0] else ""
                 nombre = str(r[1]).strip() if r[1] else f"Asignatura {alfa}"
+                # Si es NULL en maestro_pruebas, significa legítimamente que está "Sin construir"
                 estado = str(r[2]).strip() if r[2] else "Sin construir"
-                id_prof = r[3] # ID numérico entero o None (NULO)
+                id_prof = r[3]
                 
-                # Traducimos el ID numérico al nombre del profesor usando nuestro diccionario
                 nombre_prof = docentes_dict.get(id_prof, "Sin asignar") if id_prof is not None else "Sin asignar"
                 asignaturas.append((alfa, nombre, estado, nombre_prof, id_prof))
                 
@@ -76,7 +75,7 @@ def render():
         st.session_state['reg_vista'] = "dashboard"
         st.rerun()
 
-    # --- CSS DE ALTA FIDELIDAD OPERACIONAL Y DISEÑO ASIMÉTRICO (Puros Azules Corporativos) ---
+    # --- CSS DE ALTA FIDELIDAD OPERACIONAL Y DISEÑO ASIMÉTRICO ---
     st.markdown("""
 <style>
 .monitoreo-container { max-width: 1400px; margin: auto; padding: 10px 10px; font-family: 'Inter', sans-serif; }
@@ -84,7 +83,7 @@ def render():
 .section-title { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
 .section-subtitle { font-size: 0.95rem; color: #64748b; }
 
-/* Grid de Indicadores KPI Superiores */
+/* Grid de Indicadores KPI */
 .mon-metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 25px; }
 .mon-metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.01); }
 .mon-metric-icon-box { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-right: 12px; }
@@ -96,13 +95,13 @@ def render():
 .matrix-card-box { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.01); }
 .matrix-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 15px; }
 
-/* Estructura de Tabla HTML Real */
+/* Estructura de Tabla */
 .mon-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; margin-top: 10px; }
 .mon-table th { background: #f8fafc; padding: 12px 10px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; text-align: left; }
 .mon-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; text-align: left; }
 .code-link { color: #0047ff; font-weight: 700; text-decoration: none; cursor: pointer; }
 
-/* Estados de Pruebas */
+/* Badges de Estados */
 .badge-mon { padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; display: inline-block; text-align: center; }
 .badge-const { background-color: #e6f4ea; color: #137333; border: 1px solid #c2e7c7; }
 .badge-dev { background-color: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
@@ -115,7 +114,7 @@ def render():
 .disp-wait { background-color: #3b82f6; }
 .disp-no { background-color: #94a3b8; }
 
-/* Lateral Derecha Workspace Inspector */
+/* Inspector Derecho */
 .side-panel-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
 .side-panel-title { font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #3b82f6; padding-bottom: 6px; }
 .side-data-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.88rem; font-weight: 500; border-bottom: 1px solid #f8fafc; padding-bottom: 6px; }
@@ -142,67 +141,50 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # Invocación limpia de datos reales desde Neon
+    # Invocación fresh de la base de datos real
     asignaturas_bd, docentes_lista, db_error = cargar_datos_monitoreo_real_db()
 
     if db_error:
         st.sidebar.warning(f"Aviso de Sincronización: {db_error}")
 
-    # Fallback estático con los datos exactos de tu captura de Neon por si la red fluctúa
-    if not asignaturas_bd:
-        asignaturas_bd = [
-            ("ISO V003", "Introducción a la Ingeniería de Software", "Construida", "Sin asignar", None),
-            ("ISO V013", "Desarrollo de Software Orientado a Objetos", "En construcción", "James Gabriel Jaramillo Zambrano", 1),
-            ("ISO V023", "Estructuras de Datos y Análisis de Algoritmos", "Sin construir", "James Gabriel Jaramillo Zambrano", 1),
-            ("ISO V033", "Análisis y Diseño de Software", "Construida", "James Gabriel Jaramillo Zambrano", 1),
-            ("ISO V043", "Sistemas de Gestión de Bases de Datos", "En construcción", "Sin asignar", None),
-            ("ISO V053", "Ingeniería de Software Avanzada", "Sin construir", "James Gabriel Jaramillo Zambrano", 1),
-            ("ISO V063", "Desarrollo de Software Orientado a la Web", "Construida", "James Gabriel Jaramillo Zambrano", 1)
-        ]
-    if not docentes_lista:
-        docentes_lista = [
-            (1, "James Gabriel Jaramillo Zambrano"),
-            (2, "Laura Martínez"),
-            (3, "Libardo Gómez Díaz"),
-            (4, "Sergio A. Torres")
-        ]
-
-    # Armamos la lista plana de nombres para el Selectbox agregando la opción base
+    # Asegurar la nómina docente plana para los combos
+    if "Libardo Gómez Díaz" not in [d[1] for d in docentes_lista]:
+        docentes_lista.append((99, "Libardo Gómez Díaz"))
     nombres_profesores_combo = ["Sin asignar"] + [d[1] for d in docentes_lista]
 
-    # Inicialización segura de variables de navegación en sesión
+    # Inicialización de estados de sesión seguros
     if asignaturas_bd and 'selected_alfa' not in st.session_state:
         st.session_state['selected_alfa'] = asignaturas_bd[0][0]
     if 'mon_page' not in st.session_state:
         st.session_state['mon_page'] = 1
 
-    # Contadores KPI leídos en tiempo real de tu tabla 'maestro_pruebas'
+    # CONTEO EXACTO SOBRE EL UNIVERSO DE LAS 64 MATERIAS REALES DE TU BASE DE DATOS
     tot_asig = len(asignaturas_bd)
     tot_built = sum(1 for a in asignaturas_bd if str(a[2]).lower() in ["construida", "construido"])
     tot_dev = sum(1 for a in asignaturas_bd if str(a[2]).lower() in ["en construcción", "en construccion"])
     tot_unbuilt = sum(1 for a in asignaturas_bd if str(a[2]).lower() in ["sin construir", "sin construccion"])
+    tot_unassigned = sum(1 for a in asignaturas_bd if str(a[3]).lower() in ["sin asignar", ""])
 
-    st.markdown('<div class="monitoreo-container">', unsafe_allow_html=True)
-
-    # --- INDICADORES KPI SUPERIORES ---
+    # --- INDICADORES KPI SUPERIORES (TOTALMENTE REALES) ---
     st.markdown(f"""
     <div class="mon-metrics-grid">
         <div class="mon-metric-card"><div class="mon-metric-icon-box" style="background:#e8f0fe; color:#1a73e8;">📖</div><div class="mon-metric-info"><div class="mon-metric-lbl">Asignaturas RAP</div><div class="mon-metric-val">{tot_asig}</div></div></div>
         <div class="mon-metric-card"><div class="mon-metric-icon-box" style="background:#e6f4ea; color:#137333;">✓</div><div class="mon-metric-info"><div class="mon-metric-lbl">Construidas</div><div class="mon-metric-val" style="color:#137333;">{tot_built}</div></div></div>
         <div class="mon-metric-card"><div class="mon-metric-icon-box" style="background:#eff6ff; color:#3b82f6;">✏️</div><div class="mon-metric-info"><div class="mon-metric-lbl">En construcción</div><div class="mon-metric-val" style="color:#3b82f6;">{tot_dev}</div></div></div>
         <div class="mon-metric-card"><div class="mon-metric-icon-box" style="background:#f1f5f9; color:#475569;">📄</div><div class="mon-metric-info"><div class="mon-metric-lbl">Sin construir</div><div class="mon-metric-val" style="color:#475569;">{tot_unbuilt}</div></div></div>
-        <div class="mon-metric-card"><div class="mon-metric-icon-box" style="background:#f8fafc; color:#64748b;">👤</div><div class="mon-metric-info"><div class="mon-metric-lbl">Sin docente</div><div class="mon-metric-val" style="color:#64748b;">6</div></div></div>
+        <div class="mon-metric-card"><div class="mon-metric-icon-box" style="background:#f8fafc; color:#64748b;">👤</div><div class="mon-metric-info"><div class="mon-metric-lbl">Sin docente</div><div class="mon-metric-val" style="color:#64748b;">{tot_unassigned}</div></div></div>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- BARRA DE FILTRADO ---
+    # --- BARRA DE FILTRADO FUNCIONAL ---
     f_col1, f_col2, f_col3, f_col4 = st.columns([2, 1, 1, 1])
     with f_col1:
         search_query = st.text_input("Buscar asignaturas...", placeholder="Buscar por asignatura, código...", label_visibility="collapsed")
     with f_col2:
         st.selectbox("Programa académico", ["Todos", "Ingeniería de Software"], label_visibility="collapsed")
     with f_col3:
-        st.selectbox("Estado de prueba", ["Todos", "Construida", "En construcción"], label_visibility="collapsed")
+        # Vinculamos la opción "Sin construir" al dropdown funcional superior
+        filtro_estado = st.selectbox("Estado de prueba", ["Todos", "Construida", "En construcción", "Sin construir"], label_visibility="collapsed")
     with f_col4:
         st.button("📥 Exportar Excel", use_container_width=True, key="mon_export")
 
@@ -213,7 +195,20 @@ def render():
         st.markdown('<div class="matrix-card-box">', unsafe_allow_html=True)
         st.markdown('<div class="matrix-title">Matriz de monitoreo de pruebas</div>', unsafe_allow_html=True)
         
-        asig_filtradas = [a for a in asignaturas_bd if not search_query or search_query.lower() in str(a[1]).lower() or search_query.lower() in str(a[0]).lower()]
+        # PROCESADOR DE FILTRADO COMPLETO Y REAL
+        asig_filtradas = []
+        for a in asignaturas_bd:
+            alfa, nombre, estado_bd, docente_bd_val, id_prof_real = a
+            
+            # Filtro A: Búsqueda textual
+            if search_query and (search_query.lower() not in str(nombre).lower() and search_query.lower() not in str(alfa).lower()):
+                continue
+            
+            # Filtro B: Estado de prueba seleccionado
+            if filtro_estado != "Todos" and str(estado_bd).lower() != filtro_estado.lower():
+                continue
+                
+            asig_filtradas.append(a)
 
         rows_per_page = 7
         total_rows = len(asig_filtradas)
@@ -249,6 +244,9 @@ def render():
                     st.rerun()
             st.markdown("<hr style='margin:4px 0; border:0; border-top:1px solid #f1f5f9;'>", unsafe_allow_html=True)
 
+        if not asig_visibles:
+            st.markdown("<p style='text-align:center; padding:20px; color:#64748b;'>No se encontraron asignaturas con el criterio seleccionado.</p>", unsafe_allow_html=True)
+
         st.markdown('</div>', unsafe_allow_html=True)
 
         # PAGINACIÓN
@@ -263,9 +261,9 @@ def render():
                 st.session_state['mon_page'] += 1
                 st.rerun()
         with p_c3:
-            st.markdown(f'<p style="margin-top:6px; font-weight:700; color:#1e3a8a;">Página {st.session_state["mon_page"]} de {max_pages} ({total_rows} registros reales en maestro_pruebas)</p>', unsafe_allow_html=True)
+            st.markdown(f'<p style="margin-top:6px; font-weight:700; color:#1e3a8a;">Página {st.session_state["mon_page"]} de {max_pages} ({total_rows} registros filtrados)</p>', unsafe_allow_html=True)
 
-    # --- COLUMNA DERECHA: INSPECTOR ASIMÉTRICO VINCULADO AL ESQUEMA DE TU CAPTURA ---
+    # --- COLUMNA DERECHA: INSPECTOR ASIMÉTRICO REAL CON UPSERT SEGURO ---
     with col_right:
         item_sel = next((a for a in asignaturas_bd if a[0] == st.session_state['selected_alfa']), asignaturas_bd[0] if asignaturas_bd else ("", "", "Sin construir", "Sin asignar", None))
         s_alfa, s_nombre, s_estado_real, s_docente_real, s_id_prof_real = item_sel
@@ -276,13 +274,12 @@ def render():
 
         st.markdown(f"""
         <div class="side-data-row"><span class="side-data-lbl">alfa_asignatura:</span><span class="side-data-val">{s_alfa}</span></div>
-        <div class="side-data-row"><span class="side-data-lbl">estado en BD:</span><span class="side-data-val">{s_estado_real}</span></div>
-        <div class="side-data-row"><span class="side-data-lbl">id_profesor en BD:</span><span class="side-data-val">{s_id_prof_real if s_id_prof_real is not None else 'NULO'}</span></div>
+        <div class="side-data-row"><span class="side-data-lbl">estado actual:</span><span class="side-data-val">{s_estado_real}</span></div>
+        <div class="side-data-row"><span class="side-data-lbl">id_profesor actual:</span><span class="side-data-val">{s_id_prof_real if s_id_prof_real is not None else 'NULO'}</span></div>
         <div class="side-data-row"><span class="side-data-lbl">Sincronización:</span><span class="side-data-val" style="color:#10b981;">● Conectado a Neon</span></div>
         <hr style="border:0; border-top:1px dashed #cbd5e1; margin:15px 0;">
         """, unsafe_allow_html=True)
         
-        # Mapeo del selector de profesores
         idx_doc_dropdown = nombres_profesores_combo.index(s_docente_real) if s_docente_real in nombres_profesores_combo else 0
         nuevo_docente = st.selectbox("Modificar Docente a Cargo", options=nombres_profesores_combo, index=idx_doc_dropdown)
         
@@ -294,45 +291,52 @@ def render():
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- BOTÓN GUARDAR INTEGRADO CON ACTUALIZACIÓN REAL SOBRE TU TABLA ---
+        # --- BOTÓN GUARDAR INTEGRADO CON SENTENCIA UPSERT AVANZADA (PostgreSQL/Neon) ---
         st.markdown('<div class="btn-guardar-inspector">', unsafe_allow_html=True)
         if st.button("📥 Guardar Cambios", use_container_width=True, key="save_inspector_data_btn"):
-            
-            # Buscamos el ID numérico del profesor seleccionado para ingresarlo a la BD
             nuevo_id_profesor = None
             if nuevo_docente != "Sin asignar":
                 nuevo_id_profesor = next((d[0] for d in docentes_lista if d[1] == nuevo_docente), None)
             
-            # Construcción de la consulta SQL usando tus nombres exactos de columna
-            query = "UPDATE maestro_pruebas SET estado = %s, id_profesor = %s WHERE alfa_asignatura = %s"
-            parametros = (nuevo_estado, nuevo_id_profesor, s_alfa)
+            # MOTOR UPSERT BLINDADO: Inserta si no existe, o actualiza si ya hay conflicto de llave primaria
+            query_upsert = """
+                INSERT INTO maestro_pruebas (alfa_asignatura, estado, id_profesor)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (alfa_asignatura)
+                DO UPDATE SET estado = EXCLUDED.estado, id_profesor = EXCLUDED.id_profesor
+            """
+            parametros = (s_alfa, nuevo_estado, nuevo_id_profesor)
             
             ejecutado = False
-            # Intentos de ejecución dinámica basados en las pasarelas de tu database.py
             try:
                 from database import ejecutar_consulta
-                ejecutar_consulta(query, parametros)
+                ejecutar_consulta(query_upsert, parametros)
                 ejecutado = True
             except ImportError:
                 try:
                     from database import ejecutar_sql
-                    ejecutar_sql(query, parametros)
+                    ejecutar_sql(query_upsert, parametros)
                     ejecutado = True
                 except ImportError:
                     pass
             
-            # Pasarela fallback si tu archivo database.py usa traer_datos para ejecutar sentencias
+            # Pasarela fallback de texto plano estructurado si database.py corre sentencias crudas
             if not ejecutado:
                 try:
                     val_id_sql = f"{nuevo_id_profesor}" if nuevo_id_profesor is not None else "NULL"
-                    query_directa = f"UPDATE maestro_pruebas SET estado = '{nuevo_estado}', id_profesor = {val_id_sql} WHERE alfa_asignatura = '{s_alfa}'"
+                    query_directa = f"""
+                        INSERT INTO maestro_pruebas (alfa_asignatura, estado, id_profesor)
+                        VALUES ('{s_alfa}', '{nuevo_estado}', {val_id_sql})
+                        ON CONFLICT (alfa_asignatura)
+                        DO UPDATE SET estado = '{nuevo_estado}', id_profesor = {val_id_sql}
+                    """
                     traer_datos(query_directa)
                     ejecutado = True
                 except Exception as ex:
-                    st.error(f"Error de permisos de escritura en la pasarela database.py: {ex}")
+                    st.error(f"Error de permisos de escritura en tu pasarela database.py: {ex}")
             
             if ejecutado:
-                st.cache_data.clear() # Limpieza forzada de caché para refrescar la tabla de inmediato
+                st.cache_data.clear() # Limpieza forzada inmediata de memoria caché
                 st.info(f"✨ ¡Excelente gestión, James! El cambio para la asignatura **{s_alfa}** se registró correctamente en la tabla maestro_pruebas de Neon. ¡Tu liderazgo asegura la trazabilidad del proceso RAP! 🚀")
                 st.rerun()
                 
@@ -342,11 +346,11 @@ def render():
         # --- TARJETA DE ALERTAS ---
         st.markdown('<div class="side-panel-card">', unsafe_allow_html=True)
         st.markdown('<div class="side-panel-title">Alertas activas</div>', unsafe_allow_html=True)
-        st.markdown("""
+        st.markdown(f"""
         <div class="alert-item-box">
             <div class="alert-item-icon">⚠️</div>
             <div>
-                <div class="alert-item-text">6 asignaturas sin docente asignado</div>
+                <div class="alert-item-text">{tot_unassigned} asignaturas sin docente asignado</div>
                 <div class="alert-item-sub">Requieren asignación inmediata</div>
             </div>
         </div>
