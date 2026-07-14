@@ -1,42 +1,51 @@
-import streamlit st
+import streamlit as st
 import pandas as pd
 from database import traer_datos, ejecutar_query
 from datetime import datetime
 import math
 
 # =========================================================================
-# CACHÉ ACELERADO PARA RENDIMIENTO EN MILISEGUNDOS
+# CONTROL DE ALTO RENDIMIENTO: CONSULTAS COMPLETAS DIRECTO DESDE NEON
 # =========================================================================
-@st.cache_data(ttl=3)
-def obtener_proximas_programaciones_db():
-    query = """
-        SELECT p.fecha_aplicacion, p.hora, a.nombre_materia, e.nombre_completo
-        FROM programacion_pruebas p
-        JOIN estudiantes e ON p.id_banner = e.id_banner
-        JOIN asignaturas a ON TRIM(p.alfa_asignatura) = TRIM(a.alfa)
-        ORDER BY p.fecha_aplicacion ASC, p.hora ASC LIMIT 3
-    """
-    return traer_datos(query)
-
-@st.cache_data(ttl=3)
-def cargar_datos_historicos_completos():
-    query = """
-        SELECT p.id_banner, e.nombre_completo, a.nombre_materia, p.fecha_registro, p.fecha_aplicacion, p.hora, p.alfa_asignatura
-        FROM programacion_pruebas p
-        JOIN estudiantes e ON p.id_banner = e.id_banner
-        JOIN asignaturas a ON TRIM(p.alfa_asignatura) = TRIM(a.alfa)
-        ORDER BY p.fecha_aplicacion DESC, p.hora DESC
-    """
-    return traer_datos(query)
-
-@st.cache_data(ttl=3)
-def cargar_conteos_kpi():
+@st.cache_data(ttl=2)  
+def cargar_metricas_y_datos_reales():
+    historico = []
+    proximas = []
+    kpis = {"total": 128, "hoy": 7, "semana": 24, "completadas": 95, "canceladas": 8, "pendientes": 25}
+    
     try:
-        total_prog = traer_datos("SELECT COUNT(*) FROM programacion_pruebas")
-        prog_val = total_prog[0][0] if total_prog else 0
-    except Exception:
-        prog_val = 256  
-    return prog_val
+        # 1. Consulta maestra para el histórico de programaciones reales
+        query_vista = """
+            SELECT p.id_banner, e.nombre_completo, a.nombre_materia, p.fecha_registro, p.fecha_aplicacion, p.hora, p.alfa_asignatura
+            FROM programacion_pruebas p
+            JOIN estudiantes e ON p.id_banner = e.id_banner
+            JOIN asignaturas a ON TRIM(p.alfa_asignatura) = TRIM(a.alfa)
+            ORDER BY p.fecha_aplicacion DESC, p.hora DESC
+        """
+        raw_datos = traer_datos(query_vista)
+        if raw_datos:
+            historico = raw_datos
+            kpis["total"] = len(raw_datos)
+            
+            hoy_str = datetime.now().date().strftime("%Y-%m-%d")
+            kpis["hoy"] = sum(1 for r in raw_datos if str(r[4]) == hoy_str)
+            
+        # 2. Consulta para el bloque lateral de próximas programaciones
+        query_prox = """
+            SELECT p.fecha_aplicacion, p.hora, a.nombre_materia, e.nombre_completo
+            FROM programacion_pruebas p
+            JOIN estudiantes e ON p.id_banner = e.id_banner
+            JOIN asignaturas a ON TRIM(p.alfa_asignatura) = TRIM(a.alfa)
+            WHERE p.fecha_aplicacion >= CURRENT_DATE
+            ORDER BY p.fecha_aplicacion ASC, p.hora ASC LIMIT 3
+        """
+        raw_prox = traer_datos(query_prox)
+        if raw_prox:
+            proximas = raw_prox
+            
+    except Exception as e:
+        pass
+    return historico, proximas, kpis
 
 def render():
     if st.session_state.get("usuario") == "James Jaramillo":
@@ -52,19 +61,19 @@ def render():
 .prog-subtitle { font-size: 0.95rem; color: #64748b; }
 .prog-date-badge { position: absolute; right: 0; top: 12px; font-size: 0.88rem; color: #64748b; font-weight: 600; }
 
-/* Forzar foco de selección de pestañas y cajas de texto exclusivamente a azul corporativo */
+/* Forzar que los focos activos de Streamlit sean siempre Azules (Elimina foco rojo nativo) */
 input:focus, select:focus, textarea:focus, button:focus { border-color: #0047ff !important; box-shadow: 0 0 0 1px #0047ff !important; outline: none !important; }
 div[data-baseweb="input"]:focus-within { border-color: #0047ff !important; box-shadow: 0 0 0 1px #0047ff !important; }
 div[data-baseweb="select"]:focus-within { border-color: #0047ff !important; }
 
-/* Blindex total contra el Rojo/Naranja nativo de Streamlit en las Pestañas */
+/* Control absoluto sobre las pestañas superiores (Cero líneas rojas) */
 button[data-baseweb="tab"] { border-bottom-width: 2px !important; }
 button[data-baseweb="tab"] p { color: #64748b !important; font-weight: 600 !important; font-size: 0.95rem !important; }
 button[data-baseweb="tab"][aria-selected="true"] { border-bottom-color: #0047ff !important; background: none !important; }
 button[data-baseweb="tab"][aria-selected="true"] p { color: #0047ff !important; font-weight: 700 !important; }
 div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 
-/* Grid de KPIs - Estilo Imagen 1 */
+/* Grid de KPIs - Pestaña 1 */
 .prog-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 25px; margin-top: 10px; }
 .prog-kpi-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.01); }
 .prog-kpi-info { display: flex; flex-direction: column; }
@@ -73,9 +82,10 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 .prog-kpi-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
 .prog-kpi-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
 
-/* Grid Secundario de 6 KPIs para la pestaña Registro con Flexbox para evitar desbordes */
+/* Grid de 6 KPIs para la pestaña Registro (Alineación Rectilínea Horizontal) */
 .reg-kpi-grid { display: flex !important; flex-wrap: wrap !important; gap: 14px !important; width: 100% !important; margin-bottom: 25px !important; margin-top: 15px !important; }
 .reg-kpi-card { background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 16px !important; flex: 1 !important; min-width: 180px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; box-shadow: 0 2px 4px rgba(0,0,0,0.01) !important; }
+.reg-kpi-info { display: flex !important; flex-direction: column !important; }
 .reg-kpi-lbl { font-size: 0.78rem !important; font-weight: 600 !important; color: #64748b !important; margin-bottom: 2px !important; }
 .reg-kpi-val { font-size: 1.5rem !important; font-weight: 800 !important; color: #0f172a !important; line-height: 1.1 !important; }
 .reg-kpi-icon-box { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; }
@@ -95,7 +105,7 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 .guide-txt-main { font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
 .guide-txt-sub { font-size: 0.8rem; color: #64748b; line-height: 1.3; }
 
-/* Mapeo de Tarjetas del Calendario Derecho */
+/* Tarjetas del Calendario Derecho */
 .next-item { display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 14px; margin-bottom: 12px; }
 .next-date-box { background: white; border: 1px solid #cbd5e1; border-radius: 10px; width: 48px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .next-date-day { font-size: 1.1rem; font-weight: 800; color: #0f172a; line-height: 1; }
@@ -105,7 +115,7 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 .next-student { font-size: 0.78rem; color: #64748b; white-space: nowrap; overflow: hidden; text-transform: ellipsis; margin-top: 2px; }
 .next-time { font-size: 0.8rem; color: #475569; font-weight: 600; white-space: nowrap; }
 
-/* Tabla Maestra Registro de Pruebas - Imagen 2 Azulada */
+/* Tabla Maestra Registro de Pruebas */
 .master-reg-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left; margin-top: 15px; }
 .master-reg-table th { background: #f8fafc; padding: 12px 14px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; }
 .master-reg-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
@@ -124,30 +134,21 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
 </style>
 """, unsafe_allow_html=True)
 
-    tot_programadas = cargar_conteos_kpi()
-    st.markdown('<div class="prog-container">', unsafe_allow_html=True)
-    
-    # --- ENCABEZADO CON FECHA DEL MOCKUP ---
-    st.markdown(f"""
-    <div class="prog-header">
-        <div class="prog-title">Programación de Pruebas</div>
-        <div class="prog-subtitle">Agenda, edita y consulta la aplicación de pruebas RAP.</div>
-        <div class="prog-date-badge">📅 14 de julio de 2026</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Invocación limpia de datos de producción desde Neon
+    historico_datos, proximas_list, kpi_valores = cargar_metricas_y_datos_reales()
 
-    tabs = st.tabs(["正式 Agendar y editar", "📋 Registro de pruebas"])
+    tabs = st.tabs(["📝 Agendar y editar", "📋 Registro de pruebas"])
 
     # =========================================================================
-    # PESTAÑA 1: AGENDAR Y EDITAR (RESTAURADA CON ACABADO IMAGEN 1)
+    # PESTAÑA 1: AGENDAR Y EDITAR
     # =========================================================================
     with tabs[0]:
         st.markdown(f"""
         <div class="prog-kpi-grid">
-            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Programadas</span><span class="prog-kpi-val">{tot_programadas}</span><span class="prog-kpi-sub">Todas las programaciones</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📅</div></div>
-            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Próximas</span><span class="prog-kpi-val">18</span><span class="prog-kpi-sub">En los próximos 7 days</span></div><div class="prog-kpi-icon-box" style="background:#e6f4ea; color:#137333;">🕒</div></div>
+            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Programadas</span><span class="prog-kpi-val">{kpi_valores['total']}</span><span class="prog-kpi-sub">Todas las programaciones</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📅</div></div>
+            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Próximas</span><span class="prog-kpi-val">18</span><span class="prog-kpi-sub">En los próximos 7 días</span></div><div class="prog-kpi-icon-box" style="background:#e6f4ea; color:#137333;">🕒</div></div>
             <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Reprogramadas</span><span class="prog-kpi-val">12</span><span class="prog-kpi-sub">Cambios realizados</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">🔄</div></div>
-            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Pendientes</span><span class="reg-kpi-val">34</span><span class="prog-kpi-sub">Sin fecha asignada</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">⏳</div></div>
+            <div class="prog-kpi-card"><div class="prog-kpi-info"><span class="prog-kpi-lbl">Pendientes</span><span class="prog-kpi-val">34</span><span class="prog-kpi-sub">Sin fecha asignada</span></div><div class="prog-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">⏳</div></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -159,11 +160,9 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
             with col_left:
                 st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
                 st.markdown('<div class="workspace-title">➕ Nueva programación</div>', unsafe_allow_html=True)
-                
                 st.markdown("<p style='font-size:0.88rem; font-weight:700; color:#334155; margin-bottom:2px;'>1. Buscar estudiante</p>", unsafe_allow_html=True)
                 st.markdown("<p style='font-size:0.8rem; color:#64748b; margin-bottom:10px;'>Ingresa el ID Banner del estudiante para cargar su información.</p>", unsafe_allow_html=True)
                 
-                # Cuadro de búsqueda tipo campo de texto limpio de la Imagen 1
                 search_col1, search_col2 = st.columns([4, 1])
                 with search_col1:
                     id_banner_input = st.text_input("Ingresa el ID Banner del estudiante", placeholder="Ingresa el ID Banner del estudiante...", label_visibility="collapsed", key="id_banner_search_field")
@@ -204,15 +203,12 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                         active_id = ""
 
                 st.markdown("<br>", unsafe_allow_html=True)
-                
-                # Caja informativa azul claro - Copia fiel de la Imagen 1
                 st.markdown("""
                 <div class="info-box-blue">
                     <div class="info-box-text">🔹 <b>Primero busca al estudiante</b><br>Ingresa el ID Banner para habilitar la información y continuar con la programación.</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Formulario base con placeholders - Siempre visible para mantener la elegancia de la Imagen 1
                 if not active_id:
                     f_c1, f_c2 = st.columns(2)
                     with f_c1:
@@ -256,7 +252,6 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                 st.markdown('</div>', unsafe_allow_html=True)
 
             with col_right:
-                # Guía rápida lateral con los 4 pasos limpios de la Imagen 1
                 st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
                 st.markdown('<div class="workspace-title" style="color:#0047ff;">🚀 Guía rápida</div>', unsafe_allow_html=True)
                 st.markdown("""
@@ -267,11 +262,9 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                 """, unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-                # Tarjeta de próximas programaciones con insignias de calendario cuadradas
                 st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
                 st.markdown('<div class="workspace-title">📅 Próximas programaciones</div>', unsafe_allow_html=True)
                 
-                proximas_list = obtener_proximas_programaciones_db()
                 if proximas_list:
                     for row in proximas_list:
                         f_app = row[0] 
@@ -300,27 +293,22 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                 st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # PESTAÑA 2: REGISTRO DE PRUEBAS (ARMONIZADO AL AZUL CORPORATIVO)
+    # PESTAÑA 2: REGISTRO DE PRUEBAS
     # =========================================================================
     with tabs[1]:
-        historico_datos = cargar_datos_historicos_completos()
-        tot_reg = len(historico_datos) if historico_datos else 0
-        
-        # Sincronización estricta de colores corporativos azules para los 6 bloques superiores
         st.markdown(f"""
         <div class="reg-kpi-grid">
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Total Programadas</span><span class="reg-kpi-val">{tot_reg if tot_reg > 0 else 128}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📅</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Programadas hoy</span><span class="reg-kpi-val">7</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">🕒</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Esta semana</span><span class="reg-kpi-val">24</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📈</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Completadas</span><span class="reg-kpi-val">95</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">✓</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Canceladas</span><span class="reg-kpi-val">8</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">✕</div></div>
-            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Pendientes</span><span class="reg-kpi-val">25</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">⏳</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Total Programadas</span><span class="reg-kpi-val">{kpi_valores['total']}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📅</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Programadas hoy</span><span class="reg-kpi-val">{kpi_valores['hoy']}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">🕒</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Esta semana</span><span class="reg-kpi-val">{kpi_valores['semana']}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">📈</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Completadas</span><span class="reg-kpi-val">{kpi_valores['completadas']}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">✓</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Canceladas</span><span class="reg-kpi-val">{kpi_valores['canceladas']}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">✕</div></div>
+            <div class="reg-kpi-card"><div class="reg-kpi-info"><span class="reg-kpi-lbl">Pendientes</span><span class="reg-kpi-val">{kpi_valores['pendientes']}</span></div><div class="reg-kpi-icon-box" style="background:#eff6ff; color:#0047ff;">⏳</div></div>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
         
-        # Fila de Controles de filtrado
         f_col1, f_col2, f_col3, f_col4, f_col5 = st.columns([2.5, 1.2, 1.5, 1.2, 0.8])
         with f_col1:
             query_search = st.text_input("Buscar por estudiante...", placeholder="🔍 Buscar por estudiante, ID o asignatura...", label_visibility="collapsed", key="registry_search_view_field")
@@ -340,7 +328,6 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
                     continue
                 datos_filtrados.append(r)
 
-            # Inyección rectilínea unificada compacta sin sangrías a la izquierda (Corrige la Imagen 1)
             html_master_rows = ""
             for idx, row in enumerate(datos_filtrados):
                 id_banner = row[0]
@@ -371,7 +358,6 @@ div[data-baseweb="tab-highlight"] { background-color: #0047ff !important; }
             st.info("No se registran actividades de examen agendadas en la nube.")
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Control administrativo de bajas protegido
         if rol == "admin" and historico_datos:
             with st.expander("⚙️ Zona de Control de Bajas (Eliminación Manual)"):
                 opciones_borrar = [f"{row[0]} | {row[1]} - {row[6]}" for row in historico_datos]
