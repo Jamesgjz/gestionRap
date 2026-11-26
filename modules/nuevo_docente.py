@@ -1,5 +1,5 @@
 import streamlit as st
-from database import traer_datos
+from database import DatabaseError, ejecutar_query, traer_datos
 
 def render():
     # --- BOTÓN DE RETORNO NATIVO ---
@@ -48,17 +48,11 @@ def render():
 </style>
 """, unsafe_allow_html=True)
 
-    # --- CONSULTA REAL A LA TABLA ASIGNATURAS (COLUMNA REAL: nombre_materia) ---
-    lista_asignaturas = []
-    try:
-        db_asig = traer_datos("SELECT nombre_materia FROM asignaturas")
-        if db_asig:
-            lista_asignaturas = [str(item[0]).strip() for item in db_asig if item[0]]
-    except Exception as e:
-        st.sidebar.warning(f"Aviso de carga de asignaturas: {e}")
-    
+    version = st.session_state.setdefault("form_version", 0)
+    rows = traer_datos("SELECT DISTINCT nombre_materia FROM asignaturas ORDER BY nombre_materia")
+    lista_asignaturas = [nombre.strip() for (nombre,) in rows if nombre]
     if not lista_asignaturas:
-        lista_asignaturas = ["Introducción a la Ingeniería de Software", "Desarrollo de Software I", "Estructuras de Datos y Algoritmos"]
+        st.warning("No hay asignaturas disponibles en el catálogo.")
 
     st.markdown('<div class="form-container">', unsafe_allow_html=True)
     st.markdown('<div class="form-title">Nuevo docente evaluador</div>', unsafe_allow_html=True)
@@ -73,46 +67,61 @@ def render():
         g_col1, g_col2 = st.columns(2)
         with g_col1:
             # Campo Real BD: nombre_completo
-            nombre_completo = st.text_input("Nombre completo del docente *", placeholder="Ej. María Fernanda López Gómez")
+            nombre_completo = st.text_input("Nombre completo del docente *", placeholder="Ej. María Fernanda López Gómez", key=f"teacher_nombre_completo_{version}")
         with g_col2:
             # Programa por defecto: Ingeniería de Software
-            programa = st.selectbox("Programa / Área *", ["Ingeniería de Software", "Ingeniería de Sistemas", "Administración de Empresas"])
+            programa = st.selectbox("Programa / Área *", ["Ingeniería de Software", "Ingeniería de Sistemas", "Administración de Empresas"], key=f"teacher_programa_{version}")
 
         # --- 2. ASIGNACIÓN ACADÉMICA (Mapeado a horas_dedicacion y asignaturas) ---
         st.markdown('<div class="form-section-title">2. Asignación académica</div>', unsafe_allow_html=True)
         
         a_col1, a_col2 = st.columns(2)
         with a_col1:
-            asig_seleccionadas = st.multiselect("Asignaturas RAP a dictar *", options=lista_asignaturas, placeholder="Selecciona los cursos")
+            asig_seleccionadas = st.multiselect("Asignaturas RAP a dictar *", options=lista_asignaturas, placeholder="Selecciona los cursos", key=f"teacher_asig_seleccionadas_{version}")
         with a_col2:
             # Campo Real BD: horas_dedicacion
-            horas_dedicacion = st.number_input("Horas de dedicación asignadas *", min_value=0, max_value=100, value=4, step=1)
+            horas_dedicacion = st.number_input("Horas de dedicación asignadas *", min_value=0, max_value=100, value=4, step=1, key=f"teacher_horas_dedicacion_{version}")
 
         # --- 3. OBSERVACIONES ---
         st.markdown('<div class="form-section-title">3. Notas del proceso</div>', unsafe_allow_html=True)
-        observaciones = st.text_area("Observaciones adicionales", max_chars=500, placeholder="Anotaciones de soporte académico...")
+        observaciones = st.text_area("Observaciones adicionales", max_chars=500, placeholder="Anotaciones de soporte académico...", key=f"teacher_observaciones_{version}")
 
         # --- ACCIONES ---
         st.markdown("<br>", unsafe_allow_html=True)
         b_col1, b_col2, b_col3 = st.columns([1, 0.8, 2])
         with b_col1:
             st.markdown('<div class="btn-guardar">', unsafe_allow_html=True)
-            btn_save = st.button("📥 Guardar docente", use_container_width=True)
+            btn_save = st.button("📥 Guardar docente", width="stretch")
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col2:
             st.markdown('<div class="btn-cancelar">', unsafe_allow_html=True)
-            if st.button("Cancelar", use_container_width=True):
+            if st.button("Cancelar", width="stretch"):
                 st.session_state['reg_vista'] = "docentes"
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col3:
-            st.markdown('<p style="margin-top:12px;"><a href="#" style="color:#3b82f6; font-weight:700; text-decoration:none;">Guardar y crear otro</a></p>', unsafe_allow_html=True)
+            btn_another = st.button("Guardar y crear otro", width="stretch")
 
-        if btn_save:
-            if nombre_completo and asig_seleccionadas:
-                st.success(f"🎉 ¡Docente '{nombre_completo}' listo con {horas_dedicacion} hrs de dedicación!")
+        if btn_save or btn_another:
+            if not nombre_completo.strip() or not asig_seleccionadas:
+                st.warning("Completa los campos obligatorios.")
             else:
-                st.error("❌ Por favor completa los campos requeridos (*)")
+                try:
+                    ejecutar_query(
+                        """INSERT INTO profesores (nombre_completo, programa, asignaturas, horas_dedicacion, observaciones)
+                           VALUES (%s, %s, %s, %s, %s)""",
+                        (nombre_completo.strip(), programa, ", ".join(asig_seleccionadas),
+                         horas_dedicacion, observaciones.strip()),
+                    )
+                except DatabaseError:
+                    st.error("No se pudo guardar el docente. Revisa los datos e intenta de nuevo.")
+                else:
+                    st.session_state["registro_guardado"] = "Se guardó el docente."
+                    if btn_another:
+                        st.session_state["form_version"] += 1
+                    else:
+                        st.session_state["reg_vista"] = "docentes"
+                    st.rerun()
 
     # --- BARRA LATERAL EN VIVO (CERO SANGRIAS PARA DESPLEGAR EL HTML) ---
     with col_sum:

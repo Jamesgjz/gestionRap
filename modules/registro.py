@@ -1,38 +1,14 @@
 import streamlit as st
 from database import traer_datos
-import os
-import sys
-import importlib.util
+from html import escape
+from importlib import import_module
+
+
+def ir_a(vista):
+    st.session_state["reg_vista"] = vista
+
 
 def render():
-    # --- CARGA DINÁMICA CON RE-INJECTION CONTROLADA (EVITA ERRORES DE RELOAD) ---
-    dir_actual = os.path.dirname(os.path.abspath(__file__))
-    
-    def cargar_modulo_por_archivo(nombre_modulo, nombre_archivo):
-        ruta_completa = os.path.join(dir_actual, nombre_archivo)
-        if not os.path.exists(ruta_completa):
-            st.error(f"❌ No se encontró el archivo '{nombre_archivo}' en la ruta: {dir_actual}.")
-            st.stop()
-        
-        # Si el módulo ya existe, re-ejecutamos el código sobre el mismo objeto para actualizarlo sin romper Streamlit
-        if nombre_modulo in sys.modules:
-            spec = importlib.util.spec_from_file_location(nombre_modulo, ruta_completa)
-            modulo_existente = sys.modules[nombre_modulo]
-            spec.loader.exec_module(modulo_existente)  # Re-ejecución limpia en caliente
-            return modulo_existente
-            
-        spec = importlib.util.spec_from_file_location(nombre_modulo, ruta_completa)
-        modulo = importlib.util.module_from_spec(spec)
-        sys.modules[nombre_modulo] = modulo  # Registro clave en el sistema de Python
-        spec.loader.exec_module(modulo)
-        return modulo
-
-    # Carga dinámica optimizada 
-    gestion_docentes = cargar_modulo_por_archivo("gestion_docentes", "gestion_docentes.py")
-    gestion_estudiantes = cargar_modulo_por_archivo("gestion_estudiantes", "gestion_estudiantes.py")
-    vista_maestra = cargar_modulo_por_archivo("vista_maestra", "vista_maestra.py")
-    nuevo_docente = cargar_modulo_por_archivo("nuevo_docente", "nuevo_docente.py")
-
     # --- CSS DE ALTA FIDELIDAD ---
     st.markdown("""
 <style>
@@ -84,22 +60,22 @@ def render():
     if 'reg_vista' not in st.session_state:
         st.session_state['reg_vista'] = "dashboard"
 
+    if message := st.session_state.pop("registro_guardado", None):
+        st.success(message)
+
     # --- ENRUTADOR INTERNO RAP ---
     if st.session_state['reg_vista'] == "dashboard":
-        tot_est = tot_prof = tot_pend = tot_asig = 0
+        tot_est, tot_prof, tot_pend, tot_asig = traer_datos("""
+            SELECT (SELECT COUNT(*) FROM estudiantes),
+                   (SELECT COUNT(*) FROM profesores),
+                   (SELECT COUNT(*) FROM maestro_pruebas WHERE lower(trim(estado)) IN ('en construcción', 'en construccion')),
+                   (SELECT COUNT(*) FROM asignaturas)
+        """)[0]
         actividades = []
-        try:
-            db_est = traer_datos("SELECT COUNT(*) FROM estudiantes")
-            if db_est: tot_est = db_est[0][0]
-            db_prof = traer_datos("SELECT COUNT(*) FROM profesores")
-            if db_prof: tot_prof = db_prof[0][0]
-            db_pend = traer_datos("SELECT COUNT(*) FROM estado_pruebas")
-            if db_pend: tot_pend = db_pend[0][0]
-            db_asig = traer_datos("SELECT COUNT(*) FROM asignaturas")
-            if db_asig: tot_asig = db_asig[0][0]
-            actividades = traer_datos("SELECT tipo, fecha, descripcion FROM historial_actividad ORDER BY fecha DESC LIMIT 3")
-        except Exception as db_error:
-            st.sidebar.error(f"Aviso de Base de Datos: {db_error}")
+        if traer_datos("SELECT to_regclass('historial_actividad')")[0][0]:
+            actividades = traer_datos(
+                "SELECT tipo, fecha, descripcion FROM historial_actividad ORDER BY fecha DESC LIMIT 3"
+            )
 
         st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 30px;">Gestión de Registros</h1>', unsafe_allow_html=True)
@@ -107,19 +83,13 @@ def render():
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown('<div class="action-card"><div class="card-icon">🎓</div><div class="card-title">Docentes evaluadores</div><div class="card-desc">Registra, actualiza y gestiona los docentes que participan en el proceso RAP.</div></div>', unsafe_allow_html=True)
-            if st.button("Gestionar docentes", use_container_width=True, key="nav_doc_btn"):
-                st.session_state['reg_vista'] = "docentes"
-                st.rerun()
+            st.button("Gestionar docentes", width="stretch", key="nav_doc_btn", on_click=ir_a, args=("docentes",))
         with col2:
             st.markdown('<div class="action-card"><div class="card-icon">👤</div><div class="card-title">Estudiantes</div><div class="card-desc">Registra, actualiza y gestiona los estudiantes del proceso RAP y consulta su estado de aplicación.</div></div>', unsafe_allow_html=True)
-            if st.button("Gestionar estudiantes", use_container_width=True, key="nav_est_btn"):
-                st.session_state['reg_vista'] = "estudiantes"
-                st.rerun()
+            st.button("Gestionar estudiantes", width="stretch", key="nav_est_btn", on_click=ir_a, args=("estudiantes",))
         with col3:
             st.markdown('<div class="action-card"><div class="card-icon">👁️</div><div class="card-title">Vista maestra</div><div class="card-desc">Consulta el estado de aplicación por estudiante, asignaturas y resultados del proceso RAP.</div></div>', unsafe_allow_html=True)
-            if st.button("Abrir vista maestra", use_container_width=True, key="nav_mae_btn"):
-                st.session_state['reg_vista'] = "maestra"
-                st.rerun()
+            st.button("Abrir vista maestra", width="stretch", key="nav_mae_btn", on_click=ir_a, args=("maestra",))
 
         # Métricas
         st.markdown(f"""<div class="metrics-grid">
@@ -133,8 +103,8 @@ def render():
         html_timeline = ""
         if actividades:
             for tipo, fecha, desc in actividades:
-                color = "#00875a" if "estudiante" in tipo.lower() else "#0047ff"
-                html_timeline += f'<div class="timeline-item"><div class="timeline-dot" style="background:{color};"></div><div class="timeline-content"><b>{tipo}</b><br><small style="color:#64748b;">{fecha}</small><br>{desc}</div></div>'
+                color = "#00875a" if "estudiante" in str(tipo).lower() else "#0047ff"
+                html_timeline += f'<div class="timeline-item"><div class="timeline-dot" style="background:{color};"></div><div class="timeline-content"><b>{escape(str(tipo))}</b><br><small style="color:#64748b;">{escape(str(fecha))}</small><br>{escape(str(desc))}</div></div>'
         else:
             html_timeline = "<p style='color:#64748b; font-size:1.1rem;'>No hay actividad reciente registrada en la base de datos.</p>"
 
@@ -143,18 +113,13 @@ def render():
                 <div class="panel-card-title">Actividad reciente</div>
                 <div class="timeline-wrapper"><div class="timeline-line"></div>{html_timeline}</div>
             </div>
-            <div class="card-box">
-                <div class="panel-card-title">Accesos rápidos</div>
-                <div class="acceso-rapido-item">✅ Validar documentos de estudiantes</div>
-                <div class="acceso-rapido-item">📅 Programar prueba por asignatura</div>
-            </div>
         </div></div>""", unsafe_allow_html=True)
 
-    elif st.session_state['reg_vista'] == "docentes":
-        gestion_docentes.render()
-    elif st.session_state['reg_vista'] == "estudiantes":
-        gestion_estudiantes.render()
-    elif st.session_state['reg_vista'] == "maestra":
-        vista_maestra.render()
-    elif st.session_state['reg_vista'] == "nuevo_docente":
-        nuevo_docente.render()
+    else:
+        module = {
+            "docentes": "gestion_docentes",
+            "estudiantes": "gestion_estudiantes",
+            "maestra": "vista_maestra",
+            "nuevo_docente": "nuevo_docente",
+        }[st.session_state["reg_vista"]]
+        import_module(f"modules.{module}").render()

@@ -8,16 +8,16 @@ def render():
     st.info("Seleccione un indicador del menú desplegable para evaluar el rendimiento del proceso en tiempo real.")
 
     # --- LISTA DESPLEGABLE DE KPIs ---
-    kpi_seleccionado = st.selectbox(
-        "🎯 Seleccione el KPI a visualizar:",
-        [
-            "1. Estado General de las Pruebas (Avance de Construcción)",
-            "2. Productividad de Docentes (Pruebas Construidas)",
-            "3. Cobertura: Asignaturas Solicitadas vs. Programadas",
-            "4. Control de Asistencia a Pruebas Programadas",
-            "5. Rendimiento Académico: Tasa de Aprobación (Sugerido)"
-        ]
-    )
+    indicadores = [
+        "1. Estado General de las Pruebas (Avance de Construcción)",
+        "2. Productividad de Docentes (Pruebas Construidas)",
+        "3. Cobertura: Asignaturas Solicitadas vs. Programadas",
+        "4. Control de Asistencia a Pruebas Programadas",
+        "5. Rendimiento Académico: Tasa de Aprobación",
+    ]
+    if st.session_state.get("rol") != "admin":
+        indicadores.pop(1)
+    kpi_seleccionado = st.selectbox("Seleccione el KPI a visualizar", indicadores)
 
     st.divider()
 
@@ -61,11 +61,11 @@ def render():
                               "Sin construir": "#dc3545"
                           },
                           hole=0.4, title="Distribución Porcentual")
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, width="stretch")
             
         with col2:
             st.markdown("#### Resumen Numérico")
-            st.dataframe(df_kpi1, hide_index=True, use_container_width=True)
+            st.dataframe(df_kpi1, hide_index=True, width="stretch")
             total_pruebas = df_kpi1["Cantidad"].sum()
             st.metric("Total Banco de Pruebas", f"{total_pruebas} Materias")
 
@@ -80,17 +80,14 @@ def render():
         query = """
             SELECT p.nombre_completo, COUNT(m.alfa_asignatura) as total
             FROM profesores p
-            LEFT JOIN maestro_pruebas m ON p.id_professor = m.id_profesor_programacion_pruebas
+            JOIN maestro_pruebas m ON m.id_profesor::text = COALESCE(
+                to_jsonb(p)->>'id_professor', to_jsonb(p)->>'id_profesor', to_jsonb(p)->>'id'
+            )
             WHERE m.estado = 'Construida'
             GROUP BY p.nombre_completo
             ORDER BY total DESC
         """
-        # Nota: Ajusté provisionalmente el JOIN según las columnas comunes de tus capturas. 
-        # Si arroja vacío o no encuentra relación, mostramos el aviso preventivo.
-        try:
-            datos = traer_datos(query)
-        except:
-            datos = None
+        datos = traer_datos(query)
 
         if datos:
             df_kpi2 = pd.DataFrame(datos, columns=["Docente", "Pruebas Listas"])
@@ -98,8 +95,8 @@ def render():
             fig2 = px.bar(df_kpi2, x="Docente", y="Pruebas Listas", 
                           text="Pruebas Listas", title="Ranking de Construcción",
                           color_discrete_sequence=["#0056b3"])
-            st.plotly_chart(fig2, use_container_width=True)
-            st.dataframe(df_kpi2, hide_index=True, use_container_width=True)
+            st.plotly_chart(fig2, width="stretch")
+            st.dataframe(df_kpi2, hide_index=True, width="stretch")
         else:
             st.warning("⚠️ Sin resultados acumulados. Actualmente no hay pruebas asociadas a docentes que hayan cambiado al estado de 'Construida'.")
 
@@ -131,10 +128,10 @@ def render():
         with col1:
             fig3 = px.bar(df_kpi3, x="Métrica", y="Cantidad", color="Métrica",
                           text="Cantidad", color_discrete_sequence=["#17a2b8", "#6c757d"])
-            st.plotly_chart(fig3, use_container_width=True)
+            st.plotly_chart(fig3, width="stretch")
         with col2:
             st.markdown("#### Brecha de Cobertura")
-            st.dataframe(df_kpi3, hide_index=True, use_container_width=True)
+            st.dataframe(df_kpi3, hide_index=True, width="stretch")
             porcentaje_cobertura = int((cant_programadas / cant_solicitadas * 100)) if cant_solicitadas > 0 else 0
             st.metric("Índice de Cumplimiento", f"{porcentaje_cobertura}%")
 
@@ -162,10 +159,10 @@ def render():
             fig4 = px.pie(df_kpi4, values="Estudiantes", names="Condición", 
                           color="Condición", color_discrete_map={"Asistió (SÍ)": "#20c997", "No Asistió (NO)": "#6c757d"},
                           title="Asistencia General")
-            st.plotly_chart(fig4, use_container_width=True)
+            st.plotly_chart(fig4, width="stretch")
         with col2:
             st.markdown("#### Tabla de Control")
-            st.dataframe(df_kpi4, hide_index=True, use_container_width=True)
+            st.dataframe(df_kpi4, hide_index=True, width="stretch")
             total_convocados = df_kpi4["Estudiantes"].sum()
             st.metric("Total Convocados Evaluados", f"{total_convocados} alumnos")
 
@@ -191,10 +188,10 @@ def render():
         with col1:
             fig5 = px.bar(df_kpi5, x="Dictamen", y="Casos", color="Dictamen",
                           text="Casos", color_discrete_map={"APROBÓ": "#28a745", "REPROBÓ": "#dc3545"})
-            st.plotly_chart(fig5, use_container_width=True)
+            st.plotly_chart(fig5, width="stretch")
         with col2:
             st.markdown("#### Histórico de Notas")
-            st.dataframe(df_kpi5, hide_index=True, use_container_width=True)
+            st.dataframe(df_kpi5, hide_index=True, width="stretch")
             total_presentados = df_kpi5["Casos"].sum()
             aprobados = resultados_base["APROBÓ"]
             

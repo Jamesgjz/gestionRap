@@ -1,6 +1,7 @@
-streamlit
+streamlit[auth]>=1.67,<2
 psycopg2-binary
 pandas
 python-dotenv
 plotly
-streamlit-cookies-controller
+openpyxl
+tzdata
