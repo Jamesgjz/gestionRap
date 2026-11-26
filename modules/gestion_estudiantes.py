@@ -1,5 +1,7 @@
+from html import escape
+
 import streamlit as st
-from database import traer_datos
+from database import DatabaseError, ejecutar_query, traer_datos
 
 def render():
     # --- BOTÓN DE RETORNO NATIVO ---
@@ -75,26 +77,15 @@ div[data-baseweb="select"]:focus-within,
 </style>
 """, unsafe_allow_html=True)
 
-    # --- EXTRACCIÓN DINÁMICA DE ASIGNATURAS REALES ---
-    lista_asignaturas = []
-    try:
-        db_asig = traer_datos("SELECT alfa, nombre_materia FROM asignaturas")
-        if db_asig:
-            lista_asignaturas = [f"{str(item[0]).strip()} - {str(item[1]).strip()}" for item in db_asig if item[0] and item[1]]
-    except Exception as e:
-        st.sidebar.warning(f"Aviso de sincronización: {e}")
-    
+    version = st.session_state.setdefault("form_version", 0)
+    rows = traer_datos("SELECT DISTINCT alfa, nombre_materia FROM asignaturas ORDER BY alfa, nombre_materia")
+    lista_asignaturas = [f"{alfa.strip()} - {nombre.strip()}" for alfa, nombre in rows if alfa and nombre]
     if not lista_asignaturas:
-        lista_asignaturas = [
-            "ISOF V003 - Introducción a la Ingeniería de Software",
-            "ISOF V013 - Desarrollo de Software I",
-            "ISOF V023 - Estructuras de Datos y Algoritmos",
-            "ISOF V033 - Análisis y Diseño de Sistemas"
-        ]
+        st.warning("No hay asignaturas disponibles en el catálogo.")
 
     st.markdown('<div class="form-container">', unsafe_allow_html=True)
-    st.markdown('<div class="form-title">Nuevo estudiante</div>', unsafe_allow_html=True)
-    st.markdown('<div class="form-subtitle">Formulario oficial parametrizado según las columnas de la tabla estudiantes de la base de datos.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="form-title">Nuevo participante</div>', unsafe_allow_html=True)
+    st.markdown('<div class="form-subtitle">Vincula al participante con las asignaturas que evaluará en el proceso RAP.</div>', unsafe_allow_html=True)
 
     col_form, col_sum = st.columns([2.2, 1])
 
@@ -104,42 +95,55 @@ div[data-baseweb="select"]:focus-within,
         
         g_col1, g_col2 = st.columns(2)
         with g_col1:
-            id_banner = st.text_input("ID Banner (*id_banner) *", placeholder="Ej. 90012345")
-            estado_matriz = st.selectbox("Estado de matrícula (*estado_matriz) *", ["Matriculado", "No matriculado"])
+            id_banner = st.text_input("ID Banner (*id_banner) *", placeholder="Ej. 90012345", key=f"student_id_banner_{version}")
+            estado_matriz = st.selectbox("Estado de matrícula (*estado_matriz) *", ["Matriculado", "No matriculado"], key=f"student_estado_matriz_{version}")
         with g_col2:
-            nombre_completo = st.text_input("Nombre completo del estudiante *", placeholder="Ej. Alba Lucía Pinzón Gallego")
+            nombre_completo = st.text_input("Nombre completo del participante *", placeholder="Ej. Alba Lucía Pinzón Gallego", key=f"student_nombre_completo_{version}")
 
         # --- 2. VINCULACIÓN CURRICULAR ---
         st.markdown('<div class="form-section-title">2. Vinculación curricular</div>', unsafe_allow_html=True)
-        asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=lista_asignaturas, placeholder="Selecciona los códigos alfanuméricos")
+        asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=lista_asignaturas, placeholder="Selecciona los códigos alfanuméricos", key=f"student_asig_seleccionadas_{version}")
 
         # --- 3. OBSERVACIONES ---
-        st.markdown('<div class="form-section-title">3. Observaciones del estudiante</div>', unsafe_allow_html=True)
-        observaciones = st.text_area("Notas adicionales (*observaciones)", max_chars=500, placeholder="Escribe apoyos requeridos o novedades académicas...")
+        st.markdown('<div class="form-section-title">3. Observaciones del participante</div>', unsafe_allow_html=True)
+        observaciones = st.text_area("Notas adicionales (*observaciones)", max_chars=500, placeholder="Escribe apoyos requeridos o novedades académicas...", key=f"student_observaciones_{version}")
 
         # --- BOTONERA DE ACCIÓN ---
         st.markdown("<br>", unsafe_allow_html=True)
         b_col1, b_col2, b_col3 = st.columns([1, 0.8, 2])
         with b_col1:
             st.markdown('<div class="btn-guardar">', unsafe_allow_html=True)
-            btn_save = st.button("📥 Guardar estudiante", use_container_width=True)
+            btn_save = st.button("📥 Guardar participante", width="stretch")
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col2:
             st.markdown('<div class="btn-cancelar">', unsafe_allow_html=True)
-            if st.button("Cancelar", use_container_width=True):
+            if st.button("Cancelar", width="stretch"):
                 st.session_state['reg_vista'] = "dashboard"
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col3:
-            st.markdown('<p style="margin-top:12px;"><a href="#" style="color:#3b82f6; font-weight:700; text-decoration:none;">Guardar y crear otro</a></p>', unsafe_allow_html=True)
+            btn_another = st.button("Guardar y crear otro", width="stretch")
 
-        if btn_save:
-            if nombre_completo and id_banner and asig_seleccionadas:
-                codigos_alfa = [string.split(" - ")[0] for string in asig_seleccionadas]
-                alfa_cadena = ", ".join(codigos_alfa)
-                st.info(f"📘 Estudiante estructurado para inserción en Neon. Cursos: {alfa_cadena}")
+        if btn_save or btn_another:
+            if not nombre_completo.strip() or not asig_seleccionadas or not (id_banner.strip().isascii() and id_banner.strip().isdecimal() and len(id_banner.strip()) <= 18):
+                st.warning("Completa los campos obligatorios e ingresa un ID Banner válido.")
             else:
-                st.warning("⚠️ Por favor completa los campos obligatorios antes de guardar (*)")
+                try:
+                    ejecutar_query(
+                        """INSERT INTO estudiantes (id_banner, nombre_completo, estado_matriz, alfa_asignatura, observaciones)
+                           VALUES (%s, %s, %s, %s, %s)""",
+                        (int(id_banner.strip()), nombre_completo.strip(), estado_matriz,
+                         ", ".join(item.split(" - ", 1)[0] for item in asig_seleccionadas), observaciones.strip()),
+                    )
+                except DatabaseError:
+                    st.error("No se pudo guardar el participante. Revisa los datos e intenta de nuevo.")
+                else:
+                    st.session_state["registro_guardado"] = "Se guardó el participante."
+                    if btn_another:
+                        st.session_state["form_version"] += 1
+                    else:
+                        st.session_state["reg_vista"] = "maestra"
+                    st.rerun()
 
     # --- BARRA LATERAL EN VIVO (CERO SANGRIAS) ---
     with col_sum:
@@ -147,7 +151,7 @@ div[data-baseweb="select"]:focus-within,
         
         html_sum_box = '<div class="summary-box">'
         html_sum_box += '<div class="summary-title">Resumen de registro</div>'
-        html_sum_box += f'<div class="summary-item"><div class="summary-icon">🆔</div><div class="summary-details"><span class="summary-lbl">ID Banner asignado</span><span class="summary-val">{id_banner if id_banner else "—"}</span></div></div>'
+        html_sum_box += f'<div class="summary-item"><div class="summary-icon">🆔</div><div class="summary-details"><span class="summary-lbl">ID Banner asignado</span><span class="summary-val">{escape(id_banner) if id_banner else "—"}</span></div></div>'
         html_sum_box += f'<div class="summary-item"><div class="summary-icon">✓</div><div class="summary-details"><span class="summary-lbl">Estado en matriz</span><span><b class="badge-est" style="{badge_style}">{estado_matriz}</b></span></div></div>'
         html_sum_box += f'<div class="summary-item"><div class="summary-icon">📚</div><div class="summary-details"><span class="summary-lbl">Asignaturas de la BD</span><span class="summary-val">{len(asig_seleccionadas)} seleccionadas</span></div></div>'
         html_sum_box += '<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:20px 0;">'
