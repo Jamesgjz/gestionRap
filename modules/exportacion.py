@@ -22,3 +22,18 @@ def crear_excel(headers, rows):
     output = BytesIO()
     workbook.save(output)
     return output.getvalue()
+
+
+def descarga_autorizada(generar):
+    import streamlit as st
+
+    from web_auth import COOKIE_NAME, cuentas, sesiones
+
+    token = st.context.cookies.get(COOKIE_NAME)
+
+    def descargar():
+        if sesiones.validar(token, cuentas()) is None:
+            raise PermissionError("La sesión terminó. Vuelve a iniciar sesión.")
+        return generar()
+
+    return descargar

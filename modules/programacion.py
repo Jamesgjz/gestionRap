@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from database import connection_pool, ejecutar_query, leer, traer_datos, traer_pagina
-from modules.exportacion import crear_excel
+from modules.exportacion import crear_excel, descarga_autorizada
 from modules.ui import encabezado, panel, tabla_con_estados
 
 
@@ -172,7 +172,7 @@ def historico(hoy, *, gestionar=False):
             return crear_excel(COLUMNAS, (fila[:8] for fila in filas_excel))
 
         st.download_button(
-            "Exportar Excel", descargar, "programacion.xlsx",
+            "Exportar Excel", descarga_autorizada(descargar), "programacion.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", on_click="ignore",
         )
     else:

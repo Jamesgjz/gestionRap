@@ -6,10 +6,7 @@ import streamlit as st
 from database import traer_datos, traer_pagina
 from errors import DatabaseError
 from modules.ui import encabezado, tabla_con_estados
-
-
-def volver_a_registros():
-    st.session_state["reg_vista"] = "dashboard"
+from rutas import enlace
 
 
 def codigos(texto):
@@ -40,7 +37,7 @@ def catalogo_y_estados():
 
 
 def render():
-    st.button("← Volver a registros", on_click=volver_a_registros)
+    enlace("registro", label="← Volver a registros")
     encabezado("Vista maestra de asignaturas por participante", "Busca participantes y consulta el estado de sus pruebas.")
 
     buscar, compacta, cantidad = st.columns([1.5, 1.2, 1])

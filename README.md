@@ -20,7 +20,7 @@ El asistente pide la contraseña sin mostrarla y devuelve un bloque TOML con su 
 
 Agrega un bloque por usuario. El rol `admin` gestiona los registros y las evaluaciones. El rol `consulta_academica` puede consultar y exportar estados de pruebas, programaciones y resultados. El rol `consulta` se limita al Dashboard. Los Excel de resultados pueden incluir nombres, IDs y notas. Crea una cuenta individual por persona autorizada, usando `--rol consulta_academica` en el comando. Las vistas de consulta carecen de acciones de edición y las escrituras desde la aplicación web requieren el rol `admin`. Para cambiar una contraseña ejecuta el comando otra vez y reemplaza su bloque. Para retirar el acceso, quita el bloque del usuario. Agrega al menos un administrador antes de integrar los cambios a la rama desplegada.
 
-Las sesiones expiran tras 30 minutos sin actividad o 8 horas desde el inicio. Recargar la página puede requerir entrar de nuevo. Los intentos de acceso se limitan en memoria por proceso y cuenta. Publica la app mediante HTTPS y usa contraseñas nuevas y exclusivas para Gestión RAP.
+Las sesiones expiran tras 30 minutos sin actividad o 8 horas desde el inicio. La sesión se comparte entre las pestañas del mismo perfil de navegador. El menú permite abrir cada sección en otra pestaña con el icono ↗. Un reinicio del servidor requiere iniciar sesión de nuevo. Los intentos de acceso se limitan en memoria por proceso y cuenta. Publica la app mediante HTTPS y usa contraseñas nuevas y exclusivas para Gestión RAP.
 
 [Administrar secretos en Streamlit Community Cloud](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app/app-settings)
 
