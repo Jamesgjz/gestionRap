@@ -6,6 +6,8 @@ Aplicación Streamlit para registrar estudiantes, gestionar docentes, programar 
 
 Instala Python 3.12, ejecuta `python -m pip install -r requirements.txt` y luego `python -m streamlit run main.py`.
 
+En desarrollo, puedes activar la recarga automática con `python -m streamlit run main.py --server.fileWatcherType=auto`.
+
 ### Cuentas de acceso
 
 Gestión RAP valida cuentas administradas desde los secretos de Streamlit. Desde una terminal interactiva, crea tu primera cuenta:

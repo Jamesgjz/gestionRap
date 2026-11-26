@@ -17,3 +17,7 @@ backgroundColor = "#031430"
 secondaryBackgroundColor = "#122847"
 textColor = "#F3F7FF"
 borderColor = "#2B4263"
+
+[server]
+# Las actualizaciones se aplican mediante un despliegue, sin recargar módulos en sesiones activas.
+fileWatcherType = "none"
