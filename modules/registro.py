@@ -11,6 +11,7 @@ def ir_a(vista):
 
 def ver_resumen():
     from database import traer_datos
+    from modules.indicadores_registro import mostrar_registros_mensuales, resumen_operativo
 
     encabezado("Registro de participantes", "Administra a los participantes y docentes del proceso RAP.")
     tarjetas_acciones((
@@ -22,17 +23,26 @@ def ver_resumen():
          ":material/table_view:", ir_a, ("maestra",)),
     ))
 
-    tot_est, tot_prof, tot_pend, tot_asig = traer_datos("""
-        SELECT (SELECT COUNT(*) FROM estudiantes),
-               (SELECT COUNT(*) FROM profesores),
+    st.button("Registro automático (CSV)", icon=":material/upload_file:", on_click=ir_a, args=("importar",))
+
+    participantes, _, pendientes, _, con_programacion, aprobados, reprobados = resumen_operativo()
+    docentes, en_construccion, asignaturas = traer_datos("""
+        SELECT (SELECT COUNT(*) FROM profesores),
                (SELECT COUNT(*) FROM maestro_pruebas
                 WHERE lower(trim(estado)) IN ('en construcción', 'en construccion')),
                (SELECT COUNT(DISTINCT nullif(trim(alfa), '')) FROM asignaturas)
     """)[0]
+    evaluados = aprobados + reprobados
     tarjetas_metricas((
-        ("Participantes registrados", tot_est), ("Docentes evaluadores", tot_prof),
-        ("Pruebas en construcción", tot_pend), ("Asignaturas activas", tot_asig),
-    ))
+        ("Participantes registrados", participantes), ("Docentes evaluadores", docentes),
+        ("Pruebas en construcción", en_construccion), ("Asignaturas activas", asignaturas),
+    ), ("azul", "morado", "ambar", "turquesa"))
+    tarjetas_metricas((
+        ("Cobertura de programación", f"{con_programacion / participantes:.0%}" if participantes else "—"),
+        ("Resultados pendientes", pendientes),
+        ("Tasa de aprobación", f"{aprobados / evaluados:.0%}" if evaluados else "—"),
+    ), ("turquesa", "ambar", "verde"))
+    mostrar_registros_mensuales()
 
     with panel("programaciones-recientes"):
         st.subheader("Programaciones recientes", anchor=False)
@@ -62,6 +72,7 @@ def render():
         "docentes": "gestion_docentes",
         "estudiantes": "gestion_estudiantes",
         "maestra": "vista_maestra",
+        "importar": "registro_automatico",
         "nuevo_docente": "nuevo_docente",
     }[vista]
     import_module(f"modules.{module}").render()

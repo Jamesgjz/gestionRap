@@ -1,13 +1,18 @@
 from html import escape
 
 import streamlit as st
-from database import DatabaseError, ejecutar_query, traer_datos
+from errors import DatabaseError
+from modules.participantes_datos import guardar_participantes, preparar_participante
+from modules.programas_datos import catalogo_asignaturas, preparar_esquema, selector_programa
 
 def render():
     # --- BOTÓN DE RETORNO NATIVO ---
     if st.button("← Volver al Panel Principal", key="back_to_dash"):
         st.session_state['reg_vista'] = "dashboard"
         st.rerun()
+
+    if not preparar_esquema():
+        return
 
     # --- CSS DE ALTA INTENSIDAD GRÁFICA EN AZULES CORPORATIVOS ---
     st.markdown("""
@@ -78,14 +83,11 @@ div[data-baseweb="select"]:focus-within,
 """, unsafe_allow_html=True)
 
     version = st.session_state.setdefault("form_version", 0)
-    rows = traer_datos("SELECT DISTINCT alfa, nombre_materia FROM asignaturas ORDER BY alfa, nombre_materia")
-    lista_asignaturas = [f"{alfa.strip()} - {nombre.strip()}" for alfa, nombre in rows if alfa and nombre]
-    if not lista_asignaturas:
-        st.warning("No hay asignaturas disponibles en el catálogo.")
-
-    st.markdown('<div class="form-container">', unsafe_allow_html=True)
     st.markdown('<div class="form-title">Nuevo participante</div>', unsafe_allow_html=True)
-    st.markdown('<div class="form-subtitle">Vincula al participante con las asignaturas que evaluará en el proceso RAP.</div>', unsafe_allow_html=True)
+    programa_id = selector_programa(key=f"student_programa_{version}")
+    catalogo = {codigo: nombre or codigo for codigo, nombre in catalogo_asignaturas(programa_id)}
+    if not catalogo:
+        st.warning("No hay asignaturas vinculadas. Revisa el catálogo del programa.")
 
     col_form, col_sum = st.columns([2.2, 1])
 
@@ -102,7 +104,7 @@ div[data-baseweb="select"]:focus-within,
 
         # --- 2. VINCULACIÓN CURRICULAR ---
         st.markdown('<div class="form-section-title">2. Vinculación curricular</div>', unsafe_allow_html=True)
-        asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=lista_asignaturas, placeholder="Selecciona los códigos alfanuméricos", key=f"student_asig_seleccionadas_{version}")
+        asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=list(catalogo), format_func=lambda codigo: f"{codigo} - {catalogo[codigo]}", placeholder="Selecciona los códigos alfanuméricos", key=f"student_asig_seleccionadas_{version}_{programa_id}")
 
         # --- 3. OBSERVACIONES ---
         st.markdown('<div class="form-section-title">3. Observaciones del participante</div>', unsafe_allow_html=True)
@@ -125,18 +127,17 @@ div[data-baseweb="select"]:focus-within,
             btn_another = st.button("Guardar y crear otro", width="stretch")
 
         if btn_save or btn_another:
-            if not nombre_completo.strip() or not asig_seleccionadas or not (id_banner.strip().isascii() and id_banner.strip().isdecimal() and len(id_banner.strip()) <= 18):
-                st.warning("Completa los campos obligatorios e ingresa un ID Banner válido.")
+            try:
+                registro = preparar_participante(id_banner, nombre_completo, estado_matriz,
+                                                 asig_seleccionadas, observaciones, catalogo)
+                insertados, _ = guardar_participantes([registro], programa_id)
+            except ValueError as exc:
+                st.warning(str(exc))
+            except DatabaseError:
+                st.error("No se pudo guardar el participante. Revisa los datos e intenta de nuevo.")
             else:
-                try:
-                    ejecutar_query(
-                        """INSERT INTO estudiantes (id_banner, nombre_completo, estado_matriz, alfa_asignatura, observaciones)
-                           VALUES (%s, %s, %s, %s, %s)""",
-                        (int(id_banner.strip()), nombre_completo.strip(), estado_matriz,
-                         ", ".join(item.split(" - ", 1)[0] for item in asig_seleccionadas), observaciones.strip()),
-                    )
-                except DatabaseError:
-                    st.error("No se pudo guardar el participante. Revisa los datos e intenta de nuevo.")
+                if not insertados:
+                    st.warning("El ID Banner ya está registrado.")
                 else:
                     st.session_state["registro_guardado"] = "Se guardó el participante."
                     if btn_another:

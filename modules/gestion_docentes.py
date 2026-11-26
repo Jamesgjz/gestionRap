@@ -14,8 +14,11 @@ def render():
     st.button("+ Nuevo docente", type="primary", on_click=ir_a, args=("nuevo_docente",))
 
     docentes = traer_datos("""
-        SELECT nombre_completo, programa, asignaturas, horas_dedicacion,
-               COALESCE(to_jsonb(p)->>'estado', '') AS estado
+        SELECT p.nombre_completo,
+               coalesce(nullif(to_jsonb(p)->>'programa', ''), to_jsonb(p)->>'programa_academico'),
+               to_jsonb(p)->>'asignaturas',
+               to_jsonb(p)->>'horas_dedicacion',
+               to_jsonb(p)->>'estado'
         FROM profesores p ORDER BY nombre_completo
     """)
     if not docentes:
@@ -34,5 +37,5 @@ def render():
     ]
     st.dataframe(
         pd.DataFrame(visible, columns=["Docente", "Programa", "Asignaturas RAP", "Horas asignadas", "Estado"]),
-        hide_index=True, width="stretch",
+        hide_index=True, width="stretch", height="content",
     )

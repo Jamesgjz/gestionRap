@@ -71,6 +71,7 @@ st.session_state["rol"] = role
 pages = {
     "Inicio": ("inicio", "Inicio", ":material/home:"),
     "Registro de participantes": ("registro", "Registro de participantes", ":material/group:"),
+    "Programas académicos": ("programas", "Programas académicos", ":material/account_tree:"),
     "Estado de Pruebas": ("estado_pruebas", "Estado de Pruebas", ":material/assignment:"),
     "Programación": ("programacion", "Programación", ":material/calendar_today:"),
     "Evaluación": ("evaluacion", "Evaluación", ":material/rate_review:"),

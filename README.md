@@ -31,3 +31,11 @@ Usa la base de Gestión RAP existente. Antes de desplegar, valida en una copia d
 Los flujos de actualización requieren claves únicas para `maestro_pruebas.alfa_asignatura`, `programacion_pruebas (id_banner, alfa_asignatura)` y `notas.id_programacion`, como en las sentencias de actualización de la aplicación. Confirma que la cuenta de PostgreSQL tenga permisos de lectura y escritura para estas operaciones antes del despliegue.
 
 Como alternativa local a `[postgres]`, se admiten `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT` y `DB_SSLMODE` en un archivo `.env`. Los secretos de autenticación se configuran en Streamlit.
+
+### Programas y registro automático
+
+Abre **Programas académicos → Activar funciones de registro** con una cuenta de administración. La app aplica `migrations/002_programas_y_registros.sql` en una transacción. La conexión de PostgreSQL debe poder crear tablas y modificar `estudiantes` y `profesores`. Si la conexión normal carece de esos permisos, el propietario de la base puede aplicar el archivo con `psql -1 -f migrations/002_programas_y_registros.sql`. La actualización no asigna programas ni fechas ficticias a registros anteriores.
+
+En **Programas académicos**, crea el programa y vincula los códigos de las asignaturas. Puedes reutilizar una asignatura en varios programas. En **Estado de Pruebas**, filtra por programa. El estado de construcción sigue asociado a la prueba de la asignatura y se comparte entre los programas vinculados.
+
+En **Registro de participantes → Registro automático (CSV)**, descarga la plantilla, completa una fila por persona y separa varios códigos con `|`. El sistema valida el archivo antes de guardar. Omite IDs existentes sin actualizar sus datos. El selector de programa limita los códigos disponibles al programa elegido.

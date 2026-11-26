@@ -3,6 +3,7 @@ import streamlit as st
 
 from database import ejecutar_query, traer_datos
 from modules.exportacion import crear_excel
+from modules.programas_datos import catalogo_asignaturas, listar_programas
 from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados, tarjetas_metricas
 
 
@@ -57,6 +58,13 @@ def _render(*, gestionar):
         listado_col = st.container()
     with listado_col, panel("listado-pruebas"):
         st.subheader("Listado de pruebas", anchor=False)
+        programas = dict(listar_programas())
+        codigos_programa = None
+        if programas:
+            programa = st.selectbox("Programa académico", [None, *programas],
+                                    format_func=lambda id_: programas.get(id_, "Todos los programas"))
+            if programa is not None:
+                codigos_programa = {alfa for alfa, _ in catalogo_asignaturas(programa)}
         search, status = st.columns([2, 1])
         query = search.text_input("Buscar por asignatura o código").strip().casefold()
         status = status.selectbox("Estado de prueba", ("Todos", *ESTADOS))
@@ -64,6 +72,7 @@ def _render(*, gestionar):
             row for row in rows
             if (query in row[0].casefold() or query in row[1].casefold())
             and (status == "Todos" or row[2] == status)
+            and (codigos_programa is None or row[0].upper() in codigos_programa)
         ]
         if not filtradas:
             st.info("No se encontraron asignaturas con estos filtros.")

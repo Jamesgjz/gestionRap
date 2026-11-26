@@ -1,11 +1,17 @@
+from html import escape
+
 import streamlit as st
 from database import DatabaseError, ejecutar_query, traer_datos
+from modules.programas_datos import listar_programas, preparar_esquema
 
 def render():
     # --- BOTÓN DE RETORNO NATIVO ---
     if st.button("← Volver a Gestión de Docentes", key="back_to_docs"):
         st.session_state['reg_vista'] = "docentes"
         st.rerun()
+
+    if not preparar_esquema():
+        return
 
     # --- CSS EN ALTA VIBRACIÓN GRÁFICA (Cero palidez) ---
     st.markdown("""
@@ -49,6 +55,7 @@ def render():
 """, unsafe_allow_html=True)
 
     version = st.session_state.setdefault("form_version", 0)
+    programas = [nombre for _, nombre in listar_programas()]
     rows = traer_datos("SELECT DISTINCT nombre_materia FROM asignaturas ORDER BY nombre_materia")
     lista_asignaturas = [nombre.strip() for (nombre,) in rows if nombre]
     if not lista_asignaturas:
@@ -69,8 +76,10 @@ def render():
             # Campo Real BD: nombre_completo
             nombre_completo = st.text_input("Nombre completo del docente *", placeholder="Ej. María Fernanda López Gómez", key=f"teacher_nombre_completo_{version}")
         with g_col2:
-            # Programa por defecto: Ingeniería de Software
-            programa = st.selectbox("Programa / Área *", ["Ingeniería de Software", "Ingeniería de Sistemas", "Administración de Empresas"], key=f"teacher_programa_{version}")
+            if programas:
+                programa = st.selectbox("Programa / Área *", programas, key=f"teacher_programa_{version}")
+            else:
+                programa = st.text_input("Programa / Área *", max_chars=120, key=f"teacher_programa_{version}")
 
         # --- 2. ASIGNACIÓN ACADÉMICA (Mapeado a horas_dedicacion y asignaturas) ---
         st.markdown('<div class="form-section-title">2. Asignación académica</div>', unsafe_allow_html=True)
@@ -103,14 +112,14 @@ def render():
             btn_another = st.button("Guardar y crear otro", width="stretch")
 
         if btn_save or btn_another:
-            if not nombre_completo.strip() or not asig_seleccionadas:
+            if not nombre_completo.strip() or not programa.strip() or not asig_seleccionadas:
                 st.warning("Completa los campos obligatorios.")
             else:
                 try:
                     ejecutar_query(
                         """INSERT INTO profesores (nombre_completo, programa, asignaturas, horas_dedicacion, observaciones)
                            VALUES (%s, %s, %s, %s, %s)""",
-                        (nombre_completo.strip(), programa, ", ".join(asig_seleccionadas),
+                        (nombre_completo.strip(), programa.strip(), ", ".join(asig_seleccionadas),
                          horas_dedicacion, observaciones.strip()),
                     )
                 except DatabaseError:
@@ -128,7 +137,7 @@ def render():
         # Concatenación directa sin espacios al inicio de cada línea para el motor Markdown
         html_sum_box = '<div class="summary-box">'
         html_sum_box += '<div class="summary-title">Resumen de registro</div>'
-        html_sum_box += f'<div class="summary-item"><div class="summary-icon">💻</div><div class="summary-details"><span class="summary-lbl">Programa académico</span><span class="summary-val">{programa}</span></div></div>'
+        html_sum_box += f'<div class="summary-item"><div class="summary-icon">💻</div><div class="summary-details"><span class="summary-lbl">Programa académico</span><span class="summary-val">{escape(programa)}</span></div></div>'
         html_sum_box += f'<div class="summary-item"><div class="summary-icon">📚</div><div class="summary-details"><span class="summary-lbl">Asignaturas de la BD</span><span class="summary-val">{len(asig_seleccionadas)} seleccionadas</span></div></div>'
         html_sum_box += f'<div class="summary-item"><div class="summary-icon">🕒</div><div class="summary-details"><span class="summary-lbl">Horas dedicación</span><span class="summary-val">{horas_dedicacion} horas</span></div></div>'
         html_sum_box += '<hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:20px 0;">'
