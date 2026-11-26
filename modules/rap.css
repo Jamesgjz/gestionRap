@@ -7,7 +7,12 @@
 @media (min-width: 900px) {
   [data-testid="stSidebar"][aria-expanded="true"] { min-width: 15.5rem; max-width: 15.5rem; }
 }
-[data-testid="stSidebar"] button { min-height: 2.75rem; font-weight: 650; }
+[data-testid="stSidebar"] [data-testid="stButton"] button {
+  min-height: 2.85rem; padding-inline: .72rem; justify-content: flex-start; text-align: left;
+}
+[data-testid="stSidebar"] [data-testid="stButton"] button p {
+  font-size: 1rem; font-weight: 650; text-align: left;
+}
 [data-testid="stSidebar"] button[kind="primary"] { background: var(--rap-blue); border-color: var(--rap-blue); }
 .rap-sidebar-logo { display: flex; align-items: center; gap: .55rem; padding: 0 .15rem 1rem; border-bottom: 1px solid #1f314c; }
 .rap-sidebar-logo strong, .rap-profile strong { color: #fff; display: block; line-height: 1.2; }

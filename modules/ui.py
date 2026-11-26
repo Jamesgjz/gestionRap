@@ -75,10 +75,10 @@ def etiqueta_estado(valor):
     st.html(f'<span class="rap-status" style="background:{fondo}; color:{texto}">{escape(str(valor))}</span>')
 
 
-def tabla_con_estados(datos, columnas, *, column_config=None):
+def tabla_con_estados(datos, columnas, *, column_config=None, height="auto"):
     st.dataframe(
         datos.style.map(estilo_estado, subset=list(columnas)),
-        hide_index=True, width="stretch", column_config=column_config,
+        hide_index=True, width="stretch", height=height, column_config=column_config,
     )
 
 

@@ -56,7 +56,7 @@ def render():
         label_visibility="collapsed",
     ).strip().casefold()
     vista_compacta = compacta.toggle("Vista compacta (Ocultar columnas N/A)", value=True)
-    limite = cantidad.selectbox("Registros por página", [10, 25, 50], label_visibility="collapsed")
+    limite = cantidad.selectbox("Registros por página", [10, 25, 50], index=1, label_visibility="collapsed")
 
     if (consulta, limite) != st.session_state.get("filtros_maestra"):
         st.session_state["pagina_actual"] = 1
@@ -99,9 +99,9 @@ def render():
                 row[label] = estados.get(codigo, "Sin construir")
         rows.append(row)
     if cursos:
-        tabla_con_estados(pd.DataFrame(rows), cursos.values())
+        tabla_con_estados(pd.DataFrame(rows), cursos.values(), height="content")
     else:
-        st.dataframe(rows, hide_index=True, width="stretch")
+        st.dataframe(rows, hide_index=True, width="stretch", height="content")
 
     def mover_pagina(offset):
         st.session_state["pagina_actual"] += offset

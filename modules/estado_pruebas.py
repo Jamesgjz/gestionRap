@@ -1,5 +1,3 @@
-import math
-
 import pandas as pd
 import streamlit as st
 
@@ -65,26 +63,13 @@ def render():
             st.info("No se encontraron asignaturas con estos filtros.")
             return
 
-        if (query, status) != st.session_state.get("mon_filtros"):
-            st.session_state["mon_filtros"] = (query, status)
-            st.session_state["mon_page"] = 1
-
-        max_page = math.ceil(len(filtradas) / 10)
-        page = min(st.session_state.get("mon_page", 1), max_page)
-        st.session_state["mon_page"] = page
-
         headers = ("Código", "Asignatura", "Estado", "Docente")
         tabla = [(code, name, state, profesores.get(teacher, "Sin asignar"))
                  for code, name, state, teacher in filtradas]
-        tabla_con_estados(pd.DataFrame(tabla[(page - 1) * 10:page * 10], columns=headers), ("Estado",))
-        left, middle, right = st.columns(3)
-
-        def move_page(offset):
-            st.session_state["mon_page"] += offset
-
-        left.button("◀ Anterior", disabled=page == 1, on_click=move_page, args=(-1,))
-        middle.caption(f"Página {page} de {max_page} · {len(filtradas)} asignaturas")
-        right.button("Siguiente ▶", disabled=page == max_page, on_click=move_page, args=(1,))
+        total = len(tabla)
+        resultado = "asignatura encontrada" if total == 1 else "asignaturas encontradas"
+        st.caption(f"{total} {resultado}")
+        tabla_con_estados(pd.DataFrame(tabla, columns=headers), ("Estado",), height="content")
         st.download_button(
             "Exportar Excel", lambda: crear_excel(headers, tabla),
             "estado-pruebas.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
