@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.exportacion import crear_excel
+from modules.exportacion import crear_excel, descarga_autorizada
 from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados
 
 
@@ -156,7 +156,7 @@ def historial(*, gestionar=False):
                 return crear_excel(COLUMNAS_RESULTADOS, (fila[:6] for fila in registros))
 
             st.download_button(
-                "Exportar resultados a Excel", descargar, "resultados-rap.xlsx",
+                "Exportar resultados a Excel", descarga_autorizada(descargar), "resultados-rap.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", on_click="ignore",
             )
 

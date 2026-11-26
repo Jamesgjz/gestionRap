@@ -7,14 +7,11 @@ from errors import DatabaseError
 from modules.participantes_datos import COLUMNAS_CSV, guardar_participantes, leer_csv
 from modules.programas_datos import catalogo_asignaturas, preparar_esquema, selector_programa
 from modules.ui import encabezado, panel
-
-
-def volver():
-    st.session_state["reg_vista"] = "dashboard"
+from rutas import enlace
 
 
 def render():
-    st.button("← Volver a registros", on_click=volver)
+    enlace("registro", label="← Volver a registros")
     encabezado("Registro automático", "Importa participantes desde una plantilla CSV y revisa los datos antes de guardarlos.")
     if not preparar_esquema():
         return

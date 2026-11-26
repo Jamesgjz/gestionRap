@@ -2,16 +2,13 @@ import pandas as pd
 import streamlit as st
 
 from database import traer_datos
-
-
-def ir_a(vista):
-    st.session_state["reg_vista"] = vista
+from rutas import enlace
 
 
 def render():
-    st.button("← Volver a registros", on_click=ir_a, args=("dashboard",))
+    enlace("registro", label="← Volver a registros")
     st.title("Gestión de docentes evaluadores")
-    st.button("+ Nuevo docente", type="primary", on_click=ir_a, args=("nuevo_docente",))
+    enlace("nuevo-docente", label="+ Nuevo docente")
 
     docentes = traer_datos("""
         SELECT p.nombre_completo,
