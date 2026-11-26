@@ -22,10 +22,13 @@ def volver():
     st.session_state["opcion_menu"] = "Inicio"
 
 
-def render():
-    st.button("← Volver al Panel Principal", on_click=volver)
-    encabezado("Estado de Pruebas", "Consulta el avance de cada asignatura y asigna docentes evaluadores.")
-    if message := st.session_state.pop("estado_guardado", None):
+def _render(*, gestionar):
+    descripcion = "Consulta el avance de construcción de las pruebas por asignatura."
+    if gestionar:
+        st.button("← Volver al Panel Principal", on_click=volver)
+        descripcion = "Consulta el avance de cada asignatura y asigna docentes evaluadores."
+    encabezado("Estado de Pruebas", descripcion)
+    if gestionar and (message := st.session_state.pop("estado_guardado", None)):
         st.success(message)
 
     profesores = dict(traer_datos("""
@@ -48,7 +51,10 @@ def render():
     metrics = (("Asignaturas", len(rows)), *((state, sum(r[2] == state for r in rows)) for state in ESTADOS))
     tarjetas_metricas(metrics, ("azul", "verde", "ambar", "gris"))
 
-    listado_col, gestion_col = st.columns([2.2, 1], gap="medium")
+    if gestionar:
+        listado_col, gestion_col = st.columns([2.2, 1], gap="medium")
+    else:
+        listado_col = st.container()
     with listado_col, panel("listado-pruebas"):
         st.subheader("Listado de pruebas", anchor=False)
         search, status = st.columns([2, 1])
@@ -76,6 +82,9 @@ def render():
             on_click="ignore",
         )
 
+    if not gestionar:
+        return
+
     with gestion_col, panel("gestionar-prueba"):
         st.subheader("Gestionar prueba", anchor=False)
         options = {row[0]: row for row in filtradas}
@@ -98,3 +107,11 @@ def render():
                 """, (code, new_status, teacher))
                 st.session_state["estado_guardado"] = f"Se guardaron los cambios de {code}."
                 st.rerun()
+
+
+def render():
+    _render(gestionar=True)
+
+
+def render_consulta():
+    _render(gestionar=False)

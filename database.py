@@ -7,6 +7,7 @@ import psycopg2
 from psycopg2.pool import PoolError, ThreadedConnectionPool
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
+from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from errors import DatabaseError
 
@@ -35,17 +36,21 @@ def connection_pool():
 
 
 @contextmanager
-def transaction():
-    pool = None
+def transaction(*, read_only=False, pool=None):
+    if not read_only and get_script_run_ctx(suppress_warning=True) is not None:
+        if st.session_state.get("rol") != "admin":
+            raise DatabaseError("Esta cuenta tiene acceso de solo lectura.")
     conn = None
     discard = False
     try:
-        pool = connection_pool()
+        if pool is None:
+            pool = connection_pool()
         conn = pool.getconn()
         if conn.closed:
             pool.putconn(conn, close=True)
             conn = None
             conn = pool.getconn()
+        conn.set_session(readonly=read_only)
         with conn, conn.cursor() as cursor:
             yield cursor
     except (psycopg2.Error, PoolError) as exc:
@@ -65,8 +70,23 @@ def ejecutar_query(sql, params=None):
     return affected
 
 
+def leer(sql, params=None, *, pool=None):
+    # Reintenta solo lecturas ante una conexión interrumpida o un servidor iniciándose.
+    for attempt in range(2):
+        try:
+            with transaction(read_only=True, pool=pool) as cursor:
+                cursor.execute(sql, params)
+                return cursor.fetchall()
+        except DatabaseError as error:
+            cause = error.__cause__
+            code = getattr(cause, "pgcode", None)
+            recoverable = isinstance(cause, (psycopg2.OperationalError, psycopg2.InterfaceError)) and (
+                code is None or code.startswith("08") or code in {"57P01", "57P02", "57P03"}
+            )
+            if attempt or not recoverable:
+                raise
+
+
 @st.cache_data(ttl=30, max_entries=256, show_spinner=False)
 def traer_datos(sql, params=None):
-    with transaction() as cursor:
-        cursor.execute(sql, params)
-        return cursor.fetchall()
+    return leer(sql, params)

@@ -76,7 +76,14 @@ pages = {
     "Evaluación": ("evaluacion", "Evaluación", ":material/rate_review:"),
     "Dashboard / KPIs": ("dashboard", "Dashboard / KPIs", ":material/dashboard:"),
 }
-if role == "consulta":
+if role == "consulta_academica":
+    pages = {
+        "Estado de Pruebas": pages["Estado de Pruebas"],
+        "Programación": pages["Programación"],
+        "Resultados": ("evaluacion", "Resultados", ":material/assignment_turned_in:"),
+
+    }
+elif role == "consulta":
     pages = {"Dashboard / KPIs": pages["Dashboard / KPIs"]}
 
 
@@ -102,6 +109,12 @@ with st.sidebar:
     st.button("Cerrar sesión", icon=":material/logout:", width="stretch", type="tertiary", on_click=logout)
 
 try:
-    import_module(f"modules.{pages[selected][0]}").render()
+    module_name = pages[selected][0]
+    module = import_module(f"modules.{module_name}")
+    if role == "consulta_academica":
+        module.render_consulta()
+    else:
+        module.render()
 except DatabaseError:
-    st.error("No se pudo completar la operación en la base de datos. Intenta de nuevo.")
+    st.error("No se pudo completar la operación en la base de datos.")
+    st.button("Reintentar conexión", icon=":material/refresh:")

@@ -14,7 +14,7 @@ ITERATIONS = 600_000
 MAX_PASSWORD_LENGTH = 256
 TOTAL_SESSION_SECONDS = 8 * 60 * 60
 IDLE_SESSION_SECONDS = 30 * 60
-ROLES = {"admin", "consulta"}
+ROLES = {"admin", "consulta", "consulta_academica"}
 HASH_PATTERN = re.compile(rf"{HASH_ALGORITHM}[$]{ITERATIONS}[$]([0-9a-f]{{32}})[$]([0-9a-f]{{64}})")
 
 

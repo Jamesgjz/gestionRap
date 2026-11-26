@@ -6,7 +6,7 @@ import streamlit as st
 
 from database import ejecutar_query, traer_datos
 from modules.exportacion import crear_excel
-from modules.ui import tabla_con_estados
+from modules.ui import encabezado, panel, tabla_con_estados
 
 
 QUERY_HISTORICO = """
@@ -101,7 +101,7 @@ def agendar(hoy, hora_actual):
             st.success("Programación guardada.")
 
 
-def historico(hoy):
+def historico(hoy, *, gestionar=False):
     rows = traer_datos(QUERY_HISTORICO)
     if not rows:
         st.info("Aún no hay pruebas agendadas.")
@@ -129,7 +129,27 @@ def historico(hoy):
         and (status == "Todos" or row[7] == status)
     ]
     if visible:
-        tabla_con_estados(pd.DataFrame(visible, columns=COLUMNAS), ("Estado",))
+        contador, cantidad = st.columns([3, 1])
+        limite = cantidad.selectbox("Filas por página", (15, 25, 50), index=1)
+        filtros = (query, dates, course, status, limite)
+        if filtros != st.session_state.get("programacion_filtros"):
+            st.session_state["programacion_filtros"] = filtros
+            st.session_state["programacion_pagina"] = 0
+        ultima = (len(visible) - 1) // limite
+        pagina = min(st.session_state["programacion_pagina"], ultima)
+        st.session_state["programacion_pagina"] = pagina
+        inicio = pagina * limite
+        fin = min(inicio + limite, len(visible))
+        contador.caption(f"Mostrando {inicio + 1}–{fin} de {len(visible)} registros")
+        tabla_con_estados(pd.DataFrame(visible[inicio:fin], columns=COLUMNAS), ("Estado",), height="content")
+        anterior, centro, siguiente = st.columns([1, 2, 1])
+        if anterior.button("Anterior", disabled=pagina == 0, icon=":material/chevron_left:"):
+            st.session_state["programacion_pagina"] -= 1
+            st.rerun()
+        centro.caption(f"Página {pagina + 1} de {ultima + 1}")
+        if siguiente.button("Siguiente", disabled=pagina == ultima, icon=":material/chevron_right:"):
+            st.session_state["programacion_pagina"] += 1
+            st.rerun()
         st.download_button(
             "Exportar Excel", lambda: crear_excel(COLUMNAS, visible),
             "programacion.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -137,6 +157,9 @@ def historico(hoy):
         )
     else:
         st.info("No hay pruebas que coincidan con los filtros.")
+
+    if not gestionar:
+        return
 
     with st.expander("Eliminar programación"):
         options = {(r[0], r[6]): f"{r[0]} · {r[1]} · {r[2]}" for r in rows}
@@ -162,4 +185,10 @@ def render():
                 st.success("Programación eliminada.")
             else:
                 st.warning("La programación ya no existe.")
-        historico(now.date())
+        historico(now.date(), gestionar=True)
+
+
+def render_consulta():
+    encabezado("Programación", "Consulta y exporta el calendario de las pruebas RAP.")
+    with panel("programacion-consulta"):
+        historico(datetime.now(ZoneInfo("America/Bogota")).date())

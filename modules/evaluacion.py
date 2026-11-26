@@ -1,15 +1,31 @@
 import streamlit as st
 
+from modules.exportacion import crear_excel
 from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados
 
 
 PAGE_SIZE = 25
+COLUMNAS_RESULTADOS = ("ID Banner", "Participante", "Asignatura", "Asistió", "Nota", "Resultado")
 CATALOGO = """
     LEFT JOIN LATERAL (
         SELECT nombre_materia
         FROM asignaturas WHERE trim(alfa) = trim(p.alfa_asignatura)
         ORDER BY nombre_materia LIMIT 1
     ) a ON true
+"""
+
+
+QUERY_RESULTADOS = f"""
+    SELECT e.id_banner, e.nombre_completo, COALESCE(a.nombre_materia, p.alfa_asignatura),
+           n.asistencia, n.calificacion, n.resultado, n.id_programacion
+    FROM notas n
+    JOIN programacion_pruebas p ON n.id_programacion = p.id
+    JOIN estudiantes e ON p.id_banner = e.id_banner
+    {CATALOGO}
+    WHERE (%s = 'Todos' OR n.resultado = %s)
+      AND strpos(lower(concat_ws(' ', e.id_banner, e.nombre_completo,
+                                 p.alfa_asignatura, a.nombre_materia)), lower(%s)) > 0
+    ORDER BY n.id_programacion DESC
 """
 
 
@@ -86,10 +102,10 @@ def calificar():
                 st.rerun()
 
 
-def historial():
+def historial(*, gestionar=False):
     import pandas as pd
 
-    from database import ejecutar_query, traer_datos
+    from database import connection_pool, ejecutar_query, leer, traer_datos
 
     with panel("evaluacion-historico"):
         st.subheader("Histórico de resultados", anchor=False)
@@ -101,19 +117,10 @@ def historial():
             st.session_state["evaluacion_pagina"] = 0
 
         pagina = st.session_state["evaluacion_pagina"]
-        rows = traer_datos(f"""
-            SELECT e.id_banner, e.nombre_completo, COALESCE(a.nombre_materia, p.alfa_asignatura),
-                   n.asistencia, n.calificacion, n.resultado, n.id_programacion
-            FROM notas n
-            JOIN programacion_pruebas p ON n.id_programacion = p.id
-            JOIN estudiantes e ON p.id_banner = e.id_banner
-            {CATALOGO}
-            WHERE (%s = 'Todos' OR n.resultado = %s)
-              AND strpos(lower(concat_ws(' ', e.id_banner, e.nombre_completo,
-                                         p.alfa_asignatura, a.nombre_materia)), lower(%s)) > 0
-            ORDER BY n.id_programacion DESC
-            LIMIT %s OFFSET %s
-        """, (estado, estado, buscar, PAGE_SIZE + 1, PAGE_SIZE * pagina))
+        filtros_sql = (estado, estado, buscar)
+        rows = traer_datos(QUERY_RESULTADOS + " LIMIT %s OFFSET %s", (
+            *filtros_sql, PAGE_SIZE + 1, PAGE_SIZE * pagina,
+        ))
         if not rows and pagina:
             st.session_state["evaluacion_pagina"] = pagina - 1
             st.rerun()
@@ -140,6 +147,21 @@ def historial():
             st.session_state["evaluacion_pagina"] += 1
             st.rerun()
 
+        if not gestionar:
+            pool = connection_pool()
+
+            def descargar():
+                registros = leer(QUERY_RESULTADOS, filtros_sql, pool=pool)
+                return crear_excel(COLUMNAS_RESULTADOS, (fila[:6] for fila in registros))
+
+            st.download_button(
+                "Exportar resultados a Excel", descargar, "resultados-rap.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", on_click="ignore",
+            )
+
+    if not gestionar:
+        return
+
     with st.expander("Eliminar calificación", icon=":material/delete:"):
         opciones = {row[6]: f"{row[1]} ({row[0]}) · {row[2]} · Nota: {row[4]}" for row in visibles}
         id_programacion = st.selectbox("Calificación", list(opciones), format_func=opciones.__getitem__)
@@ -164,4 +186,9 @@ def render():
     if vista == "Calificar prueba":
         calificar()
     else:
-        historial()
+        historial(gestionar=True)
+
+
+def render_consulta():
+    encabezado("Resultados", "Consulta las calificaciones y descarga los resultados de los filtros aplicados.")
+    historial()
