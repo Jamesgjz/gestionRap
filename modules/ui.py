@@ -3,6 +3,8 @@ from pathlib import Path
 
 import streamlit as st
 
+from modules.colores import PALETA, estilo_estado, tono_estado
+
 
 def aplicar_estilo():
     st.html(Path(__file__).with_name("rap.css"))
@@ -59,9 +61,25 @@ def panel(nombre):
     return st.container(border=True, key=f"rap-panel-{nombre}")
 
 
-def tarjetas_metricas(metricas):
-    for columna, (etiqueta, valor) in zip(st.columns(len(metricas)), metricas):
-        columna.metric(etiqueta, valor, border=True)
+def tarjetas_metricas(metricas, tonos=()):
+    for i, (columna, (etiqueta, valor)) in enumerate(zip(st.columns(len(metricas)), metricas)):
+        if not tonos:
+            columna.metric(etiqueta, valor, border=True)
+            continue
+        with columna, st.container(key=f"rap-metric-{tonos[i]}-{i}"):
+            st.metric(etiqueta, valor, border=True)
+
+
+def etiqueta_estado(valor):
+    _, fondo, texto = PALETA[tono_estado(valor) or "gris"]
+    st.html(f'<span class="rap-status" style="background:{fondo}; color:{texto}">{escape(str(valor))}</span>')
+
+
+def tabla_con_estados(datos, columnas, *, column_config=None):
+    st.dataframe(
+        datos.style.map(estilo_estado, subset=list(columnas)),
+        hide_index=True, width="stretch", column_config=column_config,
+    )
 
 
 def tarjetas_acciones(acciones):

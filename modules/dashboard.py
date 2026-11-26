@@ -1,28 +1,57 @@
 import streamlit as st
 
 from database import traer_datos
-from modules.ui import encabezado, panel, tarjetas_metricas
+from modules.colores import PALETA
+from modules.ui import encabezado, panel, tabla_con_estados, tarjetas_metricas
 
 
 def porcentaje(parte, total):
     return f"{parte / total:.0%}" if total else "—"
 
 
-def resumen(titulo, categoria, filas, color):
+def resumen(titulo, categoria, filas, color, tonos=None):
     if not filas or not any(total for _, total in filas):
         st.info("Aún no hay datos para este indicador.")
         return
 
+    import altair as alt
     import pandas as pd
 
     datos = pd.DataFrame(filas, columns=[categoria, "Cantidad"])
+    barra = alt.Chart(datos).encode(
+        x=alt.X(
+            "Cantidad:Q", scale=alt.Scale(domain=[0, max(datos["Cantidad"]) * 1.2]),
+            axis=alt.Axis(title=None, tickMinStep=1, grid=True),
+        ),
+        y=alt.Y(f"{categoria}:N", sort="-x", axis=alt.Axis(title=None, labelLimit=138)),
+    )
+    color_barra = alt.value(PALETA[color][0])
+    if tonos:
+        color_barra = alt.Color(
+            f"{categoria}:N",
+            scale=alt.Scale(domain=list(tonos), range=[PALETA[t][0] for t in tonos.values()]),
+            legend=None,
+        )
+
+    barras = barra.mark_bar(cornerRadiusEnd=7, height=22).encode(
+        color=color_barra,
+        tooltip=[alt.Tooltip(f"{categoria}:N"), alt.Tooltip("Cantidad:Q", format="d")],
+    )
+    valores = barra.mark_text(align="left", dx=7, fontSize=15, fontWeight=700, color="#17304D").encode(
+        text=alt.Text("Cantidad:Q", format="d"),
+    )
+    grafico_final = (barras + valores).properties(
+        height=max(135, 36 * len(datos)),
+        width="container", autosize=alt.AutoSizeParams(type="fit-x", contains="padding", resize=True),
+    ).configure_axis(labelFontSize=14, labelColor="#34516E", gridColor="#E5EDF5").configure_view(strokeWidth=0)
+
     grafico, tabla = st.columns([3, 2], gap="medium")
     with grafico, panel("indicador-grafico"):
         st.subheader(titulo, anchor=False)
-        st.bar_chart(datos, x=categoria, y="Cantidad", horizontal=True, sort="-Cantidad", color=color)
+        st.altair_chart(grafico_final, width="stretch", theme=None)
     with tabla, panel("indicador-detalle"):
         st.subheader("Detalle", anchor=False)
-        st.dataframe(datos, hide_index=True, width="stretch")
+        tabla_con_estados(datos, (categoria,))
 
 
 def banco_de_pruebas():
@@ -45,8 +74,9 @@ def banco_de_pruebas():
     """))
     orden = ("Construida", "En construcción", "Sin construir")
     datos = [(estado, filas.get(estado, 0)) for estado in orden]
-    tarjetas_metricas(datos)
-    resumen("Distribución del banco", "Estado", datos, "#1559D6")
+    tonos = dict(zip(orden, ("verde", "ambar", "gris")))
+    tarjetas_metricas(datos, tuple(tonos.values()))
+    resumen("Distribución del banco", "Estado", datos, "azul", tonos)
 
 
 def productividad():
@@ -63,8 +93,8 @@ def productividad():
     tarjetas_metricas((
         ("Docentes con pruebas listas", len(datos)),
         ("Pruebas construidas", sum(total for _, total in datos)),
-    ))
-    resumen("Pruebas listas por docente", "Docente", datos, "#7134B8")
+    ), ("morado", "verde"))
+    resumen("Pruebas listas por docente", "Docente", datos, "morado")
 
 
 def cobertura():
@@ -85,9 +115,10 @@ def cobertura():
     tarjetas_metricas((
         ("Solicitadas", solicitadas), ("Con programación", programadas),
         ("Cobertura", porcentaje(programadas, solicitadas)),
-    ))
+    ), ("azul", "turquesa", "morado"))
     resumen("Cobertura de asignaturas solicitadas", "Estado",
-            [("Con programación", programadas), ("Por programar", solicitadas - programadas)], "#1559D6")
+            [("Con programación", programadas), ("Por programar", solicitadas - programadas)],
+            "azul", {"Con programación": "turquesa", "Por programar": "ambar"})
 
 
 def asistencia():
@@ -99,9 +130,9 @@ def asistencia():
     tarjetas_metricas((
         ("Asistieron", presentes), ("No asistieron", ausentes),
         ("Tasa de asistencia", porcentaje(presentes, presentes + ausentes)),
-    ))
+    ), ("verde", "ambar", "turquesa"))
     resumen("Asistencia a las pruebas evaluadas", "Asistencia",
-            [("Asistió", presentes), ("No asistió", ausentes)], "#008461")
+            [("Asistió", presentes), ("No asistió", ausentes)], "verde", {"Asistió": "verde", "No asistió": "ambar"})
 
 
 def aprobacion():
@@ -113,9 +144,9 @@ def aprobacion():
     tarjetas_metricas((
         ("Aprobaron", aprobados), ("Reprobaron", reprobados),
         ("Tasa de aprobación", porcentaje(aprobados, aprobados + reprobados)),
-    ))
+    ), ("verde", "rojo", "azul"))
     resumen("Resultados de quienes presentaron la prueba", "Resultado",
-            [("Aprobó", aprobados), ("Reprobó", reprobados)], "#008461")
+            [("Aprobó", aprobados), ("Reprobó", reprobados)], "verde", {"Aprobó": "verde", "Reprobó": "rojo"})
 
 
 def render():

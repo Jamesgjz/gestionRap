@@ -6,6 +6,7 @@ import streamlit as st
 
 from database import ejecutar_query, traer_datos
 from modules.exportacion import crear_excel
+from modules.ui import tabla_con_estados
 
 
 QUERY_HISTORICO = """
@@ -128,7 +129,7 @@ def historico(hoy):
         and (status == "Todos" or row[7] == status)
     ]
     if visible:
-        st.dataframe(pd.DataFrame(visible, columns=COLUMNAS), hide_index=True, width="stretch")
+        tabla_con_estados(pd.DataFrame(visible, columns=COLUMNAS), ("Estado",))
         st.download_button(
             "Exportar Excel", lambda: crear_excel(COLUMNAS, visible),
             "programacion.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

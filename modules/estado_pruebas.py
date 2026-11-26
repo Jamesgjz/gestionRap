@@ -5,6 +5,7 @@ import streamlit as st
 
 from database import ejecutar_query, traer_datos
 from modules.exportacion import crear_excel
+from modules.ui import encabezado, etiqueta_estado, tabla_con_estados, tarjetas_metricas
 
 
 ESTADOS = ("Construida", "En construcción", "Sin construir")
@@ -25,7 +26,7 @@ def volver():
 
 def render():
     st.button("← Volver al Panel Principal", on_click=volver)
-    st.title("Estado de Pruebas")
+    encabezado("Estado de Pruebas", "Consulta el avance de cada asignatura y asigna docentes evaluadores.")
     if message := st.session_state.pop("estado_guardado", None):
         st.success(message)
 
@@ -47,8 +48,7 @@ def render():
     """)
     rows = [(code, name or code, estado_visible(state), teacher) for code, name, state, teacher in catalogo]
     metrics = (("Asignaturas", len(rows)), *((state, sum(r[2] == state for r in rows)) for state in ESTADOS))
-    for col, (label, value) in zip(st.columns(4), metrics):
-        col.metric(label, value)
+    tarjetas_metricas(metrics, ("azul", "verde", "ambar", "gris"))
 
     search, status = st.columns([2, 1])
     query = search.text_input("Buscar por asignatura o código").strip().casefold()
@@ -73,7 +73,7 @@ def render():
     headers = ("Código", "Asignatura", "Estado", "Docente")
     tabla = [(code, name, state, profesores.get(teacher, "Sin asignar"))
              for code, name, state, teacher in filtradas]
-    st.dataframe(pd.DataFrame(tabla[(page-1)*10:page*10], columns=headers), hide_index=True, width="stretch")
+    tabla_con_estados(pd.DataFrame(tabla[(page - 1) * 10:page * 10], columns=headers), ("Estado",))
     left, middle, right = st.columns(3)
 
     def move_page(offset):
@@ -92,6 +92,7 @@ def render():
     options = {row[0]: row for row in filtradas}
     code = st.selectbox("Asignatura", list(options), format_func=lambda key: f"{key} · {options[key][1]}")
     _, _, current_status, current_teacher = options[code]
+    etiqueta_estado(current_status)
     teachers = [None, *profesores]
     with st.form(f"estado_prueba_{code}"):
         teacher = st.selectbox(

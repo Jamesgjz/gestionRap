@@ -1,5 +1,6 @@
 import streamlit as st
 from database import traer_datos
+from modules.ui import tabla_con_estados
 import math
 
 def volver_a_registros():
@@ -73,7 +74,12 @@ def render():
         for code, label in courses.items():
             row[label] = (estados.get(code) or "sin construir").capitalize() if code in codes else "—"
         rows.append(row)
-    st.dataframe(rows, hide_index=True, width="stretch")
+    if courses:
+        import pandas as pd
+
+        tabla_con_estados(pd.DataFrame(rows), courses.values())
+    else:
+        st.dataframe(rows, hide_index=True, width="stretch")
 
     def mover_pagina(offset):
         st.session_state["pagina_actual"] += offset

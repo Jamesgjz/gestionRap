@@ -1,6 +1,7 @@
 streamlit>=1.67,<2
 psycopg2-binary
 pandas
+altair>=5,<7
 python-dotenv
 openpyxl
 tzdata

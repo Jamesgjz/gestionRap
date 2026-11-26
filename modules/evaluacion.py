@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.ui import encabezado, panel
+from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados
 
 
 PAGE_SIZE = 25
@@ -58,7 +58,7 @@ def calificar():
         )
         _, _, _, _, registrada, asistencia_anterior, nota_anterior, resultado_anterior = opciones[id_programacion]
         if registrada:
-            st.caption(f"Resultado registrado · {resultado_anterior or 'Pendiente'}")
+            etiqueta_estado(resultado_anterior or "Pendiente")
         with st.form(f"evaluacion_nota_{id_programacion}", border=False):
             col_asistencia, col_nota = st.columns(2)
             asistencia = col_asistencia.radio(
@@ -87,6 +87,8 @@ def calificar():
 
 
 def historial():
+    import pandas as pd
+
     from database import ejecutar_query, traer_datos
 
     with panel("evaluacion-historico"):
@@ -119,11 +121,14 @@ def historial():
             st.info("No hay resultados para estos filtros.")
             return
         visibles = rows[:PAGE_SIZE]
-        st.dataframe([
+        datos = pd.DataFrame([
             {"ID Banner": row[0], "Participante": row[1], "Asignatura": row[2],
              "Asistió": row[3], "Nota": float(row[4]) if row[4] is not None else None, "Resultado": row[5]}
             for row in visibles
-        ], hide_index=True, width="stretch")
+        ])
+        tabla_con_estados(
+            datos, ("Resultado",), column_config={"Nota": st.column_config.NumberColumn(format="%.2f")},
+        )
 
         anterior, centro, siguiente = st.columns([1, 2, 1])
         if anterior.button("Anterior", disabled=pagina == 0, icon=":material/chevron_left:"):
