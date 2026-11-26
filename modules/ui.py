@@ -1,3 +1,4 @@
+from functools import lru_cache
 from html import escape
 from pathlib import Path
 
@@ -6,8 +7,13 @@ import streamlit as st
 from modules.colores import PALETA, estilo_estado, tono_estado
 
 
+@lru_cache(maxsize=1)
+def css():
+    return Path(__file__).with_name("rap.css").read_text(encoding="utf-8")
+
+
 def aplicar_estilo():
-    st.html(Path(__file__).with_name("rap.css"))
+    st.html(f"<style>{css()}</style>")
 
 
 def acceso():
@@ -78,7 +84,7 @@ def etiqueta_estado(valor):
 def tabla_con_estados(datos, columnas, *, column_config=None, height="auto"):
     st.dataframe(
         datos.style.map(estilo_estado, subset=list(columnas)),
-        hide_index=True, width="stretch", height=height, column_config=column_config,
+        hide_index=True, width="stretch", height=height, row_height=36, column_config=column_config,
     )
 
 

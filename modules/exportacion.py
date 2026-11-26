@@ -1,10 +1,11 @@
 from io import BytesIO
 
-from openpyxl import Workbook
-from openpyxl.cell import WriteOnlyCell
 
 
 def crear_excel(headers, rows):
+    from openpyxl import Workbook
+    from openpyxl.cell import WriteOnlyCell
+
     workbook = Workbook(write_only=True)
     sheet = workbook.create_sheet("Gestión RAP")
     sheet.append(headers)

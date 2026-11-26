@@ -23,7 +23,7 @@ def resumen(titulo, categoria, filas, color, tonos=None):
             "Cantidad:Q", scale=alt.Scale(domain=[0, max(datos["Cantidad"]) * 1.2]),
             axis=alt.Axis(title=None, tickMinStep=1, grid=True),
         ),
-        y=alt.Y(f"{categoria}:N", sort="-x", axis=alt.Axis(title=None, labelLimit=138)),
+        y=alt.Y(f"{categoria}:N", sort="-x", axis=alt.Axis(title=None, labelLimit=175)),
     )
     color_barra = alt.value(PALETA[color][0])
     if tonos:
@@ -37,13 +37,13 @@ def resumen(titulo, categoria, filas, color, tonos=None):
         color=color_barra,
         tooltip=[alt.Tooltip(f"{categoria}:N"), alt.Tooltip("Cantidad:Q", format="d")],
     )
-    valores = barra.mark_text(align="left", dx=7, fontSize=15, fontWeight=700, color="#17304D").encode(
+    valores = barra.mark_text(align="left", dx=7, fontSize=18, fontWeight=700, color="#17304D").encode(
         text=alt.Text("Cantidad:Q", format="d"),
     )
     grafico_final = (barras + valores).properties(
         height=max(135, 36 * len(datos)),
         width="container", autosize=alt.AutoSizeParams(type="fit-x", contains="padding", resize=True),
-    ).configure_axis(labelFontSize=14, labelColor="#34516E", gridColor="#E5EDF5").configure_view(strokeWidth=0)
+    ).configure_axis(labelFontSize=16, labelColor="#34516E", gridColor="#E5EDF5").configure_view(strokeWidth=0)
 
     grafico, tabla = st.columns([3, 2], gap="medium")
     with grafico, panel("indicador-grafico"):

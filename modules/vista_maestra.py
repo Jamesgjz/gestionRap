@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import streamlit as st
 
-from database import traer_datos
+from database import traer_datos, traer_pagina
 from errors import DatabaseError
 from modules.ui import encabezado, tabla_con_estados
 
@@ -43,13 +43,6 @@ def render():
     st.button("← Volver a registros", on_click=volver_a_registros)
     encabezado("Vista maestra de asignaturas por participante", "Busca participantes y consulta el estado de sus pruebas.")
 
-    participantes = traer_datos("""
-        SELECT e.id_banner, e.nombre_completo, e.alfa_asignatura,
-               COALESCE(NULLIF(trim(to_jsonb(e)->>'estado_matriz'), ''),
-                        NULLIF(trim(to_jsonb(e)->>'estado_matricula'), ''))
-        FROM estudiantes e ORDER BY e.nombre_completo, e.id_banner
-    """)
-
     buscar, compacta, cantidad = st.columns([1.5, 1.2, 1])
     consulta = buscar.text_input(
         "Buscar participante", placeholder="Buscar por nombre o ID Banner…",
@@ -61,20 +54,22 @@ def render():
     if (consulta, limite) != st.session_state.get("filtros_maestra"):
         st.session_state["pagina_actual"] = 1
         st.session_state["filtros_maestra"] = (consulta, limite)
-    filtrados = [
-        fila for fila in participantes
-        if consulta in str(fila[1] or "").casefold() or consulta in str(fila[0])
-    ]
-    total = len(filtrados)
-    if not total:
+    total, pagina, visibles = traer_pagina("""
+        SELECT e.id_banner, e.nombre_completo, e.alfa_asignatura,
+               COALESCE(NULLIF(trim(to_jsonb(e)->>'estado_matriz'), ''),
+                        NULLIF(trim(to_jsonb(e)->>'estado_matricula'), ''))
+        FROM estudiantes e
+        WHERE %s = '' OR strpos(translate(lower(e.nombre_completo), 'ÁÉÍÓÚÜÑ', 'áéíóúüñ'), %s) > 0
+                     OR strpos(e.id_banner::text, %s) > 0
+    """, (consulta, consulta, consulta), "nombre_completo, id_banner",
+        st.session_state["pagina_actual"] - 1, limite)
+    if not visibles:
         st.info("No hay participantes que coincidan con la búsqueda." if consulta else "Aún no hay participantes registrados.")
         return
 
     max_pages = math.ceil(total / limite)
-    page = min(st.session_state["pagina_actual"], max_pages)
+    page = pagina + 1
     st.session_state["pagina_actual"] = page
-    start = (page - 1) * limite
-    visibles = filtrados[start:start + limite]
     catalogo, estados = catalogo_y_estados()
     activos = set().union(*(codigos(fila[2]) for fila in visibles))
 
@@ -101,7 +96,7 @@ def render():
     if cursos:
         tabla_con_estados(pd.DataFrame(rows), cursos.values(), height="content")
     else:
-        st.dataframe(rows, hide_index=True, width="stretch", height="content")
+        st.dataframe(rows, hide_index=True, width="stretch", height="content", row_height=36)
 
     def mover_pagina(offset):
         st.session_state["pagina_actual"] += offset

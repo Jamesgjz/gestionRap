@@ -15,20 +15,23 @@ MESES = ("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "
 def resumen_operativo():
     return traer_datos("""
         WITH agenda AS (
-            SELECT p.id, p.id_banner, p.fecha_aplicacion
+            SELECT count(*) AS agendadas,
+                   count(*) FILTER (WHERE n.id_programacion IS NULL AND
+                       p.fecha_aplicacion <= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota')::date) AS pendientes,
+                   count(DISTINCT e.id_banner) AS con_programacion
             FROM programacion_pruebas p
+            LEFT JOIN estudiantes e ON e.id_banner = p.id_banner
+            LEFT JOIN notas n ON n.id_programacion = p.id
             WHERE coalesce(lower(trim(to_jsonb(p)->>'estado')), '') NOT IN ('cancelada', 'cancelado')
+        ), resultados AS (
+            SELECT count(*) AS registrados,
+                   count(*) FILTER (WHERE upper(trim(resultado)) = 'APROBÓ') AS aprobados,
+                   count(*) FILTER (WHERE upper(trim(resultado)) = 'REPROBÓ') AS reprobados
+            FROM notas
         )
-        SELECT (SELECT count(*) FROM estudiantes),
-               (SELECT count(*) FROM agenda),
-               (SELECT count(*) FROM agenda p
-                WHERE p.fecha_aplicacion <= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota')::date
-                AND NOT EXISTS (SELECT 1 FROM notas n WHERE n.id_programacion = p.id)),
-               (SELECT count(*) FROM notas),
-               (SELECT count(DISTINCT p.id_banner) FROM agenda p
-                JOIN estudiantes e ON e.id_banner = p.id_banner),
-               (SELECT count(*) FROM notas WHERE upper(trim(resultado)) = 'APROBÓ'),
-               (SELECT count(*) FROM notas WHERE upper(trim(resultado)) = 'REPROBÓ')
+        SELECT (SELECT count(*) FROM estudiantes), agendadas, pendientes, registrados,
+               con_programacion, aprobados, reprobados
+        FROM agenda CROSS JOIN resultados
     """)[0]
 
 
@@ -74,8 +77,8 @@ def mostrar_registros_mensuales():
             chart = alt.Chart(serie).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6,
                                                color="#087D86").encode(
                 x=alt.X("Mes:N", sort=[mes for mes, _ in datos], title=None,
-                        axis=alt.Axis(labelAngle=-35)),
-                y=alt.Y("Participantes:Q", axis=alt.Axis(tickMinStep=1)),
+                        axis=alt.Axis(labelAngle=-35, labelFontSize=15)),
+                y=alt.Y("Participantes:Q", axis=alt.Axis(tickMinStep=1, labelFontSize=15, titleFontSize=16)),
                 tooltip=["Mes:N", "Participantes:Q"],
             ).properties(height=225)
             st.altair_chart(chart, width="stretch")

@@ -4,8 +4,8 @@
 [data-testid="stSidebar"] { background: var(--rap-navy); }
 [data-testid="stSidebarContent"] { padding-top: .2rem; }
 [data-testid="stSidebarUserContent"] { padding: 0 .9rem 1.1rem; }
-@media (min-width: 900px) {
-  [data-testid="stSidebar"][aria-expanded="true"] { min-width: 15.5rem; max-width: 15.5rem; }
+@media (min-width: 1050px) {
+  [data-testid="stSidebar"]:has([data-testid="stSidebarCollapseButton"]) { min-width: 16rem; max-width: 16rem; }
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button {
   min-height: 2.85rem; padding-inline: .72rem; justify-content: flex-start; text-align: left;
@@ -14,7 +14,7 @@
   display: flex; width: 100%; min-width: 0; justify-content: flex-start;
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button p {
-  font-size: 1rem; font-weight: 650; text-align: left;
+  font-size: 1.1rem; line-height: 1.3; font-weight: 650; text-align: left;
 }
 [data-testid="stSidebar"] button[kind="primary"] { background: var(--rap-blue); border-color: var(--rap-blue); }
 .rap-sidebar-logo { display: flex; align-items: center; gap: .55rem; padding: 0 .15rem 1rem; border-bottom: 1px solid #1f314c; }
@@ -25,7 +25,7 @@
 .rap-identity { display: flex; align-items: center; gap: .6rem; overflow-wrap: anywhere; }
 .rap-profile small { color: #b6c6de; }
 .rap-avatar { display: grid; place-items: center; flex: 0 0 2rem; height: 2rem; border-radius: 50%; background: #0052cc; color: #fff; font-size: .76rem; font-weight: 800; }
-.rap-online { margin: .45rem 0 0; color: #48dc91; font-size: .73rem; }
+.rap-online { margin: .45rem 0 0; color: #48dc91; font-size: .85rem; }
 .st-key-rap-page-heading { border-bottom: 1px solid var(--rap-border); padding-bottom: .85rem; }
 .st-key-rap-page-heading h1 { margin: 0; padding: 0; font-weight: 800; letter-spacing: -.035em; color: #0f172a; font-size: clamp(1.65rem, 2.5vw, 2.15rem); }
 .st-key-rap-page-heading p { margin: .35rem 0 0; color: #526a85 !important; }
@@ -38,7 +38,7 @@
 .st-key-rap-action-3 { --rap-accent: #153b77; }
 .rap-action-card { background: #fff; border: 1px solid var(--rap-border); border-bottom: none; border-radius: 14px 14px 0 0; padding: 1.4rem .8rem 1rem; min-height: 10rem; text-align: center; }
 .rap-action-card strong { color: #0f172a; display: block; font-size: 1.05rem; font-weight: 800; }
-.rap-action-card p { margin: .55rem 0 0; color: #526a85; font-size: .92rem; }
+.rap-action-card p { margin: .55rem 0 0; color: #526a85; font-size: .98rem; }
 .rap-action-icon { display: block; margin-bottom: .55rem; font-size: 2rem; line-height: 1.1; }
 [class*="st-key-rap-action-"][data-testid="stVerticalBlock"] { gap: 0; }
 [class*="st-key-rap-action-"] button[kind="primary"] { border-radius: 0 0 14px 14px; background: var(--rap-accent); border-color: var(--rap-accent); min-height: 2.85rem; font-weight: 700; }
@@ -69,7 +69,7 @@ body:has(.st-key-rap-login) [data-testid='stHeader'] { visibility: hidden; }
 
 .rap-status {
   display: inline-block; padding: .28rem .7rem; border-radius: 999px;
-  font-size: .9rem; font-weight: 750; line-height: 1.35;
+  font-size: .98rem; font-weight: 750; line-height: 1.35;
 }
 [class*="st-key-rap-metric-verde-"] { --metric-accent: #00865d; --metric-tint: #e5f6ee; --metric-text: #07563c; }
 [class*="st-key-rap-metric-rojo-"] { --metric-accent: #c3374b; --metric-tint: #fdecef; --metric-text: #8b2031; }
@@ -81,7 +81,11 @@ body:has(.st-key-rap-login) [data-testid='stHeader'] { visibility: hidden; }
 [class*="st-key-rap-metric-"] [data-testid="stMetric"] {
   border-top: .23rem solid var(--metric-accent);
   background: linear-gradient(145deg, var(--metric-tint), #fff 87%);
-  min-height: 6.5rem;
+  min-height: 7rem;
+}
+[data-testid="stMetricLabel"] p {
+  font-size: .95rem; line-height: 1.3;
+  white-space: normal; overflow-wrap: anywhere;
 }
 [class*="st-key-rap-metric-"] [data-testid="stMetricLabel"] p { font-weight: 700; color: var(--metric-text); }
 [class*="st-key-rap-metric-"] [data-testid="stMetricValue"] { font-size: 2.1rem; color: var(--metric-text); }

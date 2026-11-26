@@ -37,5 +37,5 @@ def render():
     ]
     st.dataframe(
         pd.DataFrame(visible, columns=["Docente", "Programa", "Asignaturas RAP", "Horas asignadas", "Estado"]),
-        hide_index=True, width="stretch", height="content",
+        hide_index=True, width="stretch", height="content", row_height=36,
     )

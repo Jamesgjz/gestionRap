@@ -90,3 +90,23 @@ def leer(sql, params=None, *, pool=None):
 @st.cache_data(ttl=30, max_entries=256, show_spinner=False)
 def traer_datos(sql, params=None):
     return leer(sql, params)
+
+
+def traer_pagina(sql, params, orden, pagina, limite):
+    """Devuelve el total y una página; el orden lo define cada consulta del código."""
+    consulta = f"""
+        WITH filtrados AS ({sql}),
+        total AS (SELECT count(*) AS registros FROM filtrados),
+        pagina AS (SELECT * FROM filtrados ORDER BY {orden} LIMIT %s OFFSET %s)
+        SELECT total.registros, pagina.*
+        FROM total LEFT JOIN pagina ON true
+        ORDER BY {orden}
+    """
+    filas = traer_datos(consulta, (*params, limite, pagina * limite))
+    total = filas[0][0]
+    ultima = max(0, (total - 1) // limite)
+    if pagina > ultima:
+        pagina = ultima
+    if total and filas[0][1] is None:
+        filas = traer_datos(consulta, (*params, limite, pagina * limite))
+    return total, pagina, [fila[1:] for fila in filas] if total else []

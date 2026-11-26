@@ -7,11 +7,10 @@ from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados
 PAGE_SIZE = 25
 COLUMNAS_RESULTADOS = ("ID Banner", "Participante", "Asignatura", "Asistió", "Nota", "Resultado")
 CATALOGO = """
-    LEFT JOIN LATERAL (
-        SELECT nombre_materia
-        FROM asignaturas WHERE trim(alfa) = trim(p.alfa_asignatura)
-        ORDER BY nombre_materia LIMIT 1
-    ) a ON true
+    LEFT JOIN (
+        SELECT DISTINCT ON (trim(alfa)) trim(alfa) AS alfa, nombre_materia
+        FROM asignaturas ORDER BY trim(alfa), nombre_materia
+    ) a ON a.alfa = trim(p.alfa_asignatura)
 """
 
 
@@ -23,8 +22,8 @@ QUERY_RESULTADOS = f"""
     JOIN estudiantes e ON p.id_banner = e.id_banner
     {CATALOGO}
     WHERE (%s = 'Todos' OR n.resultado = %s)
-      AND strpos(lower(concat_ws(' ', e.id_banner, e.nombre_completo,
-                                 p.alfa_asignatura, a.nombre_materia)), lower(%s)) > 0
+      AND (%s = '' OR strpos(lower(concat_ws(' ', e.id_banner, e.nombre_completo,
+                                               p.alfa_asignatura, a.nombre_materia)), lower(%s)) > 0)
     ORDER BY n.id_programacion DESC
 """
 
@@ -102,6 +101,10 @@ def calificar():
                 st.rerun()
 
 
+def mover_pagina(offset):
+    st.session_state["evaluacion_pagina"] += offset
+
+
 def historial(*, gestionar=False):
     import pandas as pd
 
@@ -117,7 +120,7 @@ def historial(*, gestionar=False):
             st.session_state["evaluacion_pagina"] = 0
 
         pagina = st.session_state["evaluacion_pagina"]
-        filtros_sql = (estado, estado, buscar)
+        filtros_sql = (estado, estado, buscar, buscar)
         rows = traer_datos(QUERY_RESULTADOS + " LIMIT %s OFFSET %s", (
             *filtros_sql, PAGE_SIZE + 1, PAGE_SIZE * pagina,
         ))
@@ -139,13 +142,11 @@ def historial(*, gestionar=False):
         )
 
         anterior, centro, siguiente = st.columns([1, 2, 1])
-        if anterior.button("Anterior", disabled=pagina == 0, icon=":material/chevron_left:"):
-            st.session_state["evaluacion_pagina"] -= 1
-            st.rerun()
+        anterior.button("Anterior", disabled=pagina == 0, icon=":material/chevron_left:",
+                        on_click=mover_pagina, args=(-1,))
         centro.caption(f"Página {pagina + 1}")
-        if siguiente.button("Siguiente", disabled=len(rows) <= PAGE_SIZE, icon=":material/chevron_right:"):
-            st.session_state["evaluacion_pagina"] += 1
-            st.rerun()
+        siguiente.button("Siguiente", disabled=len(rows) <= PAGE_SIZE, icon=":material/chevron_right:",
+                         on_click=mover_pagina, args=(1,))
 
         if not gestionar:
             pool = connection_pool()
@@ -162,7 +163,12 @@ def historial(*, gestionar=False):
     if not gestionar:
         return
 
-    with st.expander("Eliminar calificación", icon=":material/delete:"):
+    editor = st.expander("Eliminar calificación", icon=":material/delete:", on_change="rerun",
+                         key="evaluacion_eliminar")
+    if not editor.open:
+        return
+
+    with editor:
         opciones = {row[6]: f"{row[1]} ({row[0]}) · {row[2]} · Nota: {row[4]}" for row in visibles}
         id_programacion = st.selectbox("Calificación", list(opciones), format_func=opciones.__getitem__)
         if st.button("Confirmar eliminación de calificación"):

@@ -4,27 +4,39 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import streamlit as st
 
-from database import ejecutar_query, traer_datos
+from database import connection_pool, ejecutar_query, leer, traer_datos, traer_pagina
 from modules.exportacion import crear_excel
 from modules.ui import encabezado, panel, tabla_con_estados
 
 
-QUERY_HISTORICO = """
-    SELECT p.id_banner, e.nombre_completo,
-           COALESCE(a.nombre_materia, p.alfa_asignatura), p.fecha_registro,
-           p.fecha_aplicacion, p.hora, p.alfa_asignatura,
-           CASE WHEN lower(to_jsonb(p)->>'estado') IN ('cancelada', 'cancelado') THEN 'Cancelada'
-                WHEN n.id_programacion IS NOT NULL THEN 'Completada'
-                ELSE 'Programada' END
-    FROM programacion_pruebas p
-    JOIN estudiantes e ON e.id_banner = p.id_banner
+CATALOGO = """
     LEFT JOIN (
         SELECT DISTINCT ON (trim(alfa)) trim(alfa) AS alfa, nombre_materia
         FROM asignaturas ORDER BY trim(alfa), nombre_materia
     ) a ON a.alfa = trim(p.alfa_asignatura)
-    LEFT JOIN notas n ON n.id_programacion = p.id
-    ORDER BY p.fecha_aplicacion DESC, p.hora DESC, p.id DESC
 """
+QUERY_HISTORICO = f"""
+    SELECT p.id_banner, e.nombre_completo, COALESCE(a.nombre_materia, p.alfa_asignatura) AS asignatura,
+           p.fecha_registro, p.fecha_aplicacion, p.hora, p.alfa_asignatura,
+           CASE WHEN lower(to_jsonb(p)->>'estado') IN ('cancelada', 'cancelado') THEN 'Cancelada'
+                WHEN n.id_programacion IS NOT NULL THEN 'Completada'
+                ELSE 'Programada' END AS estado, p.id
+    FROM programacion_pruebas p
+    JOIN estudiantes e ON e.id_banner = p.id_banner
+    {CATALOGO}
+    LEFT JOIN notas n ON n.id_programacion = p.id
+"""
+FILTROS_HISTORICO = f"""
+    SELECT * FROM ({QUERY_HISTORICO}) registro
+    WHERE (%s = '' OR strpos(id_banner::text, %s) > 0
+        OR strpos(translate(lower(nombre_completo), 'ÁÉÍÓÚÜÑ', 'áéíóúüñ'), %s) > 0
+        OR strpos(translate(lower(asignatura), 'ÁÉÍÓÚÜÑ', 'áéíóúüñ'), %s) > 0
+        OR strpos(translate(lower(alfa_asignatura), 'ÁÉÍÓÚÜÑ', 'áéíóúüñ'), %s) > 0)
+      AND (%s::date IS NULL OR fecha_aplicacion BETWEEN %s AND %s)
+      AND (%s IS NULL OR asignatura = %s)
+      AND (%s IS NULL OR estado = %s)
+"""
+ORDEN_HISTORICO = "fecha_aplicacion DESC, hora DESC, id DESC"
 COLUMNAS = ["ID Banner", "Estudiante", "Asignatura", "Fecha de registro",
             "Fecha de aplicación", "Hora", "Código", "Estado"]
 
@@ -47,7 +59,7 @@ def agendar(hoy, hora_actual):
         return
 
     rows = traer_datos("""
-        SELECT e.nombre_completo, curso.alfa, a.nombre_materia
+        SELECT e.nombre_completo, curso.alfa, a.nombre_materia, p.fecha_aplicacion, p.hora, p.id
         FROM estudiantes e
         LEFT JOIN LATERAL (
             SELECT DISTINCT trim(codigo) AS alfa
@@ -62,6 +74,7 @@ def agendar(hoy, hora_actual):
             SELECT nombre_materia FROM asignaturas
             WHERE trim(alfa) = curso.alfa ORDER BY nombre_materia LIMIT 1
         ) a ON true
+        LEFT JOIN programacion_pruebas p ON p.id_banner = e.id_banner AND p.alfa_asignatura = curso.alfa
         WHERE e.id_banner = %s
         ORDER BY curso.alfa
     """, (banner_id,))
@@ -70,21 +83,19 @@ def agendar(hoy, hora_actual):
         return
 
     st.text(rows[0][0])
-    courses = {alfa: name or alfa for _, alfa, name in rows if alfa}
+    courses = {alfa: (name or alfa, fecha, hora, id_) for _, alfa, name, fecha, hora, id_ in rows if alfa}
     if not courses:
         st.info("El estudiante no tiene asignaturas con una prueba lista para agendar.")
         return
 
     course = st.selectbox(
         "Asignatura disponible", list(courses),
-        format_func=lambda alfa: f"{alfa} · {courses[alfa]}",
+        format_func=lambda alfa: f"{alfa} · {courses[alfa][0]}",
         key=f"agendar_curso_{banner_id}",
     )
-    previous = traer_datos("""
-        SELECT fecha_aplicacion, hora FROM programacion_pruebas
-        WHERE id_banner = %s AND alfa_asignatura = %s
-    """, (banner_id, course))
-    date, time = previous[0] if previous else (hoy, hora_actual)
+    _, date, time, id_ = courses[course]
+    if id_ is None:
+        date, time = hoy, hora_actual
 
     with st.form(f"programar_{banner_id}_{course}"):
         date = st.date_input("Fecha de aplicación", value=date)
@@ -98,12 +109,22 @@ def agendar(hoy, hora_actual):
                     fecha_aplicacion = EXCLUDED.fecha_aplicacion,
                     hora = EXCLUDED.hora
             """, (banner_id, course, hoy, date, time))
-            st.success("Programación guardada.")
+            st.session_state["agenda_guardada"] = True
+            st.rerun()
+
+
+def mover_pagina(offset):
+    st.session_state["programacion_pagina"] += offset
 
 
 def historico(hoy, *, gestionar=False):
-    rows = traer_datos(QUERY_HISTORICO)
-    if not rows:
+    asignaturas = traer_datos(f"""
+        SELECT DISTINCT COALESCE(a.nombre_materia, p.alfa_asignatura) AS asignatura
+        FROM programacion_pruebas p JOIN estudiantes e ON e.id_banner = p.id_banner
+        {CATALOGO}
+        ORDER BY asignatura
+    """)
+    if not asignaturas:
         st.info("Aún no hay pruebas agendadas.")
         return
 
@@ -111,8 +132,10 @@ def historico(hoy, *, gestionar=False):
     search, dates, courses, statuses = st.columns([2, 1, 1, 1])
     query = search.text_input("Estudiante, ID o asignatura").strip().casefold()
     dates = dates.selectbox("Rango de fechas", ["Todas", "Últimos 30 días", "Este mes"])
-    course = courses.selectbox("Asignatura", ["Todas"] + sorted({r[2] for r in rows}))
-    status = statuses.selectbox("Estado", ["Todos", "Programada", "Completada", "Cancelada"])
+    course = courses.selectbox("Asignatura", [None, *(nombre for (nombre,) in asignaturas if nombre)],
+                              format_func=lambda valor: valor or "Todas")
+    status = statuses.selectbox("Estado", [None, "Programada", "Completada", "Cancelada"],
+                                format_func=lambda valor: valor or "Todos")
 
     since, until = None, None
     if dates == "Últimos 30 días":
@@ -121,39 +144,36 @@ def historico(hoy, *, gestionar=False):
         since = hoy.replace(day=1)
         until = (since + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 
-    visible = [
-        row for row in rows
-        if (not query or any(query in str(row[i]).casefold() for i in (0, 1, 2, 6)))
-        and (since is None or (row[4] is not None and since <= row[4] <= until))
-        and (course == "Todas" or row[2] == course)
-        and (status == "Todos" or row[7] == status)
-    ]
-    if visible:
-        contador, cantidad = st.columns([3, 1])
-        limite = cantidad.selectbox("Filas por página", (15, 25, 50), index=1)
-        filtros = (query, dates, course, status, limite)
-        if filtros != st.session_state.get("programacion_filtros"):
-            st.session_state["programacion_filtros"] = filtros
-            st.session_state["programacion_pagina"] = 0
-        ultima = (len(visible) - 1) // limite
-        pagina = min(st.session_state["programacion_pagina"], ultima)
-        st.session_state["programacion_pagina"] = pagina
+    contador, cantidad = st.columns([3, 1])
+    limite = cantidad.selectbox("Filas por página", (15, 25, 50), index=1)
+    filtros = (query, dates, course, status, limite)
+    if filtros != st.session_state.get("programacion_filtros"):
+        st.session_state["programacion_filtros"] = filtros
+        st.session_state["programacion_pagina"] = 0
+    params = (query, query, query, query, query, since, since, until, course, course, status, status)
+    total, pagina, filas = traer_pagina(
+        FILTROS_HISTORICO, params, ORDEN_HISTORICO, st.session_state["programacion_pagina"], limite,
+    )
+    st.session_state["programacion_pagina"] = pagina
+    if filas:
         inicio = pagina * limite
-        fin = min(inicio + limite, len(visible))
-        contador.caption(f"Mostrando {inicio + 1}–{fin} de {len(visible)} registros")
-        tabla_con_estados(pd.DataFrame(visible[inicio:fin], columns=COLUMNAS), ("Estado",), height="content")
+        contador.caption(f"Mostrando {inicio + 1}–{inicio + len(filas)} de {total} registros")
+        tabla_con_estados(pd.DataFrame([fila[:8] for fila in filas], columns=COLUMNAS), ("Estado",), height="content")
         anterior, centro, siguiente = st.columns([1, 2, 1])
-        if anterior.button("Anterior", disabled=pagina == 0, icon=":material/chevron_left:"):
-            st.session_state["programacion_pagina"] -= 1
-            st.rerun()
-        centro.caption(f"Página {pagina + 1} de {ultima + 1}")
-        if siguiente.button("Siguiente", disabled=pagina == ultima, icon=":material/chevron_right:"):
-            st.session_state["programacion_pagina"] += 1
-            st.rerun()
+        anterior.button("Anterior", disabled=pagina == 0, icon=":material/chevron_left:",
+                        on_click=mover_pagina, args=(-1,))
+        centro.caption(f"Página {pagina + 1} de {(total - 1) // limite + 1}")
+        siguiente.button("Siguiente", disabled=inicio + limite >= total, icon=":material/chevron_right:",
+                         on_click=mover_pagina, args=(1,))
+        pool = connection_pool()
+
+        def descargar():
+            filas_excel = leer(f"{FILTROS_HISTORICO} ORDER BY {ORDEN_HISTORICO}", params, pool=pool)
+            return crear_excel(COLUMNAS, (fila[:8] for fila in filas_excel))
+
         st.download_button(
-            "Exportar Excel", lambda: crear_excel(COLUMNAS, visible),
-            "programacion.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            on_click="ignore",
+            "Exportar Excel", descargar, "programacion.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", on_click="ignore",
         )
     else:
         st.info("No hay pruebas que coincidan con los filtros.")
@@ -161,16 +181,28 @@ def historico(hoy, *, gestionar=False):
     if not gestionar:
         return
 
-    with st.expander("Eliminar programación"):
-        options = {(r[0], r[6]): f"{r[0]} · {r[1]} · {r[2]}" for r in rows}
-        selected = st.selectbox("Prueba a eliminar", list(options), format_func=options.__getitem__)
-        if st.button("Confirmar eliminación"):
-            affected = ejecutar_query(
-                "DELETE FROM programacion_pruebas WHERE id_banner = %s AND alfa_asignatura = %s",
-                selected,
-            )
-            st.session_state["agenda_eliminada"] = affected
-            st.rerun()
+    editor = st.expander("Eliminar programación", key="programacion_eliminar", on_change="rerun")
+    if editor.open:
+        with editor:
+            rows = traer_datos(f"""
+                SELECT p.id_banner, p.alfa_asignatura, e.nombre_completo,
+                       COALESCE(a.nombre_materia, p.alfa_asignatura)
+                FROM programacion_pruebas p JOIN estudiantes e ON e.id_banner = p.id_banner
+                {CATALOGO}
+                ORDER BY p.fecha_aplicacion DESC, p.hora DESC, p.id DESC
+            """)
+            if not rows:
+                return
+            options = {(banner, codigo): f"{banner} · {nombre} · {materia}"
+                       for banner, codigo, nombre, materia in rows}
+            selected = st.selectbox("Prueba a eliminar", list(options), format_func=options.__getitem__)
+            if st.button("Confirmar eliminación"):
+                affected = ejecutar_query(
+                    "DELETE FROM programacion_pruebas WHERE id_banner = %s AND alfa_asignatura = %s",
+                    selected,
+                )
+                st.session_state["agenda_eliminada"] = affected
+                st.rerun()
 
 
 def render():
@@ -178,6 +210,8 @@ def render():
     now = datetime.now(ZoneInfo("America/Bogota"))
     view = st.radio("Vista de programación", ["Agendar y editar", "Registro de pruebas"], horizontal=True)
     if view == "Agendar y editar":
+        if st.session_state.pop("agenda_guardada", False):
+            st.success("Programación guardada.")
         agendar(now.date(), now.time().replace(second=0, microsecond=0))
     else:
         if "agenda_eliminada" in st.session_state:
