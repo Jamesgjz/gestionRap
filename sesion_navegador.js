@@ -66,14 +66,19 @@ export default function ({data, parentElement, setTriggerValue}) {
         revoke(data.revoke).catch(() => {});
         return;
     }
-    const task = data.enroll ? enroll(data.enroll) : restore(data.challenge);
-    task.then(result => {
-        if (!result) return;
-        if (data.challenge) {
-            const form = document.querySelector(".st-key-rap-login-form [data-testid=stForm]");
-            if (form?.contains(document.activeElement) ||
-                [...(form?.querySelectorAll("input") || [])].some(input => input.value)) return;
-        }
-        setTriggerValue("reply", {operation, result});
-    }).catch(() => {});
+    if (data.enroll) {
+        enroll(data.enroll)
+            .then(result => setTriggerValue("reply", {operation, result}))
+            .catch(() => setTriggerValue("reply", {operation, result: null}));
+        return;
+    }
+    let finished = false;
+    function reply(result) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        if (root.isConnected) setTriggerValue("reply", {operation, result});
+    }
+    const timeout = setTimeout(() => reply(null), 1500);
+    restore(data.challenge).catch(() => null).then(reply);
 }

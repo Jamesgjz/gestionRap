@@ -11,7 +11,10 @@ from local_auth import (
 )
 from modules.ui import acceso, aplicar_estilo, perfil_lateral
 from rutas import PAGINAS, crear_pagina, enlace, ir_a, principal
-from sesion_navegador import cuentas_activas, inscribir, recuperar, sesiones
+from sesion_navegador import (
+    cuentas_activas, inscribir, inscripcion_pendiente, limpiar,
+    recuperar, sesiones,
+)
 
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 aplicar_estilo()
@@ -36,17 +39,30 @@ if identificador is not None:
         terminada = True
 
 now = monotonic()
-account = current_account(session, accounts, now)
-if account is None:
-    if session is not None:
-        st.session_state.clear()
-        st.session_state["rap_recuperacion_intentada"] = True
-        terminada = True
+account = accounts[session[0]] if identificador and session else current_account(session, accounts, now)
+if account is None and session is not None:
+    st.session_state.clear()
+    st.session_state["rap_recuperacion_intentada"] = True
+    terminada = True
+
+configurada = any(user.role == "admin" for user in accounts.values())
+if account is None and configurada and not st.session_state.get("rap_recuperacion_intentada"):
     recuperar(accounts)
+    with st.container(key="rap-acceso-espera"):
+        st.html('<p role="status">Abriendo Gestión RAP…</p>')
+        if st.button("Ir al inicio de sesión", type="tertiary"):
+            st.session_state.pop("rap_reto", None)
+            st.session_state["rap_recuperacion_intentada"] = True
+            st.rerun()
+    st.stop()
+
+if account is None:
+    if revocada := st.session_state.pop("rap_revocada", None):
+        limpiar(revocada)
     with acceso():
         st.header("Acceso al sistema", anchor=False)
         st.caption("Inicia sesión para continuar con RAP Digital.")
-        if not any(user.role == "admin" for user in accounts.values()):
+        if not configurada:
             st.warning("El acceso a Gestión RAP aún no está configurado.")
             st.stop()
         if terminada:
@@ -74,7 +90,9 @@ if account is None:
 
 username, revision, started, _ = session
 st.session_state["rap_session"] = (username, revision, started, now)
-inscribir(st.session_state.get("rap_id"))
+identificador = st.session_state.get("rap_id")
+if inscripcion_pendiente(identificador):
+    inscribir(identificador)
 
 role = account.role
 st.session_state["usuario"] = account.name

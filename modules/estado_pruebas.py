@@ -5,6 +5,7 @@ from database import ejecutar_query, traer_datos
 from modules.exportacion import crear_excel, descarga_autorizada
 from modules.programas_datos import catalogo_asignaturas, listar_programas
 from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados, tarjetas_metricas
+from rutas import enlace
 
 
 ESTADOS = ("Construida", "En construcción", "Sin construir")
@@ -17,7 +18,6 @@ def estado_visible(value):
     if state in {"en construcción", "en construccion"}:
         return ESTADOS[1]
     return ESTADOS[2]
-from rutas import enlace
 
 
 def _render(*, gestionar):
@@ -29,22 +29,25 @@ def _render(*, gestionar):
     if gestionar and (message := st.session_state.pop("estado_guardado", None)):
         st.success(message)
 
-    profesores = dict(traer_datos("""
-        SELECT COALESCE(to_jsonb(p)->>'id_professor', to_jsonb(p)->>'id_profesor', to_jsonb(p)->>'id'),
-               nombre_completo
-        FROM profesores p ORDER BY nombre_completo
-    """))
-    profesores.pop(None, None)
-    catalogo = traer_datos("""
-        SELECT a.alfa, a.nombre_materia, m.estado, m.id_profesor::text
-        FROM (
-            SELECT DISTINCT ON (trim(alfa)) trim(alfa) AS alfa, nombre_materia
-            FROM asignaturas WHERE nullif(trim(alfa), '') IS NOT NULL
-            ORDER BY trim(alfa), nombre_materia
-        ) a
-        LEFT JOIN maestro_pruebas m ON a.alfa = trim(m.alfa_asignatura)
-        ORDER BY a.alfa
-    """)
+    docentes, catalogo = traer_datos("""
+        WITH docentes AS (
+            SELECT COALESCE(to_jsonb(p)->>'id_professor', to_jsonb(p)->>'id_profesor', to_jsonb(p)->>'id') AS id,
+                   nombre_completo
+            FROM profesores p
+        ), pruebas AS (
+            SELECT a.alfa, a.nombre_materia, m.estado, m.id_profesor::text AS docente
+            FROM (
+                SELECT DISTINCT ON (trim(alfa)) trim(alfa) AS alfa, nombre_materia
+                FROM asignaturas WHERE nullif(trim(alfa), '') IS NOT NULL
+                ORDER BY trim(alfa), nombre_materia
+            ) a LEFT JOIN maestro_pruebas m ON a.alfa = trim(m.alfa_asignatura)
+        )
+        SELECT COALESCE((SELECT jsonb_agg(jsonb_build_array(id, nombre_completo)
+                                        ORDER BY nombre_completo) FROM docentes WHERE id IS NOT NULL), '[]'::jsonb),
+               COALESCE((SELECT jsonb_agg(jsonb_build_array(alfa, nombre_materia, estado, docente)
+                                        ORDER BY alfa) FROM pruebas), '[]'::jsonb)
+    """)[0]
+    profesores = dict(docentes)
     rows = [(code, name or code, estado_visible(state), teacher) for code, name, state, teacher in catalogo]
     metrics = (("Asignaturas", len(rows)), *((state, sum(r[2] == state for r in rows)) for state in ESTADOS))
     tarjetas_metricas(metrics, ("azul", "verde", "ambar", "gris"))

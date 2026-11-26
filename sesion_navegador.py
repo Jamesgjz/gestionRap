@@ -133,14 +133,12 @@ def intercambiar(datos):
         return None
 
 
+def limpiar(identificador):
+    intercambiar({"revoke": identificador})
+
+
 @st.fragment
 def recuperar(cuentas):
-    revocada = st.session_state.get("rap_revocada")
-    if revocada:
-        intercambiar({"revoke": revocada})
-        return
-    if st.session_state.get("rap_recuperacion_intentada"):
-        return None
     if "rap_reto" not in st.session_state:
         st.session_state["rap_reto"] = (token_urlsafe(32), monotonic())
     reto, inicio = st.session_state["rap_reto"]
@@ -150,23 +148,25 @@ def recuperar(cuentas):
     st.session_state["rap_recuperacion_intentada"] = True
     st.session_state.pop("rap_reto", None)
     valores = respuesta.get("result")
-    if not isinstance(valores, dict) or monotonic() - inicio >= 60:
-        return None
-    identificador = valores.get("id")
-    try:
-        sesion = sesiones.recuperar(identificador, valores.get("proof"), reto, cuentas)
-    except ImportError:
-        return None
-    if sesion is not None:
-        st.session_state["rap_id"] = identificador
-        st.session_state["rap_session"] = sesion
-        st.rerun()
+    if isinstance(valores, dict) and monotonic() - inicio < 60:
+        identificador = valores.get("id")
+        try:
+            sesion = sesiones.recuperar(identificador, valores.get("proof"), reto, cuentas)
+        except ImportError:
+            sesion = None
+        if sesion is not None:
+            st.session_state["rap_id"] = identificador
+            st.session_state["rap_session"] = sesion
+    st.rerun()
+
+
+def inscripcion_pendiente(identificador):
+    return (identificador is not None and not st.session_state.get("rap_inscripcion_intentada")
+            and not sesiones.inscrita(identificador))
 
 
 @st.fragment
 def inscribir(identificador):
-    if identificador is None or sesiones.inscrita(identificador) or st.session_state.get("rap_inscripcion_intentada"):
-        return
     respuesta = intercambiar({"enroll": identificador})
     if not isinstance(respuesta, dict) or respuesta.get("operation") != identificador:
         return

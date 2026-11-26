@@ -1,5 +1,6 @@
 # La interfaz usa st.html para mostrar el logo institucional desde el repositorio.
 streamlit==1.67.0
+# Verifica la sesión del navegador mientras se carga el recurso solicitado.
 cryptography>=46,<51
 psycopg2-binary==2.9.13
 pandas
