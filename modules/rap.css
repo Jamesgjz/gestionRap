@@ -10,6 +10,9 @@
 [data-testid="stSidebar"] [data-testid="stButton"] button {
   min-height: 2.85rem; padding-inline: .72rem; justify-content: flex-start; text-align: left;
 }
+[data-testid="stSidebar"] [data-testid="stButton"] button > div > span[data-has-shortcut] {
+  display: flex; width: 100%; min-width: 0; justify-content: flex-start;
+}
 [data-testid="stSidebar"] [data-testid="stButton"] button p {
   font-size: 1rem; font-weight: 650; text-align: left;
 }
