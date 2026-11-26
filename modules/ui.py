@@ -6,7 +6,6 @@ from pathlib import Path
 import streamlit as st
 
 from modules.colores import PALETA, estilo_estado, tono_estado
-from rutas import enlace
 
 
 @lru_cache(maxsize=1)
@@ -103,7 +102,7 @@ def tarjetas_acciones(acciones):
         ":material/rate_review:": "📝",
         ":material/monitoring:": "📊",
     }
-    for i, (columna, (titulo, descripcion, boton, icono, ruta)) in enumerate(
+    for i, (columna, (titulo, descripcion, boton, icono, callback, args)) in enumerate(
         zip(st.columns(len(acciones), gap="small"), acciones)
     ):
         with columna, st.container(key=f"rap-action-{i}"):
@@ -113,4 +112,4 @@ def tarjetas_acciones(acciones):
                     <strong>{escape(titulo)}</strong><p>{escape(descripcion)}</p>
                 </div>
             """)
-            enlace(ruta, label=boton, nueva_pestana=True)
+            st.button(boton, type="primary", width="stretch", on_click=callback, args=args)

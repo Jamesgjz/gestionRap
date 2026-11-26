@@ -3,11 +3,12 @@ from html import escape
 import streamlit as st
 from database import DatabaseError, ejecutar_query, traer_datos
 from modules.programas_datos import listar_programas, preparar_esquema
-from rutas import enlace, ir_a
-
 
 def render():
-    enlace("docentes", label="← Volver a Gestión de Docentes")
+    # --- BOTÓN DE RETORNO NATIVO ---
+    if st.button("← Volver a Gestión de Docentes", key="back_to_docs"):
+        st.session_state['reg_vista'] = "docentes"
+        st.rerun()
 
     if not preparar_esquema():
         return
@@ -104,7 +105,8 @@ def render():
         with b_col2:
             st.markdown('<div class="btn-cancelar">', unsafe_allow_html=True)
             if st.button("Cancelar", width="stretch"):
-                ir_a("docentes")
+                st.session_state['reg_vista'] = "docentes"
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col3:
             btn_another = st.button("Guardar y crear otro", width="stretch")
@@ -127,7 +129,7 @@ def render():
                     if btn_another:
                         st.session_state["form_version"] += 1
                     else:
-                        ir_a("docentes")
+                        st.session_state["reg_vista"] = "docentes"
                     st.rerun()
 
     # --- BARRA LATERAL EN VIVO (CERO SANGRIAS PARA DESPLEGAR EL HTML) ---

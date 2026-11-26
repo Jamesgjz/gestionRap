@@ -1,6 +1,5 @@
 # La interfaz usa st.html para mostrar el logo institucional desde el repositorio.
 streamlit==1.67.0
-starlette>=0.46,<2
 psycopg2-binary==2.9.13
 pandas
 altair>=5,<7

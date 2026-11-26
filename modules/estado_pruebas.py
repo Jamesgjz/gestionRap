@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from database import ejecutar_query, traer_datos
-from modules.exportacion import crear_excel, descarga_autorizada
+from modules.exportacion import crear_excel
 from modules.programas_datos import catalogo_asignaturas, listar_programas
 from modules.ui import encabezado, etiqueta_estado, panel, tabla_con_estados, tarjetas_metricas
 
@@ -17,13 +17,16 @@ def estado_visible(value):
     if state in {"en construcción", "en construccion"}:
         return ESTADOS[1]
     return ESTADOS[2]
-from rutas import enlace
+
+
+def volver():
+    st.session_state["opcion_menu"] = "Inicio"
 
 
 def _render(*, gestionar):
     descripcion = "Consulta el avance de construcción de las pruebas por asignatura."
     if gestionar:
-        enlace("", label="← Volver al Panel Principal")
+        st.button("← Volver al Panel Principal", on_click=volver)
         descripcion = "Consulta el avance de cada asignatura y asigna docentes evaluadores."
     encabezado("Estado de Pruebas", descripcion)
     if gestionar and (message := st.session_state.pop("estado_guardado", None)):
@@ -83,7 +86,7 @@ def _render(*, gestionar):
         st.caption(f"{total} {resultado}")
         tabla_con_estados(pd.DataFrame(tabla, columns=headers), ("Estado",), height="content")
         st.download_button(
-            "Exportar Excel", descarga_autorizada(lambda: crear_excel(headers, tabla)),
+            "Exportar Excel", lambda: crear_excel(headers, tabla),
             "estado-pruebas.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             on_click="ignore",
         )

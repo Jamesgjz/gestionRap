@@ -4,11 +4,12 @@ import streamlit as st
 from errors import DatabaseError
 from modules.participantes_datos import guardar_participantes, preparar_participante
 from modules.programas_datos import catalogo_asignaturas, preparar_esquema, selector_programa
-from rutas import enlace, ir_a
-
 
 def render():
-    enlace("registro", label="← Volver al Panel Principal")
+    # --- BOTÓN DE RETORNO NATIVO ---
+    if st.button("← Volver al Panel Principal", key="back_to_dash"):
+        st.session_state['reg_vista'] = "dashboard"
+        st.rerun()
 
     if not preparar_esquema():
         return
@@ -119,7 +120,8 @@ div[data-baseweb="select"]:focus-within,
         with b_col2:
             st.markdown('<div class="btn-cancelar">', unsafe_allow_html=True)
             if st.button("Cancelar", width="stretch"):
-                ir_a("registro")
+                st.session_state['reg_vista'] = "dashboard"
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col3:
             btn_another = st.button("Guardar y crear otro", width="stretch")
@@ -141,7 +143,7 @@ div[data-baseweb="select"]:focus-within,
                     if btn_another:
                         st.session_state["form_version"] += 1
                     else:
-                        ir_a("vista-maestra")
+                        st.session_state["reg_vista"] = "maestra"
                     st.rerun()
 
     # --- BARRA LATERAL EN VIVO (CERO SANGRIAS) ---

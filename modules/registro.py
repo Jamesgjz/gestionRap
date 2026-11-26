@@ -1,25 +1,29 @@
+from importlib import import_module
+
 import streamlit as st
 
 from modules.ui import encabezado, panel, tarjetas_acciones, tarjetas_metricas
-from rutas import enlace
 
 
-def render():
+def ir_a(vista):
+    st.session_state["reg_vista"] = vista
+
+
+def ver_resumen():
     from database import traer_datos
     from modules.indicadores_registro import mostrar_registros_mensuales, resumen_operativo
 
     encabezado("Registro de participantes", "Administra a los participantes y docentes del proceso RAP.")
     tarjetas_acciones((
         ("Docentes evaluadores", "Consulta la lista y registra nuevos docentes.", "Gestionar docentes",
-         ":material/school:", "docentes"),
+         ":material/school:", ir_a, ("docentes",)),
         ("Participantes", "Registra a una persona y vincula sus asignaturas.", "Gestionar participantes",
-         ":material/group:", "participantes"),
+         ":material/group:", ir_a, ("estudiantes",)),
         ("Vista maestra", "Consulta el estado de las pruebas por participante.", "Abrir vista maestra",
-         ":material/table_view:", "vista-maestra"),
+         ":material/table_view:", ir_a, ("maestra",)),
     ))
 
-    enlace("registro-csv", label="Registro automático (CSV)", icon=":material/upload_file:",
-           nueva_pestana=True)
+    st.button("Registro automático (CSV)", icon=":material/upload_file:", on_click=ir_a, args=("importar",))
 
     participantes, _, pendientes, _, con_programacion, aprobados, reprobados = resumen_operativo()
     docentes, en_construccion, asignaturas = traer_datos("""
@@ -53,3 +57,22 @@ def render():
             st.text(f"{nombre} · {codigo} · {fecha:%d/%m/%Y}" if fecha else f"{nombre} · {codigo}")
         if not programaciones:
             st.caption("Aún no hay pruebas programadas.")
+
+
+def render():
+    if message := st.session_state.pop("registro_guardado", None):
+        st.success(message)
+
+    vista = st.session_state.get("reg_vista", "dashboard")
+    if vista == "dashboard":
+        ver_resumen()
+        return
+
+    module = {
+        "docentes": "gestion_docentes",
+        "estudiantes": "gestion_estudiantes",
+        "maestra": "vista_maestra",
+        "importar": "registro_automatico",
+        "nuevo_docente": "nuevo_docente",
+    }[vista]
+    import_module(f"modules.{module}").render()
