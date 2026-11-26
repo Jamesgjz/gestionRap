@@ -127,7 +127,8 @@ def historial():
             for row in visibles
         ])
         tabla_con_estados(
-            datos, ("Resultado",), column_config={"Nota": st.column_config.NumberColumn(format="%.2f")},
+            datos, ("Resultado",), height="content",
+            column_config={"Nota": st.column_config.NumberColumn(format="%.2f")},
         )
 
         anterior, centro, siguiente = st.columns([1, 2, 1])
