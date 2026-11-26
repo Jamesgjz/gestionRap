@@ -1,6 +1,6 @@
 import streamlit as st
 
-from database import traer_datos
+from modules.ui import encabezado, tarjetas_acciones
 
 
 def abrir(page, registro=None):
@@ -10,27 +10,14 @@ def abrir(page, registro=None):
 
 
 def render():
-    st.title("Panel de control")
-    st.text(f"Bienvenido, {st.session_state['usuario']}")
-
-    conteos = traer_datos("""
-        SELECT (SELECT COUNT(*) FROM estudiantes),
-               (SELECT COUNT(*) FROM programacion_pruebas),
-               (SELECT COUNT(*) FROM programacion_pruebas p
-                 WHERE p.fecha_aplicacion <= CURRENT_DATE
-                   AND NOT EXISTS (SELECT 1 FROM notas n WHERE n.id_programacion = p.id)),
-               (SELECT COUNT(*) FROM notas)
-    """)[0]
-    labels = ("Estudiantes registrados", "Pruebas agendadas", "Resultados pendientes", "Resultados registrados")
-    for column, label, value in zip(st.columns(4), labels, conteos):
-        column.metric(label, value)
-
-    st.subheader("Acciones rápidas")
-    links = (
-        ("Registrar estudiante", "Registro Estudiantes", "estudiantes"),
-        ("Programar prueba", "Programación", None),
-        ("Registrar resultado", "Evaluación", None),
-        ("Ver reportes", "Dashboard / KPIs", None),
-    )
-    for column, (label, page, registro) in zip(st.columns(4), links):
-        column.button(label, width="stretch", on_click=abrir, args=(page, registro))
+    encabezado("Panel de control", f"Bienvenido, {st.session_state['usuario']}")
+    tarjetas_acciones((
+        ("Participantes", "Inscribe a una persona en el proceso RAP.", "Registrar participante",
+         ":material/person_add:", abrir, ("Registro de participantes", "estudiantes")),
+        ("Programación", "Agenda o modifica la fecha de una prueba.", "Programar prueba",
+         ":material/calendar_month:", abrir, ("Programación",)),
+        ("Evaluación", "Registra asistencia y calificaciones.", "Registrar resultado",
+         ":material/rate_review:", abrir, ("Evaluación",)),
+        ("Indicadores", "Consulta el avance del proceso RAP.", "Ver reportes",
+         ":material/monitoring:", abrir, ("Dashboard / KPIs",)),
+    ))

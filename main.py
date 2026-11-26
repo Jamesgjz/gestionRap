@@ -4,6 +4,8 @@ from time import time
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
+from errors import DatabaseError
+
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
 # Retira parámetros de acceso que podrían venir de enlaces anteriores.
@@ -61,7 +63,7 @@ st.session_state["usuario"] = user_name
 st.session_state["rol"] = role
 pages = {
     "Inicio": ("inicio", "Inicio", ":material/home:"),
-    "Registro Estudiantes": ("registro", "Registro de Estudiantes", ":material/group:"),
+    "Registro de participantes": ("registro", "Registro de participantes", ":material/group:"),
     "Estado de Pruebas": ("estado_pruebas", "Estado de Pruebas", ":material/assignment:"),
     "Programación": ("programacion", "Programación", ":material/calendar_today:"),
     "Evaluación": ("evaluacion", "Evaluación", ":material/rate_review:"),
@@ -79,19 +81,22 @@ def logout():
     st.session_state.clear()
     st.logout()
 
-with st.sidebar:
-    st.markdown("**UNIMINUTO Virtual · RAP Digital**")
-    st.text(user_name)
-    st.caption("Administración" if role == "admin" else "Consulta")
-    for page, (_, label, icon) in pages.items():
-        st.button(label, icon=icon, width="stretch", on_click=navigate, args=(page,))
-    st.button("Cerrar sesión", icon=":material/logout:", width="stretch", on_click=logout)
-
 selected = st.session_state.get("opcion_menu")
 if selected not in pages:
     selected = next(iter(pages))
 
-from database import DatabaseError
+with st.sidebar:
+    st.markdown("**UNIMINUTO Virtual**")
+    st.caption("Gestión RAP")
+    with st.container(border=True):
+        st.text(user_name)
+        st.caption("Administración" if role == "admin" else "Consulta")
+    for page, (_, label, icon) in pages.items():
+        st.button(
+            label, icon=icon, width="stretch", on_click=navigate, args=(page,),
+            type="primary" if page == selected else "tertiary",
+        )
+    st.button("Cerrar sesión", icon=":material/logout:", width="stretch", on_click=logout)
 
 try:
     import_module(f"modules.{pages[selected][0]}").render()

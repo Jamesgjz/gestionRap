@@ -8,7 +8,7 @@ def volver_a_registros():
 
 def render():
     st.button("← Volver a registros", on_click=volver_a_registros)
-    st.title("Vista maestra de asignaturas por estudiante")
+    st.title("Vista maestra de asignaturas por participante")
 
     if 'pagina_actual' not in st.session_state:
         st.session_state['pagina_actual'] = 1
@@ -32,7 +32,7 @@ def render():
 
     f_col1, f_col3, f_col4 = st.columns([1.5, 1.2, 1])
     with f_col1:
-        search_query = st.text_input("Buscar estudiante", placeholder="Buscar por nombre o ID Banner...", label_visibility="collapsed")
+        search_query = st.text_input("Buscar participante", placeholder="Buscar por nombre o ID Banner...", label_visibility="collapsed")
         if search_query != st.session_state.get("maestra_busqueda"):
             st.session_state["pagina_actual"] = 1
             st.session_state["maestra_busqueda"] = search_query
@@ -51,7 +51,7 @@ def render():
 
     total = len(estudiantes_filtrados)
     if not total:
-        st.info("No hay estudiantes que coincidan con la búsqueda.")
+        st.info("No hay participantes que coincidan con la búsqueda.")
         return
     max_pages = math.ceil(total / limite_filas)
     page = min(st.session_state["pagina_actual"], max_pages)
@@ -69,7 +69,7 @@ def render():
     rows = []
     for banner, name, registered, enrollment in visible:
         codes = {code.strip().upper() for code in (registered or "").split(",")}
-        row = {"ID Banner": banner, "Estudiante": name, "Matrícula": enrollment}
+        row = {"ID Banner": banner, "Participante": name, "Matrícula": enrollment}
         for code, label in courses.items():
             row[label] = (estados.get(code) or "sin construir").capitalize() if code in codes else "—"
         rows.append(row)
@@ -80,5 +80,5 @@ def render():
 
     left, center, right = st.columns(3)
     left.button("◀ Anterior", disabled=page == 1, on_click=mover_pagina, args=(-1,))
-    center.caption(f"Página {page} de {max_pages} · {total} estudiantes")
+    center.caption(f"Página {page} de {max_pages} · {total} participantes")
     right.button("Siguiente ▶", disabled=page == max_pages, on_click=mover_pagina, args=(1,))

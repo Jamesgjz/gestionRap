@@ -8,12 +8,10 @@ from psycopg2.pool import PoolError, ThreadedConnectionPool
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
+from errors import DatabaseError
+
 load_dotenv()
 logger = logging.getLogger(__name__)
-
-
-class DatabaseError(RuntimeError):
-    pass
 
 
 @st.cache_resource

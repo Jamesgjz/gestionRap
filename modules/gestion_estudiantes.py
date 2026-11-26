@@ -84,8 +84,8 @@ div[data-baseweb="select"]:focus-within,
         st.warning("No hay asignaturas disponibles en el catálogo.")
 
     st.markdown('<div class="form-container">', unsafe_allow_html=True)
-    st.markdown('<div class="form-title">Nuevo estudiante</div>', unsafe_allow_html=True)
-    st.markdown('<div class="form-subtitle">Formulario oficial parametrizado según las columnas de la tabla estudiantes de la base de datos.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="form-title">Nuevo participante</div>', unsafe_allow_html=True)
+    st.markdown('<div class="form-subtitle">Vincula al participante con las asignaturas que evaluará en el proceso RAP.</div>', unsafe_allow_html=True)
 
     col_form, col_sum = st.columns([2.2, 1])
 
@@ -98,14 +98,14 @@ div[data-baseweb="select"]:focus-within,
             id_banner = st.text_input("ID Banner (*id_banner) *", placeholder="Ej. 90012345", key=f"student_id_banner_{version}")
             estado_matriz = st.selectbox("Estado de matrícula (*estado_matriz) *", ["Matriculado", "No matriculado"], key=f"student_estado_matriz_{version}")
         with g_col2:
-            nombre_completo = st.text_input("Nombre completo del estudiante *", placeholder="Ej. Alba Lucía Pinzón Gallego", key=f"student_nombre_completo_{version}")
+            nombre_completo = st.text_input("Nombre completo del participante *", placeholder="Ej. Alba Lucía Pinzón Gallego", key=f"student_nombre_completo_{version}")
 
         # --- 2. VINCULACIÓN CURRICULAR ---
         st.markdown('<div class="form-section-title">2. Vinculación curricular</div>', unsafe_allow_html=True)
         asig_seleccionadas = st.multiselect("Asignaturas RAP (*alfa_asignatura) *", options=lista_asignaturas, placeholder="Selecciona los códigos alfanuméricos", key=f"student_asig_seleccionadas_{version}")
 
         # --- 3. OBSERVACIONES ---
-        st.markdown('<div class="form-section-title">3. Observaciones del estudiante</div>', unsafe_allow_html=True)
+        st.markdown('<div class="form-section-title">3. Observaciones del participante</div>', unsafe_allow_html=True)
         observaciones = st.text_area("Notas adicionales (*observaciones)", max_chars=500, placeholder="Escribe apoyos requeridos o novedades académicas...", key=f"student_observaciones_{version}")
 
         # --- BOTONERA DE ACCIÓN ---
@@ -113,7 +113,7 @@ div[data-baseweb="select"]:focus-within,
         b_col1, b_col2, b_col3 = st.columns([1, 0.8, 2])
         with b_col1:
             st.markdown('<div class="btn-guardar">', unsafe_allow_html=True)
-            btn_save = st.button("📥 Guardar estudiante", width="stretch")
+            btn_save = st.button("📥 Guardar participante", width="stretch")
             st.markdown('</div>', unsafe_allow_html=True)
         with b_col2:
             st.markdown('<div class="btn-cancelar">', unsafe_allow_html=True)
@@ -136,9 +136,9 @@ div[data-baseweb="select"]:focus-within,
                          ", ".join(item.split(" - ", 1)[0] for item in asig_seleccionadas), observaciones.strip()),
                     )
                 except DatabaseError:
-                    st.error("No se pudo guardar el estudiante. Revisa los datos e intenta de nuevo.")
+                    st.error("No se pudo guardar el participante. Revisa los datos e intenta de nuevo.")
                 else:
-                    st.session_state["registro_guardado"] = "Se guardó el estudiante."
+                    st.session_state["registro_guardado"] = "Se guardó el participante."
                     if btn_another:
                         st.session_state["form_version"] += 1
                     else:
