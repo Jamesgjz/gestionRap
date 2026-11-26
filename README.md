@@ -6,35 +6,21 @@ Aplicación Streamlit para registrar estudiantes, gestionar docentes, programar 
 
 Instala Python 3.12, ejecuta `python -m pip install -r requirements.txt` y luego `python -m streamlit run main.py`.
 
-### Acceso institucional
+### Cuentas de acceso
 
-1. Registra una aplicación web en el proveedor OpenID Connect de la institución. En el proveedor configura la URL de retorno del entorno, por ejemplo `http://localhost:8501/oauth2callback` para desarrollo o `https://tu-app.example/oauth2callback` para producción.
-2. Guarda la configuración en `.streamlit/secrets.toml` o en los secretos de Streamlit Cloud. Genera `cookie_secret` con `python -c "import secrets; print(secrets.token_urlsafe(48))"`. Usa un secreto distinto para cada entorno.
-3. Obtén de tu proveedor el identificador `sub` que emite **para este cliente OIDC** y agrega cada cuenta a su rol. Las cuentas en `admin_subjects` gestionan registros y evaluaciones. Las de `consulta_subjects` ven indicadores agregados. Un cambio de proveedor o tenant requiere actualizar las listas y rotar `cookie_secret`.
+Gestión RAP valida cuentas administradas desde los secretos de Streamlit. Desde una terminal interactiva, crea tu primera cuenta:
 
-```toml
-[auth]
-redirect_uri = "http://localhost:8501/oauth2callback"
-cookie_secret = "REEMPLAZAR"
-client_id = "REEMPLAZAR"
-client_secret = "REEMPLAZAR"
-server_metadata_url = "https://proveedor.example/.well-known/openid-configuration"
-
-[rap_access]
-admin_subjects = ["IDENTIFICADOR_OIDC_ADMIN"]
-consulta_subjects = []
-
-[postgres]
-host = "host-de-neon.example"
-database = "neondb"
-user = "usuario-de-aplicacion"
-password = "REEMPLAZAR"
-port = 5432
+```powershell
+python crear_cuenta.py tu_usuario --nombre "Tu nombre" --rol admin
 ```
 
-El despliegue requiere HTTPS. Usa un único emisor OIDC de confianza, con la URL de descubrimiento del tenant institucional. La aplicación verifica el vencimiento del token de identidad en cada ejecución.
+El asistente pide la contraseña sin mostrarla y devuelve un bloque TOML con su hash. Agrega todo ese bloque en **Settings → Secrets** de la app publicada o en `.streamlit/secrets.toml` para desarrollo. Conserva el bloque `[postgres]` existente. Evita guardar este bloque en Git o enviarlo por chat.
 
-[Configuración de OIDC en Streamlit](https://docs.streamlit.io/develop/concepts/connections/authentication)
+Agrega un bloque por usuario. El rol `admin` gestiona los registros y las evaluaciones. El rol `consulta` solo ve indicadores agregados. Para cambiar una contraseña ejecuta el comando otra vez y reemplaza su bloque. Para retirar el acceso, quita el bloque del usuario. Agrega al menos un administrador antes de integrar los cambios a la rama desplegada.
+
+Las sesiones expiran tras 30 minutos sin actividad o 8 horas desde el inicio. Recargar la página puede requerir entrar de nuevo. Los intentos de acceso se limitan en memoria por proceso y cuenta. Publica la app mediante HTTPS y usa contraseñas nuevas y exclusivas para Gestión RAP.
+
+[Administrar secretos en Streamlit Community Cloud](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app/app-settings)
 
 ### PostgreSQL
 

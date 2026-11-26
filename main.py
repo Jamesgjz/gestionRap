@@ -1,10 +1,18 @@
 from importlib import import_module
-from time import time
+from time import monotonic
 
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
 from errors import DatabaseError
+from local_auth import (
+    MAX_PASSWORD_LENGTH,
+    current_account,
+    login_attempts,
+    normalize_username,
+    read_accounts,
+    verify_password,
+)
 
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
 
@@ -14,51 +22,47 @@ for param in ("u_auth", "p_auth", "auth_mode"):
         del st.query_params[param]
 
 try:
-    oidc = st.secrets.get("auth", {})
-    access = st.secrets.get("rap_access", {})
+    accounts = read_accounts(st.secrets.get("rap_accounts", {}))
 except StreamlitSecretNotFoundError:
-    oidc, access = {}, {}
+    accounts = {}
 
-if not all(oidc.get(key) for key in (
-    "redirect_uri", "cookie_secret", "client_id", "client_secret", "server_metadata_url"
-)) or not access.get("admin_subjects"):
-    st.title("Gestión RAP · UNIMINUTO Virtual")
-    st.warning("El acceso institucional todavía no está configurado. Contacta al administrador.")
+session = st.session_state.get("rap_session")
+now = monotonic()
+account = current_account(session, accounts, now)
+if account is None:
+    if session is not None:
+        st.session_state.clear()
+
+    st.title("Gestión RAP · UNIMINUTO Virtual", anchor=False)
+    st.caption("Reconocimiento de Aprendizajes Previos")
+    if not any(user.role == "admin" for user in accounts.values()):
+        st.warning("El acceso a Gestión RAP aún no está configurado.")
+        st.stop()
+    if session is not None:
+        st.info("Tu sesión terminó. Vuelve a iniciar sesión.")
+
+    with st.form("acceso_rap", clear_on_submit=True, width=460):
+        username = st.text_input("Usuario", max_chars=64)
+        password = st.text_input("Contraseña", type="password", max_chars=MAX_PASSWORD_LENGTH)
+        if st.form_submit_button("Iniciar sesión", type="primary"):
+            username = normalize_username(username)
+            candidate = accounts.get(username)
+            if not login_attempts.reserve(username):
+                st.error("Demasiados intentos. Vuelve a intentarlo en unos minutos.")
+            elif not verify_password(password, candidate):
+                st.error("Usuario o contraseña incorrectos.")
+            else:
+                login_attempts.reset_account(username)
+                st.session_state.clear()
+                signed_in_at = monotonic()
+                st.session_state["rap_session"] = (username, candidate.revision, signed_in_at, signed_in_at)
+                st.rerun()
     st.stop()
 
-if not st.user.is_logged_in:
-    st.title("Gestión RAP · UNIMINUTO Virtual")
-    st.write("Reconocimiento de Aprendizajes Previos")
-    if st.button("Iniciar sesión", type="primary"):
-        st.login()
-    st.stop()
-
-subject = st.user.get("sub")
-expires = st.user.get("exp")
-if not isinstance(expires, (int, float)) or expires <= time():
-    st.warning("Tu sesión venció.")
-    if st.button("Volver a iniciar sesión"):
-        st.logout()
-    st.stop()
-
-role = None
-for candidate, setting in (("admin", "admin_subjects"), ("publico", "consulta_subjects")):
-    subjects = access.get(setting, [])
-    if subject and isinstance(subjects, list) and subject in subjects:
-        role = candidate
-        break
-
-if role is None:
-    st.error("Tu cuenta no tiene acceso a Gestión RAP.")
-    if st.button("Cerrar sesión"):
-        st.logout()
-    st.stop()
-
-if st.session_state.get("identidad_rap") != (subject, role):
-    st.session_state.clear()
-    st.session_state["identidad_rap"] = (subject, role)
-
-user_name = str(st.user.get("name") or st.user.get("email") or "Usuario")
+username, revision, started, _ = session
+st.session_state["rap_session"] = (username, revision, started, now)
+user_name = account.name
+role = account.role
 st.session_state["usuario"] = user_name
 st.session_state["rol"] = role
 pages = {
@@ -69,7 +73,7 @@ pages = {
     "Evaluación": ("evaluacion", "Evaluación", ":material/rate_review:"),
     "Dashboard / KPIs": ("dashboard", "Dashboard / KPIs", ":material/dashboard:"),
 }
-if role == "publico":
+if role == "consulta":
     pages = {"Dashboard / KPIs": pages["Dashboard / KPIs"]}
 
 
@@ -79,7 +83,6 @@ def navigate(page):
 
 def logout():
     st.session_state.clear()
-    st.logout()
 
 selected = st.session_state.get("opcion_menu")
 if selected not in pages:
