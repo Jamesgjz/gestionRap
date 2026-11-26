@@ -2,7 +2,7 @@ from importlib import import_module
 
 import streamlit as st
 
-from modules.ui import encabezado, tarjetas_acciones, tarjetas_metricas
+from modules.ui import encabezado, panel, tarjetas_acciones, tarjetas_metricas
 
 
 def ir_a(vista):
@@ -34,7 +34,7 @@ def ver_resumen():
         ("Pruebas en construcción", tot_pend), ("Asignaturas activas", tot_asig),
     ))
 
-    with st.container(border=True):
+    with panel("programaciones-recientes"):
         st.subheader("Programaciones recientes", anchor=False)
         programaciones = traer_datos("""
             SELECT e.nombre_completo, p.alfa_asignatura, p.fecha_aplicacion

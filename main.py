@@ -13,8 +13,10 @@ from local_auth import (
     read_accounts,
     verify_password,
 )
+from modules.ui import acceso, aplicar_estilo, perfil_lateral
 
 st.set_page_config(page_title="Gestión RAP - Uniminuto Virtual", page_icon="🔒", layout="wide")
+aplicar_estilo()
 
 # Retira parámetros de acceso que podrían venir de enlaces anteriores.
 for param in ("u_auth", "p_auth", "auth_mode"):
@@ -33,30 +35,31 @@ if account is None:
     if session is not None:
         st.session_state.clear()
 
-    st.title("Gestión RAP · UNIMINUTO Virtual", anchor=False)
-    st.caption("Reconocimiento de Aprendizajes Previos")
-    if not any(user.role == "admin" for user in accounts.values()):
-        st.warning("El acceso a Gestión RAP aún no está configurado.")
-        st.stop()
-    if session is not None:
-        st.info("Tu sesión terminó. Vuelve a iniciar sesión.")
+    with acceso():
+        st.header("Acceso al sistema", anchor=False)
+        st.caption("Inicia sesión para continuar con RAP Digital.")
+        if not any(user.role == "admin" for user in accounts.values()):
+            st.warning("El acceso a Gestión RAP aún no está configurado.")
+            st.stop()
+        if session is not None:
+            st.info("Tu sesión terminó. Vuelve a iniciar sesión.")
 
-    with st.form("acceso_rap", clear_on_submit=True, width=460):
-        username = st.text_input("Usuario", max_chars=64)
-        password = st.text_input("Contraseña", type="password", max_chars=MAX_PASSWORD_LENGTH)
-        if st.form_submit_button("Iniciar sesión", type="primary"):
-            username = normalize_username(username)
-            candidate = accounts.get(username)
-            if not login_attempts.reserve(username):
-                st.error("Demasiados intentos. Vuelve a intentarlo en unos minutos.")
-            elif not verify_password(password, candidate):
-                st.error("Usuario o contraseña incorrectos.")
-            else:
-                login_attempts.reset_account(username)
-                st.session_state.clear()
-                signed_in_at = monotonic()
-                st.session_state["rap_session"] = (username, candidate.revision, signed_in_at, signed_in_at)
-                st.rerun()
+        with st.form("acceso_rap", clear_on_submit=True, border=False):
+            username = st.text_input("Usuario", max_chars=64)
+            password = st.text_input("Contraseña", type="password", max_chars=MAX_PASSWORD_LENGTH)
+            if st.form_submit_button("Iniciar sesión", type="primary", width="stretch"):
+                username = normalize_username(username)
+                candidate = accounts.get(username)
+                if not login_attempts.reserve(username):
+                    st.error("Demasiados intentos. Vuelve a intentarlo en unos minutos.")
+                elif not verify_password(password, candidate):
+                    st.error("Usuario o contraseña incorrectos.")
+                else:
+                    login_attempts.reset_account(username)
+                    st.session_state.clear()
+                    signed_in_at = monotonic()
+                    st.session_state["rap_session"] = (username, candidate.revision, signed_in_at, signed_in_at)
+                    st.rerun()
     st.stop()
 
 username, revision, started, _ = session
@@ -89,17 +92,14 @@ if selected not in pages:
     selected = next(iter(pages))
 
 with st.sidebar:
-    st.markdown("**UNIMINUTO Virtual**")
-    st.caption("Gestión RAP")
-    with st.container(border=True):
-        st.text(user_name)
-        st.caption("Administración" if role == "admin" else "Consulta")
+    perfil_lateral(user_name, role)
     for page, (_, label, icon) in pages.items():
         st.button(
             label, icon=icon, width="stretch", on_click=navigate, args=(page,),
             type="primary" if page == selected else "tertiary",
         )
-    st.button("Cerrar sesión", icon=":material/logout:", width="stretch", on_click=logout)
+    st.divider()
+    st.button("Cerrar sesión", icon=":material/logout:", width="stretch", type="tertiary", on_click=logout)
 
 try:
     import_module(f"modules.{pages[selected][0]}").render()

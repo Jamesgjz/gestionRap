@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.ui import encabezado
+from modules.ui import encabezado, panel
 
 
 PAGE_SIZE = 25
@@ -14,7 +14,7 @@ CATALOGO = """
 
 
 def calificar():
-    with st.container(border=True):
+    with panel("evaluacion-buscar"):
         st.subheader("Buscar participante", anchor=False)
         with st.form("evaluacion_buscar", border=False):
             banner = st.text_input("ID Banner")
@@ -49,7 +49,7 @@ def calificar():
         return
 
     opciones = {row[0]: row for row in pruebas}
-    with st.container(border=True):
+    with panel("evaluacion-nota"):
         st.subheader("Asistencia y calificación", anchor=False)
         st.text(pruebas[0][1])
         id_programacion = st.selectbox(
@@ -89,7 +89,7 @@ def calificar():
 def historial():
     from database import ejecutar_query, traer_datos
 
-    with st.container(border=True):
+    with panel("evaluacion-historico"):
         st.subheader("Histórico de resultados", anchor=False)
         col_buscar, col_resultado = st.columns([2, 1])
         buscar = col_buscar.text_input("Buscar por nombre, ID Banner o asignatura").strip()

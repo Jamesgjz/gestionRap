@@ -1,7 +1,7 @@
 import streamlit as st
 
 from database import traer_datos
-from modules.ui import encabezado, tarjetas_metricas
+from modules.ui import encabezado, panel, tarjetas_metricas
 
 
 def porcentaje(parte, total):
@@ -17,10 +17,10 @@ def resumen(titulo, categoria, filas, color):
 
     datos = pd.DataFrame(filas, columns=[categoria, "Cantidad"])
     grafico, tabla = st.columns([3, 2], gap="medium")
-    with grafico, st.container(border=True):
+    with grafico, panel("indicador-grafico"):
         st.subheader(titulo, anchor=False)
         st.bar_chart(datos, x=categoria, y="Cantidad", horizontal=True, sort="-Cantidad", color=color)
-    with tabla, st.container(border=True):
+    with tabla, panel("indicador-detalle"):
         st.subheader("Detalle", anchor=False)
         st.dataframe(datos, hide_index=True, width="stretch")
 
@@ -129,6 +129,6 @@ def render():
     if st.session_state.get("rol") == "admin":
         indicadores["Pruebas por docente"] = productividad
 
-    with st.container(border=True):
+    with panel("indicador-filtro"):
         indicador = st.selectbox("Indicador", indicadores)
     indicadores[indicador]()

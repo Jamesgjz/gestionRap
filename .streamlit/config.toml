@@ -1,6 +1,6 @@
 [theme]
 base = "light"
-primaryColor = "#0047E8"
+primaryColor = "#0047FF"
 backgroundColor = "#F8FAFC"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#0F2440"
@@ -11,8 +11,8 @@ chartCategoricalColors = ["#1559D6", "#008461", "#7134B8", "#B85112"]
 showWidgetBorder = true
 
 [theme.sidebar]
-primaryColor = "#356BFF"
-backgroundColor = "#06162E"
+primaryColor = "#0047FF"
+backgroundColor = "#031430"
 secondaryBackgroundColor = "#122847"
 textColor = "#F3F7FF"
 borderColor = "#2B4263"
