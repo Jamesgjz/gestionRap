@@ -1,3 +1,4 @@
+from base64 import b64encode
 from functools import lru_cache
 from html import escape
 from pathlib import Path
@@ -16,20 +17,22 @@ def aplicar_estilo():
     st.html(f"<style>{css()}</style>")
 
 
+@lru_cache(maxsize=1)
+def logo_institucional():
+    archivo = Path(__file__).resolve().parents[1] / "assets" / "logo-uniminuto.png"
+    imagen = b64encode(archivo.read_bytes()).decode("ascii")
+    return f'<img class="rap-logo" src="data:image/png;base64,{imagen}" alt="UNIMINUTO" width="263" height="71">'
+
+
 def acceso():
     with st.container(key="rap-login"):
-        st.html("""
-            <div class="rap-login-masthead">
-                <span aria-hidden="true">🎓</span><div>UNIMINUTO<small>Virtual · RAP Digital</small></div>
-            </div>
-        """)
         brand, form = st.columns([1, 1.1], gap=None)
         with brand:
-            st.html("""
+            st.html(f"""
                 <div class="rap-login-brand">
                     <div>
-                        <span class="rap-product">RAP Digital</span>
-                        <h1>UNIMINUTO<br><span>VIRTUAL</span></h1>
+                        {logo_institucional()}
+                        <h1>RAP Digital</h1>
                         <p>Gestión académica del proceso de Reconocimiento de Aprendizajes Previos.</p>
                     </div>
                     <div class="rap-features"><span>Seguimiento</span><span>Evaluación</span><span>Trazabilidad académica</span></div>
@@ -41,9 +44,10 @@ def acceso():
 def perfil_lateral(nombre, rol):
     iniciales = "".join(palabra[0].upper() for palabra in nombre.split()[:2])
     etiqueta = "Administrador" if rol == "admin" else "Consulta"
-    st.html("""
-        <div class="rap-sidebar-logo"><span aria-hidden="true">🎓</span>
-            <div><strong>UNIMINUTO</strong><small>Virtual | RAP Digital</small></div>
+    st.html(f"""
+        <div class="rap-sidebar-logo">
+            {logo_institucional()}
+            <small>Virtual | RAP Digital</small>
         </div>
     """)
     st.html(f"""

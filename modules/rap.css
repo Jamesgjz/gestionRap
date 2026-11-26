@@ -17,10 +17,10 @@
   font-size: 1.1rem; line-height: 1.3; font-weight: 650; text-align: left;
 }
 [data-testid="stSidebar"] button[kind="primary"] { background: var(--rap-blue); border-color: var(--rap-blue); }
-.rap-sidebar-logo { display: flex; align-items: center; gap: .55rem; padding: 0 .15rem 1rem; border-bottom: 1px solid #1f314c; }
-.rap-sidebar-logo strong, .rap-profile strong { color: #fff; display: block; line-height: 1.2; }
-.rap-sidebar-logo small { color: #38bdf8; display: block; line-height: 1.35; font-weight: 750; text-transform: uppercase; }
-.rap-sidebar-logo > span { font-size: 1.32rem; }
+.rap-logo { display: block; width: 100%; max-width: 263px; height: auto; }
+.rap-sidebar-logo { padding: 0 .15rem 1rem; border-bottom: 1px solid #1f314c; }
+.rap-sidebar-logo small { color: #38bdf8; display: block; margin-top: .45rem; line-height: 1.35; font-weight: 750; text-transform: uppercase; }
+.rap-profile strong { color: #fff; display: block; line-height: 1.2; }
 .rap-profile { border: 1px solid #20304a; border-radius: .8rem; background: #0c1d36; padding: .65rem .7rem; }
 .rap-identity { display: flex; align-items: center; gap: .6rem; overflow-wrap: anywhere; }
 .rap-profile small { color: #b6c6de; }
@@ -45,16 +45,12 @@
 [class*="st-key-rap-action-"] button[kind="primary"]:hover { filter: brightness(.91); }
 
 body:has(.st-key-rap-login) [data-testid='stHeader'] { visibility: hidden; }
-.rap-login-masthead { display: flex; align-items: center; gap: .65rem; padding: 0 0 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--rap-border); font-weight: 800; color: #001737; }
-.rap-login-masthead small { color: #0056b3; font-weight: 700; display: block; line-height: 1.25; }
 .st-key-rap-login { max-width: 1140px; margin: 0 auto; }
 .st-key-rap-login [data-testid="stHorizontalBlock"] { gap: 0; background: #fff; border: 1px solid var(--rap-border); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px #0f172a12; }
 .st-key-rap-login [data-testid="stColumn"]:has(.rap-login-brand) { background: linear-gradient(#001737, #00224f); }
 .rap-login-brand { color: #fff; min-height: 32rem; padding: clamp(1.65rem, 4vw, 3.5rem); display: flex; flex-direction: column; justify-content: space-between; }
 .rap-login-brand h1 { color: #fff; font-size: clamp(2rem, 3.7vw, 2.7rem); font-weight: 850; margin: 1.1rem 0; padding: 0; line-height: 1.06; }
-.rap-login-brand h1 span { color: #f1c40f; }
 .rap-login-brand p { margin: 1rem 0; color: #b8c9de; max-width: 24rem; }
-.rap-login-brand .rap-product { font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #38bdf8; }
 .rap-login-brand .rap-features { display: flex; flex-wrap: wrap; gap: .65rem 1.2rem; padding-top: 1.2rem; color: #eaf4ff; border-top: 1px solid #ffffff32; font-size: .85rem; }
 .st-key-rap-login-form { padding: clamp(1.4rem, 5vw, 4.25rem); }
 .st-key-rap-login-form h2 { padding: 0; color: #0f172a; font-weight: 800; }
@@ -62,7 +58,7 @@ body:has(.st-key-rap-login) [data-testid='stHeader'] { visibility: hidden; }
 @media (max-width: 700px) {
   [data-testid="stMainBlockContainer"] { padding-top: 4.1rem; }
   .rap-login-brand { min-height: 0; }
-  .rap-login-brand h1 { margin: .4rem 0; }
+  .rap-login-brand h1 { margin: .9rem 0 .4rem; }
   .rap-login-brand .rap-features { display: none; }
   .st-key-rap-login [data-testid="stColumn"] { flex-basis: 100% !important; }
 }
